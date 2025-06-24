@@ -1,10 +1,9 @@
 import React from 'react';
-import Image from 'next/image';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Authentication | Melon',
-  description: 'Sign in to Africa\'s leading accountability platform'
+  description: 'Sign in to unlock geospatial intelligence for emerging markets'
 };
 
 export default function AuthLayout({
@@ -13,26 +12,58 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen">
-      <div className="hidden md:flex md:w-1/2 bg-[#5B94E5] flex-col justify-center items-start p-12">
-        <div className="mb-8">
-          <Image
-            src="/images/melon-logo.svg"
-            alt="Melon"
-            width={150}
-            height={40}
-            priority
-          />
-        </div>
-        <h1 className="text-5xl font-bold text-white mb-4">Data-Driven<br />Impact</h1>
-        <p className="text-white text-xl">Africa&rsquo;s leading accountability platform</p>
-        <div className="absolute bottom-6 left-6 text-white text-sm opacity-80">
-          © {new Date().getFullYear()} Melon. All rights reserved.
+    <div className="min-h-screen flex">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white p-8">
+        <div className="w-full max-w-md">
+          {children}
         </div>
       </div>
-      <div className="w-full md:w-1/2 flex justify-center items-center">
-        <div className="w-full max-w-md px-6 py-8">
-          {children}
+
+      <div 
+        className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 relative"
+        style={{
+          background: 'linear-gradient(135deg, #7aa6ea 10%, #5b92e5 40%, #6175d1 70%, #6659bc 90%)'
+        }}
+      >
+
+        <div className="text-center text-white max-w-lg">
+          <h1 className="text-5xl font-bold mb-6 leading-tight">
+            Transform Data into Impact
+          </h1>
+          
+          <blockquote className="text-xl mb-8 opacity-90 italic">
+            &rdquo;Melon has revolutionized how we collect and analyze geospatial data. 
+            It&rsquo;s reliable, efficient, and delivers insights that drive real impact.&rdquo;
+          </blockquote>
+
+          <div className="flex items-center justify-center space-x-4">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">AK</span>
+            </div>
+            <div className="text-left">
+              <div className="font-semibold">Akin Adebayo</div>
+              <div className="text-white/80 text-sm">Program Director at ActionAid</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-12 left-8 right-8">
+          <p className="text-white/60 text-sm text-center mb-4 uppercase tracking-wider">
+            Trusted by leading organizations
+          </p>
+          <div className="flex items-center justify-center space-x-8 opacity-60">
+            <div className="w-16 h-8 bg-white/20 rounded"></div>
+            <div className="w-16 h-8 bg-white/20 rounded"></div>
+            <div className="w-16 h-8 bg-white/20 rounded"></div>
+            <div className="w-16 h-8 bg-white/20 rounded"></div>
+          </div>
+        </div>
+
+        <div className="absolute top-20 right-20 w-64 h-64 opacity-10">
+          <div className="w-full h-full border border-white rounded-full"></div>
+        </div>
+        <div className="absolute bottom-32 right-32 w-32 h-32 opacity-5">
+          <div className="w-full h-full border border-white rounded-full"></div>
         </div>
       </div>
     </div>

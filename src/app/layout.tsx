@@ -1,13 +1,50 @@
+import localFont from 'next/font/local';
+import { Karla } from 'next/font/google';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-// import { AuthProvider } from '@/context/AuthContext';
 
-const inter = Inter({ subsets: ['latin'] });
+const mabryPro = localFont({
+  variable: '--font-mabry',
+  src: [
+    {
+      path: '../../public/fonts/mabry-pro/MabryPro-Light.ttf',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: '../../public/fonts/mabry-pro/MabryPro-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../../public/fonts/mabry-pro/MabryPro-Medium.ttf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../../public/fonts/mabry-pro/MabryPro-Bold.ttf',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../../public/fonts/mabry-pro/MabryPro-Black.ttf',
+      weight: '900',
+      style: 'normal',
+    },
+    {
+      path: '../../public/fonts/mabry-pro/MabryPro-Italic.ttf',
+      weight: '300',
+      style: 'normal',
+    },
+
+  ],
+});
+
+const karla = Karla({ subsets: ['latin'], variable: '--font-karla' });
 
 export const metadata: Metadata = {
-  title: 'Melon - Data-Driven Impact',
-  description: 'Africa\'s leading accountability platform',
+  title: 'Melon',
+  description: 'Melon Landing Page',
 };
 
 export default function RootLayout({
@@ -17,10 +54,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {/* <AuthProvider> */}
-          {children}
-        {/* </AuthProvider> */}
+      <head>
+        <link rel="icon" href="/favicon.ico?v=3" />
+        <link rel="shortcut icon" href="/favicon.ico?v=3" />
+        <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
+      </head>
+      <body className={`${karla.variable} ${mabryPro.variable} antialiased`}>
+        {children}
       </body>
     </html>
   );
