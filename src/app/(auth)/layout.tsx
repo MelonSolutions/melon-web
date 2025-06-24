@@ -37,12 +37,9 @@ export default function AuthLayout({
           </blockquote>
 
           <div className="flex items-center justify-center space-x-4">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">AK</span>
-            </div>
             <div className="text-left">
-              <div className="font-semibold">Akin Adebayo</div>
-              <div className="text-white/80 text-sm">Program Director at ActionAid</div>
+              <div className="font-semibold">Adejonwo Ismail</div>
+              <div className="text-white/80 text-sm">Founder IWello Inc</div>
             </div>
           </div>
         </div>
