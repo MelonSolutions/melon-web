@@ -1,5 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Authentication | Melon',
@@ -32,14 +33,15 @@ export default function AuthLayout({
           </h1>
           
           <blockquote className="text-xl mb-8 opacity-90 italic">
-            &rdquo;Melon has revolutionized how we collect and analyze geospatial data. 
-            It&rsquo;s reliable, efficient, and delivers insights that drive real impact.&rdquo;
+            &rdquo;Melon&rsquo;s geospatial intelligence helped us identify underserved communities, 
+            allowing iWello to extend health coverage to places we would have otherwise overlooked. 
+            Data guides us, and Melon makes that data visible.&rdquo;
           </blockquote>
 
           <div className="flex items-center justify-center space-x-4">
             <div className="text-left">
               <div className="font-semibold">Adejonwo Ismail</div>
-              <div className="text-white/80 text-sm">Founder IWello Inc</div>
+              <div className="text-white/80 text-sm">Founder, iWello Inc</div>
             </div>
           </div>
         </div>
@@ -48,11 +50,37 @@ export default function AuthLayout({
           <p className="text-white/60 text-sm text-center mb-4 uppercase tracking-wider">
             Trusted by leading organizations
           </p>
-          <div className="flex items-center justify-center space-x-8 opacity-60">
-            <div className="w-16 h-8 bg-white/20 rounded"></div>
-            <div className="w-16 h-8 bg-white/20 rounded"></div>
-            <div className="w-16 h-8 bg-white/20 rounded"></div>
-            <div className="w-16 h-8 bg-white/20 rounded"></div>
+          <div className="flex items-center justify-center space-x-6 opacity-80">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+              <Image
+                src="/images/iwello.png"
+                alt="iWello"
+                width={60}
+                height={30}
+                className="object-contain filter brightness-0 invert"
+                style={{ maxHeight: '24px', width: 'auto' }}
+              />
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+              <Image
+                src="/images/fairmoney.png"
+                alt="FairMoney"
+                width={80}
+                height={30}
+                className="object-contain filter brightness-0 invert"
+                style={{ maxHeight: '24px', width: 'auto' }}
+              />
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+              <Image
+                src="/images/remote-gravity.png"
+                alt="Remote Gravity"
+                width={60}
+                height={30}
+                className="object-contain filter brightness-0 invert"
+                style={{ maxHeight: '24px', width: 'auto' }}
+              />
+            </div>
           </div>
         </div>
 
