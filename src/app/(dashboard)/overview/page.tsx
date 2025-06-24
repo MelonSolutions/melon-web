@@ -6,7 +6,7 @@ import {
   ArrowDownRight,
   BarChart,
   LineChart,
-  MapIcon,
+  Map,
   Calendar,
   Download,
   Share2,
@@ -31,41 +31,41 @@ export default function OverviewPage() {
   ];
 
   const sectorData = [
-    { name: 'Health', value: 32, color: '#10b981' },
-    { name: 'Education', value: 28, color: '#3b82f6' },
-    { name: 'Agriculture', value: 24, color: '#f59e0b' },
-    { name: 'Technology', value: 16, color: '#8b5cf6' },
+    { name: 'Healthcare', value: 32, color: '#10b981' },
+    { name: 'Agriculture', value: 28, color: '#3b82f6' },
+    { name: 'Energy', value: 24, color: '#f59e0b' },
+    { name: 'Infrastructure', value: 16, color: '#8b5cf6' },
   ];
 
   const recentPrograms = [
     {
       id: 1,
-      name: "Maternal Health Initiative",
-      sector: "Health",
+      name: "Health Facility Coverage Rate",
+      sector: "Healthcare",
       progress: 78,
       beneficiaries: 2600,
       lastUpdated: "28/04/2025",
     },
     {
       id: 2,
-      name: "Rural Schools Program",
-      sector: "Education",
+      name: "Electricity Access Rate",
+      sector: "Agriculture",
       progress: 92,
       beneficiaries: 5200,
       lastUpdated: "01/05/2025",
     },
     {
       id: 3,
-      name: "Sustainable Farming",
-      sector: "Agriculture",
+      name: "Crop Yield per Hectare covered",
+      sector: "Energy",
       progress: 65,
       beneficiaries: 1840,
       lastUpdated: "30/04/2025",
     },
     {
       id: 4,
-      name: "Digital Skills Training",
-      sector: "Technology",
+      name: "Road Accessibility Index",
+      sector: "Infrastructure",
       progress: 45,
       beneficiaries: 980,
       lastUpdated: "25/04/2025",
@@ -213,7 +213,7 @@ export default function OverviewPage() {
           <CardHeader>
             <div className="flex flex-col space-y-1.5">
               <CardTitle className="text-xl font-semibold">Program Progress</CardTitle>
-              <p className="text-sm text-gray-500">Tracking key milestones across all active programs</p>
+              <p className="text-sm text-gray-500">Tracking key performance indicators across key sectors</p>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -223,10 +223,10 @@ export default function OverviewPage() {
                   <div className="flex items-center space-x-2">
                     <span className={cn(
                       "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      program.sector === "Health" && "bg-green-100 text-green-800",
-                      program.sector === "Education" && "bg-blue-100 text-blue-800",
-                      program.sector === "Agriculture" && "bg-yellow-100 text-yellow-800",
-                      program.sector === "Technology" && "bg-purple-100 text-purple-800",
+                      program.sector === "Healthcare" && "bg-green-100 text-green-800",
+                      program.sector === "Agriculture" && "bg-blue-100 text-blue-800",
+                      program.sector === "Energy" && "bg-yellow-100 text-yellow-800",
+                      program.sector === "Infrastructure" && "bg-purple-100 text-purple-800",
                     )}>
                       {program.sector}
                     </span>
@@ -238,10 +238,10 @@ export default function OverviewPage() {
                   value={program.progress} 
                   className={cn(
                     "h-2 w-full",
-                    program.sector === "Health" && "bg-green-100 [&>div]:bg-green-600",
-                    program.sector === "Education" && "bg-blue-100 [&>div]:bg-blue-600",
-                    program.sector === "Agriculture" && "bg-yellow-100 [&>div]:bg-yellow-600",
-                    program.sector === "Technology" && "bg-purple-100 [&>div]:bg-purple-600",
+                    program.sector === "Healthcare" && "bg-green-100 [&>div]:bg-green-600",
+                    program.sector === "Agriculture" && "bg-blue-100 [&>div]:bg-blue-600",
+                    program.sector === "Energy" && "bg-yellow-100 [&>div]:bg-yellow-600",
+                    program.sector === "Infrastructure" && "bg-purple-100 [&>div]:bg-purple-600",
                   )}
                 />
               </div>
@@ -269,19 +269,19 @@ export default function OverviewPage() {
             <div className="flex flex-wrap gap-4 justify-center w-full">
             <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-green-500"></span>
-                <p className="text-xs text-gray-600">Health (32%)</p>
+                <p className="text-xs text-gray-600">Healthcare (32%)</p>
             </div>
             <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-blue-500"></span>
-                <p className="text-xs text-gray-600">Education (28%)</p>
+                <p className="text-xs text-gray-600">Agriculture (28%)</p>
             </div>
             <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-amber-500"></span>
-                <p className="text-xs text-gray-600">Agriculture (24%)</p>
+                <p className="text-xs text-gray-600">Energy (24%)</p>
             </div>
             <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-purple-500"></span>
-                <p className="text-xs text-gray-600">Technology (16%)</p>
+                <p className="text-xs text-gray-600">Infrastructure (16%)</p>
             </div>
             </div>
         </CardFooter>
@@ -327,7 +327,7 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[220px] flex items-center justify-center">
-              <MapIcon className="h-36 w-36 text-gray-200" />
+              <Map className="h-36 w-36 text-gray-200" />
             </div>
           </CardContent>
         </Card>

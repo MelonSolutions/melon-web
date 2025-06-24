@@ -152,11 +152,11 @@ export default function DashboardLayout({
               <div className="flex items-center w-full">
                 <div className="flex-shrink-0">
                   <div className="bg-gray-200 rounded-full h-10 w-10 flex items-center justify-center">
-                    <span className="text-gray-500 text-sm font-medium">V</span>
+                    <span className="text-gray-500 text-sm font-medium">J</span>
                   </div>
                 </div>
                 <div className="ml-3 flex-1">
-                  <p className="text-base font-medium text-gray-700">Victor</p>
+                  <p className="text-base font-medium text-gray-700">Jane Doe</p>
                   <p className="text-sm text-gray-500">Project Coordinator</p>
                 </div>
                 <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -219,12 +219,12 @@ export default function DashboardLayout({
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <div className="bg-gray-200 rounded-full h-10 w-10 flex items-center justify-center">
-                      <span className="text-gray-500 text-sm font-medium">V</span>
+                      <span className="text-gray-500 text-sm font-medium">J</span>
                     </div>
                   </div>
                   <div className="ml-3 flex-grow">
-                    <p className="text-sm font-medium text-gray-700">Victor</p>
-                    <p className="text-xs text-gray-500">Project Coordinator</p>
+                    <p className="text-sm font-medium text-gray-700">Jane Doe</p>
+                    <p className="text-xs text-gray-500">Program Manager</p>
                   </div>
                   <ChevronDown className="w-5 h-5 text-gray-400" />
                 </div>
