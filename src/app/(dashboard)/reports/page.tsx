@@ -1,24 +1,115 @@
-"use client";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+'use client';
 
-import React from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { ReportsHeader } from '@/components/reports/ReportsHeader';
+import { ReportsFilters } from '@/components/reports/ReportsFilter';
+import { ReportsList } from '@/components/reports/ReportsList';
+import { ReportsEmpty } from '@/components/reports/ReportsEmpty';
+import { useReports } from '@/hooks/useReports';
+import { Plus, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ReportsPage() {
-  return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Reports
-      </h2>
-      <p className="text-gray-600">
-        This is the reports page. Here you&rsquo;ll be able to generate and view reports about program performance, impact metrics, and more.
-      </p>
-      <div className="mt-6 p-6 bg-gray-50 rounded-lg text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <p className="text-gray-500">
-          Report content will be implemented soon
-        </p>
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState({
+    search: searchParams.get('search') || '',
+    status: searchParams.get('status') || '',
+    category: searchParams.get('category') || '',
+  });
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  const { 
+    reports, 
+    dashboardStats, 
+    loading, 
+    error,
+    refetch 
+  } = useReports(filters);
+
+  const handleFilterChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
-    </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading reports</p>
+          <button 
+            onClick={refetch}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+    {reports.length === 0 && !filters.search && !filters.status && !filters.category ? (
+      <ReportsEmpty />
+      ) : (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
+            <p className="text-gray-600 mt-1 text-base">
+              Create, manage, and analyze your data collection forms
+            </p>
+          </div>
+          <Link
+            href="/reports/create"
+            className="inline-flex items-center px-4 py-2 bg-[#5B94E5] text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Report
+          </Link>
+        </div>
+
+        <ReportsHeader stats={dashboardStats} />
+
+
+          <>
+            <ReportsFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              view={view}
+              onViewChange={setView}
+            />
+            
+            <ReportsList 
+              reports={reports} 
+              view={view} 
+              onRefetch={refetch}
+            />
+
+            {reports.length === 0 && (filters.search || filters.status || filters.category) && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg mb-4">No reports found matching your criteria</p>
+                <button
+                  onClick={() => setFilters({ search: '', status: '', category: '' })}
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </>
+      
+      </div>
+        )}
+    </>
   );
 }
