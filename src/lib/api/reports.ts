@@ -1,5 +1,3 @@
-// src/lib/api/reports.ts
-// Import mock API for development
 export * from './reports-mock';
 
 // Uncomment below when ready to connect to real backend
