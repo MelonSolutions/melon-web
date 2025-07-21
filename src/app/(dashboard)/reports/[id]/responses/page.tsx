@@ -165,8 +165,8 @@ export default function ReportResponsesPage() {
 
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Clock className="w-5 h-5 text-purple-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Clock className="w-5 h-5 text-gray-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Avg. Time</p>

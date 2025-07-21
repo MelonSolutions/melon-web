@@ -71,7 +71,7 @@ export default function ReportsPage() {
           </div>
           <Link
             href="/reports/create"
-            className="inline-flex items-center px-4 py-2 bg-[#5B94E5] text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#5B94E5] text-white font-medium rounded-lg hover:bg-[#4A7ABF] transition-colors"
           >
             <Plus className="w-5 h-5 mr-2" />
             Create Report

@@ -171,7 +171,7 @@ export default function ReportDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -217,7 +217,7 @@ export default function ReportDetailsPage() {
             <button 
               onClick={() => handleSave(false)}
               disabled={loading}
-              className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg disabled:opacity-50"
+              className="px-4 py-2 text-[#5B94E5] font-medium hover:bg-blue-50 rounded-lg disabled:opacity-50"
             >
               <Save className="w-4 h-4 mr-2 inline" />
               Save
@@ -225,7 +225,7 @@ export default function ReportDetailsPage() {
             <button 
               onClick={() => handleSave(true)}
               disabled={loading}
-              className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              className="px-4 py-2 bg-[#5B94E5] text-white font-medium rounded-lg hover:bg-[#4A7ABF] disabled:opacity-50"
             >
               <Send className="w-4 h-4 mr-2 inline" />
               Publish
@@ -239,7 +239,7 @@ export default function ReportDetailsPage() {
             onClick={() => setActiveTab('questions')}
             className={`px-6 py-3 font-medium border-b-2 ${
               activeTab === 'questions' 
-                ? 'border-purple-600 text-purple-600' 
+                ? 'border-[#5B94E5] text-[#5B94E5]' 
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -266,7 +266,7 @@ export default function ReportDetailsPage() {
         <div className="flex-1 p-6">
           <div className="max-w-3xl mx-auto space-y-6">
             {/* Form Header */}
-            <div className="bg-white rounded-lg border-l-4 border-purple-600 p-6">
+            <div className="bg-white rounded-lg border-l-4 border-[#5B94E5] p-6">
               <input
                 type="text"
                 value={formData.title}

@@ -55,9 +55,11 @@ export default function CreateReportPage() {
       const result = await createReport(dataToSave);
       
       if (shouldPublish) {
-        router.push(`/reports/${result._id}?published=true`);
+        // Redirect to dashboard reports page after publishing
+        router.push(`/reports?created=${result._id}&published=true`);
       } else {
-        router.push(`/reports/${result._id}`);
+        // Redirect to dashboard reports page after saving
+        router.push(`/reports?created=${result._id}`);
       }
     } catch (error) {
       console.error('Error saving report:', error);
@@ -139,8 +141,8 @@ export default function CreateReportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-purple-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Full-Screen Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -158,24 +160,22 @@ export default function CreateReportPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0"
                 />
-                <p className="text-sm text-gray-500">Last edited 2 minutes ago</p>
+                <p className="text-sm text-gray-500">Creating new report</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
-              <Eye className="w-5 h-5" />
+            <button className="p-2 hover:bg-gray-100 rounded-lg" title="Preview">
+              <Eye className="cursor-pointer w-5 h-5" />
             </button>
-            <span className="text-sm text-gray-500">Preview</span>
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
-              <Settings className="w-5 h-5" />
+            <button className="p-2 hover:bg-gray-100 rounded-lg" title="Settings">
+              <Settings className="cursor-pointerw-5 h-5" />
             </button>
-            <span className="text-sm text-gray-500">Settings</span>
             <button 
               onClick={() => handleSave(false)}
               disabled={loading}
-              className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg disabled:opacity-50"
+              className="cursor-pointer px-4 py-2 text-[#5B94E5] font-medium hover:bg-blue-50 rounded-lg disabled:opacity-50"
             >
               <Save className="w-4 h-4 mr-2 inline" />
               Save
@@ -183,7 +183,7 @@ export default function CreateReportPage() {
             <button 
               onClick={() => handleSave(true)}
               disabled={loading}
-              className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              className="cursor-pointer px-4 py-2 bg-[#5B94E5] text-white font-medium rounded-lg hover:bg-[#4A7ABF] disabled:opacity-50"
             >
               <Send className="w-4 h-4 mr-2 inline" />
               Publish
@@ -197,7 +197,7 @@ export default function CreateReportPage() {
             onClick={() => setActiveTab('questions')}
             className={`px-6 py-3 font-medium border-b-2 ${
               activeTab === 'questions' 
-                ? 'border-purple-600 text-purple-600' 
+                ? 'border-[#5B94E5] text-[#5B94E5]' 
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -207,7 +207,7 @@ export default function CreateReportPage() {
             onClick={() => setActiveTab('responses')}
             className={`px-6 py-3 font-medium border-b-2 ${
               activeTab === 'responses' 
-                ? 'border-purple-600 text-purple-600' 
+                ? 'border-[#5B94E5] text-[#5B94E5]' 
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -217,7 +217,7 @@ export default function CreateReportPage() {
             onClick={() => setActiveTab('settings')}
             className={`px-6 py-3 font-medium border-b-2 ${
               activeTab === 'settings' 
-                ? 'border-purple-600 text-purple-600' 
+                ? 'border-[#5B94E5] text-[#5B94E5]' 
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -232,7 +232,7 @@ export default function CreateReportPage() {
         <div className="flex-1 p-6">
           <div className="max-w-3xl mx-auto space-y-6">
             {/* Form Header */}
-            <div className="bg-white rounded-lg border-l-4 border-purple-600 p-6">
+            <div className="bg-white rounded-lg border-l-4 border-[#5B94E5] p-6">
               <input
                 type="text"
                 value={formData.title}
@@ -275,7 +275,7 @@ export default function CreateReportPage() {
                   <select
                     value={question.type}
                     onChange={(e) => handleQuestionUpdate(question.id, { type: e.target.value as QuestionType })}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="cursor-pointer px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {questionTypes.map(type => (
                       <option key={type.value} value={type.value}>
@@ -377,7 +377,7 @@ export default function CreateReportPage() {
             {/* Add Question Button */}
             <button
               onClick={addQuestion}
-              className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
+              className="cursor-pointer w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
             >
               <Plus className="w-5 h-5 mx-auto" />
             </button>
