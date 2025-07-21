@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, Settings, Save, Send, Plus, GripVertical, Copy, Trash2 } from 'lucide-react';
+import { ArrowLeft, Eye, Settings, Save, Send, Plus, Copy, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { createReport } from '@/lib/api/reports';
 import { CreateReportRequest, Question, QuestionType } from '@/types/reports';
@@ -169,7 +170,7 @@ export default function CreateReportPage() {
             <span className="text-sm text-gray-500">Preview</span>
             <button className="p-2 hover:bg-gray-100 rounded-lg">
               <Settings className="w-5 h-5" />
-            </span>
+            </button>
             <span className="text-sm text-gray-500">Settings</span>
             <button 
               onClick={() => handleSave(false)}
@@ -312,7 +313,7 @@ export default function CreateReportPage() {
                       className="flex items-center space-x-3 text-blue-600 hover:text-blue-700"
                     >
                       <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
-                      <span>Add option or add "Other"</span>
+                      <span>Add option or add &rdquo;Other&rdquo;</span>
                     </button>
                   </div>
                 )}

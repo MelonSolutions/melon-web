@@ -3,6 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getReports, getDashboardStats, ReportsFilters } from '@/lib/api/reports';
 
+export interface Question {
+  id: string;
+  type: string;
+  title: string;
+  description?: string;
+  required: boolean;
+  options?: string[];
+  settings?: unknown;
+}
+
 export interface Report {
   _id: string;
   title: string;
@@ -13,6 +23,7 @@ export interface Report {
   createdAt: string;
   updatedAt: string;
   lastResponseAt?: string;
+  questions?: Question[];
 }
 
 export interface DashboardStats {
