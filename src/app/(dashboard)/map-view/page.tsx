@@ -1,23 +1,107 @@
-"use client";
+'use client';
 
-import React from 'react';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { MapToolbar } from '@/components/map-view/MapToolbar';
+import { MapSidebar } from '@/components/map-view/MapSidebar';
+import { ProjectDetailsPanel } from '@/components/map-view/ProjectDetailsPanel';
+import { mockProjectLocations, mockGeographicAnalytics } from '@/lib/api/geospatial-mock';
+import { ProjectLocation, MapFilters } from '@/types/geospatial';
+
+// Dynamically import the map to avoid SSR issues
+const InteractiveMap = dynamic(
+  () => import('@/components/map-view/InteractiveMap'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+        <div className="text-gray-500">Loading map...</div>
+      </div>
+    )
+  }
+);
 
 export default function MapViewPage() {
+  const [selectedProject, setSelectedProject] = useState<ProjectLocation | null>(null);
+  const [sidebarView, setSidebarView] = useState<'analytics' | 'details'>('analytics');
+  const [filters, setFilters] = useState<MapFilters>({
+    sectors: [],
+    status: [],
+    impactRange: [0, 100],
+    showCoverage: true,
+    showHeatmap: false
+  });
+
+  const handleProjectSelect = (project: ProjectLocation) => {
+    setSelectedProject(project);
+    setSidebarView('details');
+  };
+
+  const handleCloseSidebar = () => {
+    setSelectedProject(null);
+    setSidebarView('analytics');
+  };
+
+  const filteredProjects = mockProjectLocations.filter(project => {
+    // Filter by sectors
+    if (filters.sectors.length > 0 && !filters.sectors.includes(project.sector)) {
+      return false;
+    }
+    
+    // Filter by status
+    if (filters.status.length > 0 && !filters.status.includes(project.status)) {
+      return false;
+    }
+    
+    // Filter by impact range
+    if (project.impactScore < filters.impactRange[0] || project.impactScore > filters.impactRange[1]) {
+      return false;
+    }
+    
+    return true;
+  });
+
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Map View
-      </h2>
-      <p className="text-gray-600">
-        This is the map view page. Here you&rsquo;ll be able to visualize the geographic distribution of your programs and their impact.
-      </p>
-      <div className="mt-6 p-6 bg-gray-50 rounded-lg text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-        </svg>
-        <p className="text-gray-500">
-          Map visualization tools will be implemented soon
-        </p>
+    <div className="h-screen flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Geospatial Intelligence</h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Map Toolbar */}
+      <MapToolbar filters={filters} onFiltersChange={setFilters} />
+
+      {/* Main Content */}
+      <div className="flex-1 flex relative">
+        {/* Map Container */}
+        <div className="flex-1 relative">
+          <InteractiveMap
+            projects={filteredProjects}
+            selectedProject={selectedProject}
+            onProjectSelect={handleProjectSelect}
+            showCoverage={filters.showCoverage}
+            showHeatmap={filters.showHeatmap}
+          />
+        </div>
+
+        {/* Sidebar */}
+        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+          {sidebarView === 'analytics' ? (
+            <MapSidebar 
+              analytics={mockGeographicAnalytics}
+              onProjectSelect={handleProjectSelect}
+            />
+          ) : (
+            <ProjectDetailsPanel
+              project={selectedProject}
+              onClose={handleCloseSidebar}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

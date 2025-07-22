@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import 'leaflet/dist/leaflet.css';
 
 :root {
   --background: #ffffff;
@@ -23,4 +24,129 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
+
+.custom-marker {
+  border: none !important;
+  background: transparent !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+/* Fix for production builds */
+.leaflet-marker-icon {
+  margin-left: -12px !important;
+  margin-top: -41px !important;
+}
+
+/* Add to your globals.css file */
+
+/* Professional Map Styles */
+.professional-map {
+  font-family: inherit;
+}
+
+.professional-marker {
+  border: none !important;
+  background: transparent !important;
+}
+
+.professional-popup .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0;
+}
+
+.professional-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.professional-popup .leaflet-popup-tip {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: none;
+  border-right: none;
+}
+
+/* Custom marker hover effects */
+.professional-marker:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Map controls styling */
+.leaflet-control-zoom {
+  display: none !important;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* Professional map styling */
+.leaflet-container {
+  background: #f8fafc;
+}
+
+/* Popup close button styling */
+.leaflet-popup-close-button {
+  color: #6b7280 !important;
+  font-size: 16px !important;
+  padding: 8px !important;
+  width: auto !important;
+  height: auto !important;
+  line-height: 1 !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #374151 !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-radius: 4px;
+}
+
+/* Line clamp utility for descriptions */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Heatmap styling */
+.heatmap-canvas {
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+/* Professional legend styling */
+.map-legend {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .professional-popup .leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .map-legend {
+    max-width: 200px;
+  }
 }
