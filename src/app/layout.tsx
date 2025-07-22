@@ -44,7 +44,7 @@ const karla = Karla({ subsets: ['latin'], variable: '--font-karla' });
 
 export const metadata: Metadata = {
   title: 'Melon',
-  description: 'Melon Landing Page',
+  description: 'Melon Web Application',
 };
 
 export default function RootLayout({
