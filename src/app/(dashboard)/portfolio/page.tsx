@@ -1,24 +1,120 @@
-"use client";
+'use client';
 
-import React from 'react';
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { PortfolioHeader } from '@/components/portfolio/PortfolioHeader';
+import { PortfolioFilters } from '@/components/portfolio/PortfolioFilters';
+import { ProjectsList } from '@/components/portfolio/ProjectsList';
+import { PortfolioEmpty } from '@/components/portfolio/PortfolioEmpty';
+import { usePortfolio } from '@/hooks/usePortfolio';
+import { Plus, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function PortfolioPage() {
-  return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Portfolio
-      </h2>
-      <p className="text-gray-600">
-        This is the portfolio page. Here you&rsquo;ll be able to manage your program and project portfolio across different sectors and regions.
-      </p>
-      <div className="mt-6 p-6 bg-gray-50 rounded-lg text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-        <p className="text-gray-500">
-          Portfolio management tools will be implemented soon
-        </p>
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState({
+    search: searchParams.get('search') || '',
+    status: searchParams.get('status') || '',
+    sector: searchParams.get('sector') || '',
+    region: searchParams.get('region') || '',
+  });
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  const { 
+    projects, 
+    portfolioStats, 
+    loading, 
+    error,
+    refetch 
+  } = usePortfolio(filters);
+
+  const handleFilterChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading projects</p>
+          <button 
+            onClick={refetch}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with inline New Project button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Portfolio</h1>
+          <p className="text-gray-600 mt-1 text-base">
+            Manage and monitor all projects across regions and sectors
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <button className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export
+          </button>
+          <Link
+            href="/portfolio/create"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            New Project
+          </Link>
+        </div>
+      </div>
+
+      <PortfolioHeader stats={portfolioStats} />
+
+      {projects.length === 0 && !filters.search && !filters.status && !filters.sector && !filters.region ? (
+        <PortfolioEmpty />
+      ) : (
+        <>
+          <PortfolioFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            view={view}
+            onViewChange={setView}
+          />
+          
+          <ProjectsList 
+            projects={projects} 
+            view={view} 
+            onRefetch={refetch}
+          />
+
+          {projects.length === 0 && (filters.search || filters.status || filters.sector || filters.region) && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg mb-4">No projects found matching your criteria</p>
+              <button
+                onClick={() => setFilters({ search: '', status: '', sector: '', region: '' })}
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

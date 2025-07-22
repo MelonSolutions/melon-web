@@ -127,9 +127,9 @@ export interface PortfolioStats {
 
 export interface PortfolioFilters {
   search?: string;
-  status?: ProjectStatus | '';
-  sector?: ProjectSector | '';
-  region?: ProjectRegion | '';
+  status?: string;
+  sector?: string;
+  region?: string;
   pageSize?: number;
   currentPage?: number;
 }
