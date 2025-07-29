@@ -95,6 +95,10 @@ class ApiClient {
     });
   }
 
+  async getCurrentUser(): Promise<LoginResponse['user']> {
+    return this.request<LoginResponse['user']>('/auth/me');
+  }
+
   // Reports endpoints
   async createReport(data: any) {
     return this.request('/reports/create', {

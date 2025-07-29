@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext } from 'react';
-import { useAuth, AuthState, AuthActions } from '@/hooks/useAuth';
+import { useAuth, AuthActions, AuthState } from '@/hooks/useAuth';
 
 const AuthContext = createContext<(AuthState & AuthActions) | null>(null);
 

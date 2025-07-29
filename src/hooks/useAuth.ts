@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -12,8 +12,9 @@ export interface User {
   username: string;
   email: string;
   phoneNumber: string;
-  organization?: string;
-  role?: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthState {
@@ -24,16 +25,10 @@ export interface AuthState {
 
 export interface AuthActions {
   login: (email: string, password: string) => Promise<void>;
-  register: (userData: {
-    firstName: string;
-    lastName: string;
-    username: string;
-    email: string;
-    phoneNumber: string;
-    password: string;
-  }) => Promise<void>;
   logout: () => void;
-  forgotPassword: (email: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
+  getInitials: () => string;
+  getFullName: () => string;
 }
 
 export function useAuth(): AuthState & AuthActions {
@@ -46,34 +41,42 @@ export function useAuth(): AuthState & AuthActions {
 
   // Check if user is authenticated on mount
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('authToken');
-      const userData = localStorage.getItem('userData');
-      
-      if (token && userData) {
-        try {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const userData = localStorage.getItem('userData');
+        
+        if (token && userData) {
           const user = JSON.parse(userData);
           setState({
             user,
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch (error) {
-          // Invalid stored data, clear it
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
+
+          try {
+            const freshUserData = await apiClient.getCurrentUser();
+            localStorage.setItem('userData', JSON.stringify(freshUserData));
+            setState({
+              user: freshUserData,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } catch (error) {
+            // If token is invalid, logout
+            console.error('Token refresh failed:', error);
+            logout();
+          }
+        } else {
           setState({
             user: null,
             isAuthenticated: false,
             isLoading: false,
           });
         }
-      } else {
-        setState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        logout();
       }
     };
 
@@ -84,16 +87,11 @@ export function useAuth(): AuthState & AuthActions {
     try {
       const response: LoginResponse = await apiClient.login({ email, password });
       
-      // Store token and user data
       localStorage.setItem('authToken', response.token);
       localStorage.setItem('userData', JSON.stringify(response.user));
       
       setState({
-        user: {
-          ...response.user,
-          organization: 'Melon', // Default organization
-          role: 'User', // Default role
-        },
+        user: response.user,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -101,25 +99,6 @@ export function useAuth(): AuthState & AuthActions {
       router.push('/overview');
     } catch (error) {
       console.error('Login failed:', error);
-      throw error;
-    }
-  };
-
-  const register = async (userData: {
-    firstName: string;
-    lastName: string;
-    username: string;
-    email: string;
-    phoneNumber: string;
-    password: string;
-  }) => {
-    try {
-      await apiClient.register(userData);
-      
-      // After successful registration, automatically log in
-      await login(userData.email, userData.password);
-    } catch (error) {
-      console.error('Registration failed:', error);
       throw error;
     }
   };
@@ -132,22 +111,43 @@ export function useAuth(): AuthState & AuthActions {
       isAuthenticated: false,
       isLoading: false,
     });
-
     router.push('/login');
   };
 
-  const forgotPassword = async (email: string) => {
-    // TODO: Implement forgot password logic
-    await new Promise(resolve => setTimeout(resolve, 800));
-    console.log(`Password reset requested for ${email}`);
-    return Promise.resolve();
+  const refreshUser = async () => {
+    try {
+      const freshUserData = await apiClient.getCurrentUser();
+      localStorage.setItem('userData', JSON.stringify(freshUserData));
+      setState(prev => ({
+        ...prev,
+        user: freshUserData,
+      }));
+    } catch (error) {
+      console.error('User refresh failed:', error);
+      throw error;
+    }
+  };
+
+  // Helper function to get user initials
+  const getInitials = (): string => {
+    if (!state.user) return 'U';
+    const { firstName, lastName } = state.user;
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+  };
+
+  // Helper function to get full name
+  const getFullName = (): string => {
+    if (!state.user) return 'User';
+    const { firstName, lastName } = state.user;
+    return `${firstName || ''} ${lastName || ''}`.trim();
   };
 
   return {
     ...state,
     login,
-    register,
     logout,
-    forgotPassword,
+    refreshUser,
+    getInitials,
+    getFullName,
   };
 }

@@ -4,13 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-// import { useAuthContext } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import {
   Layers,
   FileText,
   BarChart3,
-  // PieChartIcon,
   Activity,
   MapIcon,
   Briefcase,
@@ -20,6 +19,7 @@ import {
   LogOut,
   ChevronDown,
   Menu,
+  User,
 } from "lucide-react";
 
 interface NavItem {
@@ -34,7 +34,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  //   const { user, logout } = useAuthContext();
+  const { user, logout, getInitials, getFullName, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   
@@ -54,11 +54,6 @@ export default function DashboardLayout({
       href: '/visualizations',
       icon: <BarChart3 className="h-5 w-5" />,
     },
-    // {
-    //   name: 'Dashboards',
-    //   href: '/dashboards',
-    //   icon: <PieChartIcon className="h-5 w-5" />,
-    // },
     {
       name: 'Impact Metrics',
       href: '/impact-metrics',
@@ -75,6 +70,33 @@ export default function DashboardLayout({
       icon: <MapIcon className="h-5 w-5" />,
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5B94E5]"></div>
+      </div>
+    );
+  }
+
+  const UserProfile = ({ isMobile = false }) => (
+    <div className="flex items-center w-full">
+      <div className="flex-shrink-0">
+        <div className="bg-[#5B94E5] text-white rounded-full h-10 w-10 flex items-center justify-center">
+          <span className="text-sm font-medium">{getInitials()}</span>
+        </div>
+      </div>
+      <div className={cn("ml-3", isMobile ? "flex-1" : "flex-grow")}>
+        <p className={cn("font-medium text-gray-700", isMobile ? "text-base" : "text-sm")}>
+          {getFullName()}
+        </p>
+        <p className={cn("text-gray-500", isMobile ? "text-sm" : "text-xs")}>
+          {user?.email || 'User'}
+        </p>
+      </div>
+      <ChevronDown className="w-5 h-5 text-gray-400" />
+    </div>
+  );
   
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
@@ -130,6 +152,7 @@ export default function DashboardLayout({
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
                         'group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors'
                       )}
+                      onClick={() => setSidebarOpen(false)}
                     >
                       <span
                         className={cn(
@@ -149,18 +172,7 @@ export default function DashboardLayout({
             </div>
             
             <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-              <div className="flex items-center w-full">
-                <div className="flex-shrink-0">
-                  <div className="bg-gray-200 rounded-full h-10 w-10 flex items-center justify-center">
-                    <span className="text-gray-500 text-sm font-medium">J</span>
-                  </div>
-                </div>
-                <div className="ml-3 flex-1">
-                  <p className="text-base font-medium text-gray-700">Jane Doe</p>
-                  <p className="text-sm text-gray-500">Project Coordinator</p>
-                </div>
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              </div>
+              <UserProfile isMobile={true} />
             </div>
           </div>
           
@@ -216,18 +228,7 @@ export default function DashboardLayout({
             </div>
             <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
               <div className="flex-shrink-0 w-full">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="bg-gray-200 rounded-full h-10 w-10 flex items-center justify-center">
-                      <span className="text-gray-500 text-sm font-medium">J</span>
-                    </div>
-                  </div>
-                  <div className="ml-3 flex-grow">
-                    <p className="text-sm font-medium text-gray-700">Jane Doe</p>
-                    <p className="text-xs text-gray-500">Program Manager</p>
-                  </div>
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                </div>
+                <UserProfile />
               </div>
             </div>
           </div>
@@ -273,12 +274,11 @@ export default function DashboardLayout({
                 />
               </div>
 
-            {/* Notification Bell */}
-            <div className="relative">
+              {/* Notification Bell */}
+              <div className="relative">
                 <button className="cursor-pointer p-1 rounded-full text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                   <span className="sr-only">View notifications</span>
                   <Bell className="h-6 w-6" />
-                  {/* Notification dot */}
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
                 </button>
               </div>
@@ -291,27 +291,40 @@ export default function DashboardLayout({
                     className="flex items-center space-x-3 focus:outline-none"
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                   >
-                    <div className="cursor-pointer bg-gray-200 flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center">
-                      <span className="text-gray-500 text-lg font-medium">V</span>
+                    <div className="cursor-pointer bg-[#5B94E5] text-white flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center">
+                      <span className="text-lg font-medium">{getInitials()}</span>
                     </div>
                   </button>
                 </div>
 
                 {userMenuOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                  <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{getFullName()}</p>
+                      <p className="text-sm text-gray-500">{user?.email}</p>
+                    </div>
                     <div className="py-1">
-                      <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <div className="flex items-center">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </div>
+                      </button>
+                      <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         <div className="flex items-center">
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Settings</span>
                         </div>
-                      </a>
-                      <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      </button>
+                      <button 
+                        onClick={logout}
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
                         <div className="flex items-center">
                           <LogOut className="mr-2 h-4 w-4" />
                           <span>Logout</span>
                         </div>
-                      </a>
+                      </button>
                     </div>
                   </div>
                 )}
