@@ -1,7 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -30,6 +27,7 @@ export interface Question {
   required: boolean;
   options?: string[];
   settings?: any;
+  impactMetricId?: string;
 }
 
 export interface Report {
@@ -49,6 +47,13 @@ export interface Report {
   shareToken?: string;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
 // Hook for managing multiple reports
 export function useReports(filters: ReportsFilters = {}) {
   const [reports, setReports] = useState<Report[]>([]);
@@ -60,7 +65,7 @@ export function useReports(filters: ReportsFilters = {}) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
     pageSize: 10,
     totalCount: 0,
@@ -91,7 +96,7 @@ export function useReports(filters: ReportsFilters = {}) {
 
       setDashboardStats(statsResponse);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while fetching reports';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch reports';
       setError(errorMessage);
       console.error('Error fetching reports:', err);
     } finally {
@@ -291,27 +296,5 @@ export function useReport(id: string) {
     publishReport: publishReportData,
     getShareLink: getReportShareLink,
     updateStatus: updateReportStatusData,
-  };
-}
-
-// Hook for report responses
-export function useReportResponses(reportId: string) {
-  const [responses, setResponses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchResponses = useCallback(async () => {
-    setLoading(false);
-  }, [reportId]);
-
-  useEffect(() => {
-    fetchResponses();
-  }, [fetchResponses]);
-
-  return {
-    responses,
-    loading,
-    error,
-    refetch: fetchResponses,
   };
 }

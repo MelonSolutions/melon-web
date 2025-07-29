@@ -51,7 +51,7 @@ export interface DashboardStats {
   avgResponseRate: string;
 }
 
-// Get authorization header
+// Get authorization headers
 const getAuthHeaders = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   return {
@@ -60,10 +60,12 @@ const getAuthHeaders = () => {
   };
 };
 
-// API error handler
-const handleApiError = async (response: Response) => {
+// Handle API errors
+const handleApiError = async (response: globalThis.Response) => {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'An error occurred' }));
+    const errorData = await response.json().catch(() => ({ 
+      message: 'An error occurred' 
+    }));
     throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
   }
   return response;

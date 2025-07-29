@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/types/reports.ts
-
 export type ReportStatus = 'draft' | 'published' | 'closed';
 
-export type ReportCategory = 
+export type ReportCategory =
   | 'Impact Assessment'
   | 'Feedback'
   | 'Health'
@@ -11,7 +9,7 @@ export type ReportCategory =
   | 'Agriculture'
   | 'Community';
 
-export type QuestionType = 
+export type QuestionType =
   | 'multiple_choice'
   | 'checkboxes'
   | 'dropdown'
@@ -19,7 +17,16 @@ export type QuestionType =
   | 'paragraph'
   | 'linear_scale'
   | 'date'
-  | 'time';
+  | 'time'
+  | 'impact_metric';
+
+export interface QuestionSettings {
+  min?: number;
+  max?: number;
+  step?: number;
+  placeholder?: string;
+  allowOther?: boolean;
+}
 
 export interface Question {
   id: string;
@@ -28,13 +35,8 @@ export interface Question {
   description?: string;
   required: boolean;
   options?: string[];
-  settings?: {
-    min?: number;
-    max?: number;
-    step?: number;
-    placeholder?: string;
-    allowOther?: boolean;
-  };
+  settings?: QuestionSettings;
+  impactMetricId?: string;
 }
 
 export interface Report {
@@ -92,13 +94,24 @@ export interface ReportsFilters {
   currentPage?: number;
 }
 
+export interface QuestionResponse {
+  questionId: string;
+  answer?: any;
+  impactMetricId?: string;
+  actualValue?: number;
+}
+
 export interface ReportResponse {
   _id: string;
   reportId: string;
-  responses: Record<string, any>;
+  respondentEmail?: string;
+  respondentName?: string;
+  responses: QuestionResponse[];
   submittedAt: string;
   ipAddress?: string;
   userAgent?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ShareLinkResponse {
