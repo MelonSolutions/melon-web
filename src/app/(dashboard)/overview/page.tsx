@@ -49,7 +49,7 @@ export default function OverviewPage() {
     {
       id: 2,
       name: "Electricity Access Rate",
-      sector: "Agriculture",
+      sector: "Energy",
       progress: 92,
       beneficiaries: 5200,
       lastUpdated: "01/05/2025",
@@ -57,7 +57,7 @@ export default function OverviewPage() {
     {
       id: 3,
       name: "Crop Yield per Hectare covered",
-      sector: "Energy",
+      sector: "Agriculture",
       progress: 65,
       beneficiaries: 1840,
       lastUpdated: "30/04/2025",
