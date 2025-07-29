@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Input from '@/components/common/Input';
@@ -21,8 +22,8 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
     try {
       setIsLoading(true);
       await onSubmit({ email, password });
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password. Please try again.');
       console.error(err);
     } finally {
       setIsLoading(false);

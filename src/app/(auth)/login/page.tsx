@@ -1,10 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api/auth';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -19,6 +23,7 @@ export default function LoginPage() {
       ...prev,
       [name]: value
     }));
+    if (error) setError('');
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,12 +31,24 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log('Login data:', formData);
-    
-    setError('Invalid email or password. Please try again.');
-    setIsLoading(false);
+    try {
+      const response = await apiClient.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      localStorage.setItem('authToken', response.token);
+      localStorage.setItem('userData', JSON.stringify(response.user));
+      
+      // Redirect to dashboard
+      router.push('/overview');
+      
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Invalid email or password. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -128,6 +145,19 @@ export default function LoginPage() {
           )}
         </button>
       </form>
+
+      {/* Optional: Add link to register page */}
+      <div className="text-center">
+        <p className="text-gray-600 text-sm">
+          Don&rsquo;t have an account?{' '}
+          <button 
+            onClick={() => router.push('/register')}
+            className="text-[#5B94E5] hover:underline font-medium"
+          >
+            Sign up
+          </button>
+        </p>
+      </div>
     </div>
   );
 }
