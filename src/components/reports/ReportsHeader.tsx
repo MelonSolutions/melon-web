@@ -1,71 +1,71 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { FileText, Activity, Users, Calendar } from 'lucide-react';
+import { FileText, Users, TrendingUp, Clock } from 'lucide-react';
 
-interface DashboardStats {
-  totalReports: number;
-  activeReports: number;
-  totalResponses: number;
-  avgResponseRate: string;
+interface StatsCardProps {
+  icon: React.ComponentType<any>;
+  title: string;
+  value: string | number;
+  change?: string;
+  color: string;
+}
+
+function StatsCard({ icon: Icon, title, value, change, color }: StatsCardProps) {
+  return (
+    <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="flex items-center">
+        <div className={`p-2 rounded-lg ${color}`}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <div className="ml-4">
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {change && (
+            <p className="text-sm text-green-600">{change}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface ReportsHeaderProps {
-  stats: DashboardStats;
+  stats: {
+    totalReports: number;
+    activeReports: number;
+    totalResponses: number;
+    avgResponseRate: string;
+  };
 }
 
 export function ReportsHeader({ stats }: ReportsHeaderProps) {
-  const statCards = [
-    {
-      title: 'Total Reports',
-      value: stats.totalReports,
-      change: '+2 from last month',
-      icon: FileText,
-    },
-    {
-      title: 'Active Reports',
-      value: stats.activeReports,
-      change: 'Currently collecting data',
-      icon: Activity,
-    },
-    {
-      title: 'Total Responses',
-      value: stats.totalResponses,
-      change: '+89 this week',
-      icon: Users,
-    },
-    {
-      title: 'Avg Response Rate',
-      value: stats.avgResponseRate,
-      change: '+5% from last month',
-      icon: Calendar,
-    },
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat) => {
-          const IconComponent = stat.icon;
-          return (
-            <div
-              key={stat.title}
-              className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-2">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                  <p className="text-sm text-gray-500">{stat.change}</p>
-                </div>
-                <div className="ml-4">
-                  <IconComponent className="w-5 h-5 text-gray-400" />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <StatsCard
+        icon={FileText}
+        title="Total Reports"
+        value={stats.totalReports}
+        color="bg-blue-500"
+      />
+      <StatsCard
+        icon={TrendingUp}
+        title="Active Reports"
+        value={stats.activeReports}
+        color="bg-green-500"
+      />
+      <StatsCard
+        icon={Users}
+        title="Total Responses"
+        value={stats.totalResponses}
+        color="bg-purple-500"
+      />
+      <StatsCard
+        icon={Clock}
+        title="Response Rate"
+        value={stats.avgResponseRate}
+        color="bg-orange-500"
+      />
     </div>
   );
 }

@@ -1,10 +1,20 @@
-export * from './reports-mock';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Uncomment below when ready to connect to real backend
-/*
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = 'https://melon-core.onrender.com';
 
-export interface CreateReportData {
+export interface ApiResponse<T = any> {
+  data?: T;
+  message?: string;
+  error?: string;
+  pagination?: {
+    currentPage: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateReportRequest {
   title: string;
   description?: string;
   category?: string;
@@ -15,7 +25,7 @@ export interface CreateReportData {
   questions?: any[];
 }
 
-export interface UpdateReportData {
+export interface UpdateReportRequest {
   title?: string;
   description?: string;
   category?: string;
@@ -34,6 +44,13 @@ export interface ReportsFilters {
   currentPage?: number;
 }
 
+export interface DashboardStats {
+  totalReports: number;
+  activeReports: number;
+  totalResponses: number;
+  avgResponseRate: string;
+}
+
 // Get authorization header
 const getAuthHeaders = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -43,23 +60,29 @@ const getAuthHeaders = () => {
   };
 };
 
+// API error handler
+const handleApiError = async (response: Response) => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'An error occurred' }));
+    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response;
+};
+
 // Create a new report
-export const createReport = async (data: CreateReportData) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/create`, {
+export const createReport = async (data: CreateReportRequest): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/create`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to create report');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Get all reports with filters
-export const getReports = async (filters: ReportsFilters = {}) => {
+export const getReports = async (filters: ReportsFilters = {}): Promise<ApiResponse> => {
   const params = new URLSearchParams();
   
   if (filters.search) params.append('search', filters.search);
@@ -68,121 +91,109 @@ export const getReports = async (filters: ReportsFilters = {}) => {
   if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
   if (filters.currentPage) params.append('currentPage', filters.currentPage.toString());
 
-  const response = await fetch(`${API_BASE_URL}/api/reports/all?${params}`, {
+  const response = await fetch(`${API_BASE_URL}/reports/all?${params}`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch reports');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Get dashboard statistics
-export const getDashboardStats = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/dashboard`, {
+export const getDashboardStats = async (): Promise<DashboardStats> => {
+  const response = await fetch(`${API_BASE_URL}/reports/dashboard`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch dashboard stats');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Get single report by ID
-export const getReport = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/details/${id}`, {
+export const getReport = async (id: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/details/${id}`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch report');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Update report
-export const updateReport = async (id: string, data: UpdateReportData) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/update/${id}`, {
+export const updateReport = async (id: string, data: UpdateReportRequest): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/update/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to update report');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Delete report
-export const deleteReport = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/delete/${id}`, {
+export const deleteReport = async (id: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/delete/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to delete report');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Publish report
-export const publishReport = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/${id}/publish`, {
+export const publishReport = async (id: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${id}/publish`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to publish report');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Duplicate report
-export const duplicateReport = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/${id}/duplicate`, {
+export const duplicateReport = async (id: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${id}/duplicate`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to duplicate report');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
 
 // Get share link
-export const getShareLink = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/${id}/share-link`, {
+export const getShareLink = async (id: string): Promise<{ shareToken: string; shareUrl: string }> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${id}/share-link`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to get share link');
-  }
-
-  return response.json();
+  await handleApiError(response);
+  const data = await response.json();
+  return {
+    shareToken: data.shareToken,
+    shareUrl: data.shareUrl || `${window.location.origin}/reports/public/${data.shareToken}`,
+  };
 };
 
 // Get public report by share token
-export const getPublicReport = async (shareToken: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/reports/public/${shareToken}`);
+export const getPublicReport = async (shareToken: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/public/${shareToken}`);
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch public report');
-  }
-
+  await handleApiError(response);
   return response.json();
 };
-*/
+
+// Update report status
+export const updateReportStatus = async (id: string, status: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${id}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status }),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};

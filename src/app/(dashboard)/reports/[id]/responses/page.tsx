@@ -1,77 +1,34 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Filter, Search, Eye, MoreHorizontal, Users, Clock, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Download, Filter, Search, Eye, MoreHorizontal, Users, Clock, TrendingUp, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useReport } from '@/hooks/useReports';
+import { useReportResponses, useResponseAnalytics, useImpactMetricsProgress } from '@/hooks/useResponses';
 import { formatDistanceToNow } from 'date-fns';
 
-interface Response {
-  _id: string;
-  reportId: string;
-  responses: Record<string, any>;
-  submittedAt: string;
-  ipAddress?: string;
-  userAgent?: string;
-}
+interface ResponsesPageProps {}
 
-export default function ReportResponsesPage() {
+export default function ReportResponsesPage({}: ResponsesPageProps) {
   const params = useParams();
   const router = useRouter();
   const reportId = params.id as string;
   
   const { report, loading: reportLoading } = useReport(reportId);
-  const [responses, setResponses] = useState<Response[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'responses' | 'summary' | 'individual'>('responses');
+  const { responses, loading: responsesLoading, pagination, refetch } = useReportResponses(reportId, {
+    pageSize: 20,
+    currentPage: 1,
+  });
+  const { analytics, loading: analyticsLoading } = useResponseAnalytics(reportId);
+  const { progress, loading: progressLoading } = useImpactMetricsProgress(reportId);
+  
+  const [activeTab, setActiveTab] = useState<'responses' | 'summary' | 'individual' | 'impact'>('responses');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedResponse, setSelectedResponse] = useState<Response | null>(null);
-
-  // Mock data for demonstration
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setResponses([
-        {
-          _id: '1',
-          reportId: reportId,
-          responses: {
-            'question-1': 'Health',
-            'question-2': '1500',
-            'question-3': 'Very effective program with great community impact'
-          },
-          submittedAt: '2024-01-15T10:30:00Z',
-          ipAddress: '192.168.1.1',
-        },
-        {
-          _id: '2',
-          reportId: reportId,
-          responses: {
-            'question-1': 'Education',
-            'question-2': '2300',
-            'question-3': 'Good program but needs more resources'
-          },
-          submittedAt: '2024-01-14T14:22:00Z',
-          ipAddress: '192.168.1.2',
-        },
-        {
-          _id: '3',
-          reportId: reportId,
-          responses: {
-            'question-1': 'Agriculture',
-            'question-2': '950',
-            'question-3': 'Excellent training provided to farmers'
-          },
-          submittedAt: '2024-01-13T09:15:00Z',
-          ipAddress: '192.168.1.3',
-        }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, [reportId]);
+  const [selectedResponse, setSelectedResponse] = useState<any>(null);
 
   const handleExport = () => {
     // TODO: Implement export functionality
@@ -79,12 +36,14 @@ export default function ReportResponsesPage() {
   };
 
   const filteredResponses = responses.filter(response =>
-    Object.values(response.responses).some(value =>
-      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    Object.values(response.responses).some(responseItem =>
+      responseItem.answer?.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
-  if (reportLoading || loading) {
+  const loading = reportLoading || responsesLoading;
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -158,7 +117,9 @@ export default function ReportResponsesPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Completion Rate</p>
-              <p className="text-2xl font-bold text-gray-900">94%</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {responses.length > 0 ? '94%' : '0%'}
+              </p>
             </div>
           </div>
         </div>
@@ -178,12 +139,15 @@ export default function ReportResponsesPage() {
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <Users className="w-5 h-5 text-orange-600" />
+              <FileText className="w-5 h-5 text-orange-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Last Response</p>
               <p className="text-sm font-bold text-gray-900">
-                {responses.length > 0 ? formatDistanceToNow(new Date(responses[0].submittedAt), { addSuffix: true }) : 'No responses'}
+                {responses.length > 0 
+                  ? formatDistanceToNow(new Date(responses[0].submittedAt), { addSuffix: true })
+                  : 'No responses'
+                }
               </p>
             </div>
           </div>
@@ -223,6 +187,18 @@ export default function ReportResponsesPage() {
           >
             Individual
           </button>
+          {progress && progress.totalMetrics > 0 && (
+            <button
+              onClick={() => setActiveTab('impact')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'impact'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Impact Metrics ({progress.totalMetrics})
+            </button>
+          )}
         </nav>
       </div>
 
@@ -260,10 +236,10 @@ export default function ReportResponsesPage() {
                       Submitted
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Primary Sector
+                      Respondent
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Beneficiaries
+                      Responses
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -279,13 +255,11 @@ export default function ReportResponsesPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDistanceToNow(new Date(response.submittedAt), { addSuffix: true })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                          {response.responses['question-1'] || 'N/A'}
-                        </span>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {response.respondentName || response.respondentEmail || 'Anonymous'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {response.responses['question-2'] || 'N/A'}
+                        {response.responses.length} questions
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -319,77 +293,36 @@ export default function ReportResponsesPage() {
 
       {activeTab === 'summary' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Question 1 Summary */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Primary Sector Distribution</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Health</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '33%' }}></div>
+          {!analyticsLoading && analytics.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {analytics.map((analytic) => {
+                const question = report.questions?.find(q => q.id === analytic._id);
+                return (
+                  <div key={analytic._id} className="bg-white p-6 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      {question?.title || `Question ${analytic._id}`}
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Total Responses</span>
+                        <span className="font-semibold">{analytic.totalResponses}</span>
+                      </div>
+                      {analytic.avgActualValue && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Average Value</span>
+                          <span className="font-semibold">{analytic.avgActualValue.toFixed(2)}</span>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-sm font-medium">1 (33%)</span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Education</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '33%' }}></div>
-                    </div>
-                    <span className="text-sm font-medium">1 (33%)</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Agriculture</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '33%' }}></div>
-                    </div>
-                    <span className="text-sm font-medium">1 (33%)</span>
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
-
-            {/* Question 2 Summary */}
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Beneficiaries Reached</h3>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-gray-900">1,583</p>
-                  <p className="text-sm text-gray-500">Average beneficiaries</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <p className="text-lg font-semibold text-gray-900">2,300</p>
-                    <p className="text-xs text-gray-500">Highest</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold text-gray-900">950</p>
-                    <p className="text-xs text-gray-500">Lowest</p>
-                  </div>
-                </div>
-              </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No analytics data available</p>
             </div>
-          </div>
-
-          {/* Recent Comments */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Feedback</h3>
-            <div className="space-y-4">
-              {responses.slice(0, 3).map((response) => (
-                <div key={response._id} className="border-l-4 border-blue-500 pl-4">
-                  <p className="text-gray-900">{response.responses['question-3']}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {formatDistanceToNow(new Date(response.submittedAt), { addSuffix: true })}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -400,7 +333,7 @@ export default function ReportResponsesPage() {
             <div className="p-4 border-b border-gray-200">
               <h3 className="font-medium text-gray-900">Individual Responses</h3>
             </div>
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
               {responses.map((response) => (
                 <button
                   key={response._id}
@@ -413,6 +346,9 @@ export default function ReportResponsesPage() {
                   <p className="text-sm text-gray-500">
                     {formatDistanceToNow(new Date(response.submittedAt), { addSuffix: true })}
                   </p>
+                  {response.respondentName && (
+                    <p className="text-sm text-gray-600">{response.respondentName}</p>
+                  )}
                 </button>
               ))}
             </div>
@@ -429,19 +365,32 @@ export default function ReportResponsesPage() {
                   <p className="text-sm text-gray-500">
                     Submitted {formatDistanceToNow(new Date(selectedResponse.submittedAt), { addSuffix: true })}
                   </p>
+                  {selectedResponse.respondentName && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      By: {selectedResponse.respondentName}
+                      {selectedResponse.respondentEmail && ` (${selectedResponse.respondentEmail})`}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-6">
-                  {report.questions?.map((question, index) => (
-                    <div key={question.id}>
-                      <h4 className="font-medium text-gray-900 mb-2">{question.title}</h4>
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-gray-900">
-                          {selectedResponse.responses[`question-${index + 1}`] || 'No response'}
-                        </p>
+                  {selectedResponse.responses.map((response: any, index: number) => {
+                    const question = report.questions?.find(q => q.id === response.questionId);
+                    return (
+                      <div key={response.questionId || index}>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          {question?.title || `Question ${index + 1}`}
+                        </h4>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-900">
+                            {response.actualValue !== undefined 
+                              ? `Value: ${response.actualValue}`
+                              : response.answer || 'No response'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Response Metadata */}
@@ -470,6 +419,102 @@ export default function ReportResponsesPage() {
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'impact' && progress && (
+        <div className="space-y-6">
+          {/* Overall Progress Card */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Overall Impact Progress</h3>
+              <span className="text-2xl font-bold text-blue-600">{progress.overallProgress}%</span>
+            </div>
+            
+            <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+              <div 
+                className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                style={{ width: `${progress.overallProgress}%` }}
+              ></div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-green-600">{progress.summary.achieved}</p>
+                <p className="text-sm text-gray-500">Achieved</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-yellow-600">{progress.summary.onTrack}</p>
+                <p className="text-sm text-gray-500">On Track</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-red-600">{progress.summary.failing}</p>
+                <p className="text-sm text-gray-500">Behind</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Individual Metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {progress.metrics.map((metric) => {
+              const statusColor = {
+                'Achieved': 'text-green-600 bg-green-100',
+                'On Track': 'text-yellow-600 bg-yellow-100',
+                'Fail': 'text-red-600 bg-red-100',
+              }[metric.trackingStatus] || 'text-gray-600 bg-gray-100';
+
+              return (
+                <div key={metric.metricId} className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-gray-900">{metric.metricName}</h4>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColor}`}>
+                      {metric.trackingStatus}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Progress</span>
+                      <span className="font-semibold">{metric.progressPercentage}%</span>
+                    </div>
+
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          metric.trackingStatus === 'Achieved' ? 'bg-green-500' :
+                          metric.trackingStatus === 'On Track' ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min(metric.progressPercentage, 100)}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500">Target:</span>
+                        <p className="font-medium">{metric.target.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Actual:</span>
+                        <p className="font-medium">{metric.actualValue.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Weight:</span>
+                        <p className="font-medium">{metric.scoringWeight}%</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Responses:</span>
+                        <p className="font-medium">{metric.responseCount}</p>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-gray-500 pt-2 border-t">
+                      Timeline: {new Date(metric.startDate).toLocaleDateString()} - {new Date(metric.endDate).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
