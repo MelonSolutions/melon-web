@@ -2,6 +2,8 @@ import localFont from 'next/font/local';
 import { Karla } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
+import { ModalProvider } from '@/components/ui/Modal';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const mabryPro = localFont({
   variable: '--font-mabry',
@@ -60,7 +62,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
       </head>
       <body className={`${karla.variable} ${mabryPro.variable} antialiased`}>
-        {children}
+        <ToastProvider>
+          <ModalProvider>
+            {children}
+          </ModalProvider>
+        </ToastProvider>
       </body>
     </html>
   );

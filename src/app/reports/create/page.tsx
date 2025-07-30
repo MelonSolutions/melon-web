@@ -3,19 +3,34 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, Settings, Save, Send, Plus, Copy, Trash2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Save, 
+  Send, 
+  Plus, 
+  Copy, 
+  Trash2, 
+  GripVertical,
+  Settings2
+} from 'lucide-react';
 import Link from 'next/link';
-import { createReport } from '@/lib/api/reports';
-import { CreateReportRequest, Question, QuestionType } from '@/types/reports';
+import { createReport, ApiError } from '@/lib/api/reports';
+import { CreateReportRequest, Question, QuestionType, ReportCategory } from '@/types/reports';
+import { useToast } from '@/components/ui/Toast';
+import { useModal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FormField } from '@/components/ui/FormField';
+import { useFormValidation } from '@/hooks/useFormValidation';
 
 export default function CreateReportPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'questions' | 'responses' | 'settings'>('questions');
+  const { addToast } = useToast();
+  const { openModal, closeModal } = useModal();
+  const [showQuickSettings, setShowQuickSettings] = useState(false);
   
   const [formData, setFormData] = useState<CreateReportRequest>({
-    title: 'Untitled form',
-    description: 'Form description',
+    title: '',
+    description: '',
     category: 'Impact Assessment',
     status: 'draft',
     allowMultipleResponses: false,
@@ -33,39 +48,131 @@ export default function CreateReportPage() {
     ],
   });
 
-  const questionTypes: { value: QuestionType; label: string }[] = [
-    { value: 'multiple_choice', label: 'Multiple choice' },
-    { value: 'checkboxes', label: 'Checkboxes' },
-    { value: 'dropdown', label: 'Dropdown' },
-    { value: 'short_answer', label: 'Short answer' },
-    { value: 'paragraph', label: 'Paragraph' },
-    { value: 'linear_scale', label: 'Linear scale' },
-    { value: 'date', label: 'Date' },
-    { value: 'time', label: 'Time' },
+  const questionTypes: { value: QuestionType; label: string; icon: string }[] = [
+    { value: 'multiple_choice', label: 'Multiple Choice', icon: '🔘' },
+    { value: 'checkboxes', label: 'Checkboxes', icon: '☑️' },
+    { value: 'dropdown', label: 'Dropdown', icon: '📝' },
+    { value: 'short_answer', label: 'Short Answer', icon: '📄' },
+    { value: 'paragraph', label: 'Paragraph', icon: '📝' },
+    { value: 'linear_scale', label: 'Linear Scale', icon: '📊' },
+    { value: 'date', label: 'Date', icon: '📅' },
+    { value: 'time', label: 'Time', icon: '🕐' },
   ];
+
+  const categories: ReportCategory[] = [
+    'Impact Assessment',
+    'Feedback',
+    'Health',
+    'Education',
+    'Agriculture',
+    'Community',
+  ];
+
+  // Form validation
+  const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
+    schema: {
+      title: { 
+        required: true, 
+        minLength: 3, 
+        maxLength: 100,
+        custom: (value) => {
+          if (value && value.toLowerCase().includes('untitled')) {
+            return 'Please provide a meaningful title for your report';
+          }
+          return null;
+        }
+      },
+      description: { maxLength: 500 },
+      questions: {
+        custom: (questions) => {
+          if (!questions || questions.length === 0) {
+            return 'At least one question is required';
+          }
+          
+          // Validate each question has a title
+          for (const question of questions) {
+            if (!question.title || question.title.trim() === '' || question.title === 'Untitled Question') {
+              return 'All questions must have a title';
+            }
+          }
+          
+          return null;
+        }
+      }
+    },
+    onSubmit: async (data) => {
+      // This will be called by handleSave
+    }
+  });
 
   const handleSave = async (shouldPublish = false) => {
     try {
-      setLoading(true);
       const dataToSave = {
         ...formData,
         status: shouldPublish ? 'published' as const : 'draft' as const,
       };
+
+      await handleSubmit(dataToSave);
       
       const result = await createReport(dataToSave);
       
+      // Success toast
+      addToast({
+        type: 'success',
+        title: shouldPublish ? 'Report Published!' : 'Report Saved!',
+        message: shouldPublish 
+          ? 'Your report is now live and ready to collect responses.'
+          : 'Your report has been saved as a draft.',
+      });
+      
       if (shouldPublish) {
-        // Redirect to dashboard reports page after publishing
-        router.push(`/reports?created=${result._id}&published=true`);
+        router.push(`/reports/${result._id}?published=true`);
       } else {
-        // Redirect to dashboard reports page after saving
-        router.push(`/reports?created=${result._id}`);
+        router.push(`/reports/${result._id}`);
       }
     } catch (error) {
-      console.error('Error saving report:', error);
-      alert('Failed to save report');
-    } finally {
-      setLoading(false);
+      if (error instanceof ApiError) {
+        // Handle specific API errors
+        if (error.code === 'DUPLICATE_TITLE' || error.message.includes('already exists')) {
+          addToast({
+            type: 'error',
+            title: 'Title Already Exists',
+            message: 'A report with this title already exists. Please choose a different title.',
+          });
+          
+          // Focus on the title field
+          const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement;
+          if (titleInput) {
+            titleInput.focus();
+            titleInput.select();
+          }
+        } else if (error.status === 403) {
+          addToast({
+            type: 'error',
+            title: 'Permission Denied',
+            message: 'You do not have permission to create reports.',
+          });
+        } else if (error.status >= 500) {
+          addToast({
+            type: 'error',
+            title: 'Server Error',
+            message: 'Something went wrong on our end. Please try again in a moment.',
+          });
+        } else {
+          addToast({
+            type: 'error',
+            title: 'Failed to Save Report',
+            message: error.message,
+          });
+        }
+      } else {
+        // Generic error fallback
+        addToast({
+          type: 'error',
+          title: 'Unexpected Error',
+          message: 'Something went wrong. Please try again.',
+        });
+      }
     }
   };
 
@@ -78,14 +185,14 @@ export default function CreateReportPage() {
     }));
   };
 
-  const addQuestion = () => {
+  const addQuestion = (type: QuestionType = 'multiple_choice') => {
     const newQuestion: Question = {
       id: Date.now().toString(),
-      type: 'multiple_choice',
+      type,
       title: 'Untitled Question',
       description: '',
       required: false,
-      options: ['Option 1'],
+      ...(type === 'multiple_choice' || type === 'checkboxes' ? { options: ['Option 1'] } : {}),
     };
 
     setFormData(prev => ({
@@ -111,15 +218,45 @@ export default function CreateReportPage() {
   };
 
   const deleteQuestion = (questionId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      questions: prev.questions?.filter(q => q.id !== questionId) || []
-    }));
+    if (formData.questions && formData.questions.length > 1) {
+      // Use modal for confirmation
+      openModal(
+        <ConfirmDialog
+          title="Delete Question"
+          message="Are you sure you want to delete this question? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          onConfirm={() => {
+            setFormData(prev => ({
+              ...prev,
+              questions: prev.questions?.filter(q => q.id !== questionId) || []
+            }));
+            closeModal();
+            addToast({
+              type: 'info',
+              title: 'Question Deleted',
+              message: 'The question has been removed from your report.',
+            });
+          }}
+          onCancel={closeModal}
+        />,
+        { size: 'sm' }
+      );
+    } else {
+      addToast({
+        type: 'warning',
+        title: 'Cannot Delete',
+        message: 'You must have at least one question in your report.',
+      });
+    }
   };
 
   const addOption = (questionId: string) => {
+    const question = formData.questions?.find(q => q.id === questionId);
+    const optionCount = question?.options?.length || 0;
     handleQuestionUpdate(questionId, {
-      options: [...(formData.questions?.find(q => q.id === questionId)?.options || []), `Option ${(formData.questions?.find(q => q.id === questionId)?.options?.length || 0) + 1}`]
+      options: [...(question?.options || []), `Option ${optionCount + 1}`]
     });
   };
 
@@ -140,91 +277,109 @@ export default function CreateReportPage() {
     }
   };
 
+  const handleTitleChange = (value: string) => {
+    setFormData(prev => ({ ...prev, title: value }));
+    handleFieldChange('title', value);
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setFormData(prev => ({ ...prev, description: value }));
+    handleFieldChange('description', value);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Full-Screen Header */}
+      {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/reports" className="p-2 hover:bg-gray-100 rounded-lg">
-              <ArrowLeft className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <Link 
+              href="/reports" 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                <span className="text-white font-medium text-sm">📄</span>
-              </div>
-              <div>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-                />
-                <p className="text-sm text-gray-500">Creating new report</p>
-              </div>
+            <div>
+              <h1 className="text-lg font-medium text-gray-900">Create New Report</h1>
+              <p className="text-sm text-gray-500">Build your data collection form</p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
-            <button className="p-2 hover:bg-gray-100 rounded-lg" title="Preview">
-              <Eye className="cursor-pointer w-5 h-5" />
-            </button>
-            <button className="p-2 hover:bg-gray-100 rounded-lg" title="Settings">
-              <Settings className="cursor-pointerw-5 h-5" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowQuickSettings(!showQuickSettings)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Quick Settings"
+            >
+              <Settings2 className="w-4 h-4" />
             </button>
             <button 
               onClick={() => handleSave(false)}
-              disabled={loading}
-              className="cursor-pointer px-4 py-2 text-[#5B94E5] font-medium hover:bg-blue-50 rounded-lg disabled:opacity-50"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#5B94E5] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
             >
-              <Save className="w-4 h-4 mr-2 inline" />
-              Save
+              <Save className="w-4 h-4" />
+              {isSubmitting ? 'Saving...' : 'Save Draft'}
             </button>
             <button 
               onClick={() => handleSave(true)}
-              disabled={loading}
-              className="cursor-pointer px-4 py-2 bg-[#5B94E5] text-white font-medium rounded-lg hover:bg-[#4A7ABF] disabled:opacity-50"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
             >
-              <Send className="w-4 h-4 mr-2 inline" />
-              Publish
+              <Send className="w-4 h-4" />
+              {isSubmitting ? 'Publishing...' : 'Create & Publish'}
             </button>
           </div>
         </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 mt-4">
-          <button
-            onClick={() => setActiveTab('questions')}
-            className={`px-6 py-3 font-medium border-b-2 ${
-              activeTab === 'questions' 
-                ? 'border-[#5B94E5] text-[#5B94E5]' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Questions
-          </button>
-          <button
-            onClick={() => setActiveTab('responses')}
-            className={`px-6 py-3 font-medium border-b-2 ${
-              activeTab === 'responses' 
-                ? 'border-[#5B94E5] text-[#5B94E5]' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Responses
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-6 py-3 font-medium border-b-2 ${
-              activeTab === 'settings' 
-                ? 'border-[#5B94E5] text-[#5B94E5]' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Settings
-          </button>
-        </div>
       </div>
+
+      {/* Quick Settings Panel */}
+      {showQuickSettings && (
+        <div className="bg-blue-50 border-b border-blue-200 px-6 py-4">
+          <div className="max-w-4xl mx-auto">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Settings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField label="Category">
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as ReportCategory }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                >
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              
+              <div className="flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.collectEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, collectEmail: e.target.checked }))}
+                    className="rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
+                  />
+                  <span className="text-sm text-gray-700">Collect email addresses</span>
+                </label>
+              </div>
+              
+              <div className="flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPublic}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                    className="rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
+                  />
+                  <span className="text-sm text-gray-700">Allow public access</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex">
@@ -232,187 +387,255 @@ export default function CreateReportPage() {
         <div className="flex-1 p-6">
           <div className="max-w-3xl mx-auto space-y-6">
             {/* Form Header */}
-            <div className="bg-white rounded-lg border-l-4 border-[#5B94E5] p-6">
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="text-2xl font-bold bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full mb-4"
-                placeholder="Form title"
-              />
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full resize-none"
-                placeholder="Form description"
-                rows={2}
-              />
+            <div className="bg-white rounded-lg border border-gray-200 border-l-4 border-l-[#5B94E5] p-6">
+              <FormField 
+                label="Report Title" 
+                required 
+                error={getFieldError('title')}
+              >
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  onBlur={(e) => handleFieldBlur('title', e.target.value)}
+                  className={`text-2xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full text-gray-900 ${
+                    getFieldError('title') ? 'text-red-600' : ''
+                  }`}
+                  placeholder="Enter a descriptive title for your report"
+                />
+              </FormField>
+              
+              <div className="mt-4">
+                <FormField 
+                  label="Description" 
+                  error={getFieldError('description')}
+                  description="Explain what this report is for and how the data will be used"
+                >
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleDescriptionChange(e.target.value)}
+                    onBlur={(e) => handleFieldBlur('description', e.target.value)}
+                    className={`text-gray-600 bg-transparent border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] p-3 w-full resize-none transition-colors ${
+                      getFieldError('description') ? 'border-red-300' : ''
+                    }`}
+                    placeholder="Describe the purpose of this report..."
+                    rows={3}
+                  />
+                </FormField>
+              </div>
             </div>
 
             {/* Questions */}
             {formData.questions?.map((question, index) => (
-              <div key={question.id} className="bg-white rounded-lg border-l-4 border-blue-500 p-6 relative group">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1 mr-4">
-                    <input
-                      type="text"
-                      value={question.title}
-                      onChange={(e) => handleQuestionUpdate(question.id, { title: e.target.value })}
-                      className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full"
-                      placeholder="Question title"
-                    />
-                    {question.description && (
+              <div key={question.id} className="bg-white rounded-lg border border-gray-200 relative group">
+                {/* Question Header */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={question.title}
+                        onChange={(e) => handleQuestionUpdate(question.id, { title: e.target.value })}
+                        className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full text-gray-900"
+                        placeholder="Enter your question here"
+                      />
                       <textarea
-                        value={question.description}
+                        value={question.description || ''}
                         onChange={(e) => handleQuestionUpdate(question.id, { description: e.target.value })}
                         className="text-sm text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full mt-2 resize-none"
-                        placeholder="Question description"
+                        placeholder="Add a description to help respondents understand this question"
                         rows={1}
                       />
-                    )}
+                    </div>
+                    
+                    <select
+                      value={question.type}
+                      onChange={(e) => handleQuestionUpdate(question.id, { type: e.target.value as QuestionType })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                    >
+                      {questionTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  
-                  <select
-                    value={question.type}
-                    onChange={(e) => handleQuestionUpdate(question.id, { type: e.target.value as QuestionType })}
-                    className="cursor-pointer px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {questionTypes.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
-                {/* Question Options */}
-                {(question.type === 'multiple_choice' || question.type === 'checkboxes') && (
-                  <div className="space-y-3 mb-4">
-                    {question.options?.map((option, optionIndex) => (
-                      <div key={optionIndex} className="flex items-center space-x-3">
-                        <div className="w-4 h-4 border-2 border-gray-300 rounded-full flex-shrink-0"></div>
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={(e) => updateOption(question.id, optionIndex, e.target.value)}
-                          className="flex-1 py-1 border-none border-b border-gray-200 focus:outline-none focus:border-blue-500"
-                          placeholder={`Option ${optionIndex + 1}`}
-                        />
-                        {question.options && question.options.length > 1 && (
-                          <button
-                            onClick={() => removeOption(question.id, optionIndex)}
-                            className="p-1 text-gray-400 hover:text-red-500"
-                          >
-                            ×
-                          </button>
-                        )}
+                {/* Question Content */}
+                <div className="p-6">
+                  {/* Multiple Choice & Checkboxes */}
+                  {(question.type === 'multiple_choice' || question.type === 'checkboxes') && (
+                    <div className="space-y-3">
+                      {question.options?.map((option, optionIndex) => (
+                        <div key={optionIndex} className="flex items-center gap-3">
+                          <div className={`w-4 h-4 border-2 border-gray-300 flex-shrink-0 ${
+                            question.type === 'multiple_choice' ? 'rounded-full' : 'rounded'
+                          }`}></div>
+                          <input
+                            type="text"
+                            value={option}
+                            onChange={(e) => updateOption(question.id, optionIndex, e.target.value)}
+                            className="flex-1 py-1 border-none border-b border-gray-200 focus:outline-none focus:border-[#5B94E5] transition-colors"
+                            placeholder={`Option ${optionIndex + 1}`}
+                          />
+                          {question.options && question.options.length > 1 && (
+                            <button
+                              onClick={() => removeOption(question.id, optionIndex)}
+                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => addOption(question.id)}
+                        className="flex items-center gap-3 text-[#5B94E5] hover:text-blue-700 transition-colors"
+                      >
+                        <div className={`w-4 h-4 border-2 border-gray-300 ${
+                          question.type === 'multiple_choice' ? 'rounded-full' : 'rounded'
+                        }`}></div>
+                        <span className="text-sm">Add option</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Short Answer */}
+                  {question.type === 'short_answer' && (
+                    <div>
+                      <input
+                        type="text"
+                        disabled
+                        placeholder="Respondents will type their short answer here"
+                        className="w-full py-2 border-none border-b border-gray-200 bg-gray-50 text-gray-500"
+                      />
+                    </div>
+                  )}
+
+                  {/* Paragraph */}
+                  {question.type === 'paragraph' && (
+                    <div>
+                      <textarea
+                        disabled
+                        placeholder="Respondents will type their detailed answer here"
+                        rows={3}
+                        className="w-full py-2 border-none border-b border-gray-200 bg-gray-50 text-gray-500 resize-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Linear Scale */}
+                  {question.type === 'linear_scale' && (
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-gray-600">1</span>
+                      <div className="flex gap-2">
+                        {[1,2,3,4,5].map(num => (
+                          <div key={num} className="w-8 h-8 border-2 border-gray-300 rounded-full flex items-center justify-center text-sm text-gray-600">
+                            {num}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    <button
-                      onClick={() => addOption(question.id)}
-                      className="flex items-center space-x-3 text-blue-600 hover:text-blue-700"
-                    >
-                      <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
-                      <span>Add option or add &rdquo;Other&rdquo;</span>
-                    </button>
-                  </div>
-                )}
+                      <span className="text-sm text-gray-600">5</span>
+                    </div>
+                  )}
 
-                {question.type === 'short_answer' && (
-                  <div className="mb-4">
-                    <input
-                      type="text"
-                      disabled
-                      placeholder="Short answer text"
-                      className="w-full py-2 border-none border-b border-gray-200 bg-gray-50"
-                    />
-                  </div>
-                )}
+                  {/* Date */}
+                  {question.type === 'date' && (
+                    <div>
+                      <input
+                        type="date"
+                        disabled
+                        className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                      />
+                    </div>
+                  )}
 
-                {question.type === 'paragraph' && (
-                  <div className="mb-4">
-                    <textarea
-                      disabled
-                      placeholder="Long answer text"
-                      rows={3}
-                      className="w-full py-2 border-none border-b border-gray-200 bg-gray-50 resize-none"
-                    />
-                  </div>
-                )}
+                  {/* Time */}
+                  {question.type === 'time' && (
+                    <div>
+                      <input
+                        type="time"
+                        disabled
+                        className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                      />
+                    </div>
+                  )}
+                </div>
 
-                {/* Question Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div className="flex items-center space-x-4">
+                {/* Question Footer */}
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => duplicateQuestion(question.id)}
-                      className="p-2 text-gray-400 hover:text-gray-600"
-                      title="Duplicate"
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      title="Duplicate Question"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteQuestion(question.id)}
-                      className="p-2 text-gray-400 hover:text-red-500"
-                      title="Delete"
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                      title="Delete Question"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                   
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={question.required}
-                        onChange={(e) => handleQuestionUpdate(question.id, { required: e.target.checked })}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-600">Required</span>
-                    </label>
-                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={question.required}
+                      onChange={(e) => handleQuestionUpdate(question.id, { required: e.target.checked })}
+                      className="rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
+                    />
+                    <span className="text-sm text-gray-600">Required</span>
+                  </label>
+                </div>
+
+                {/* Drag Handle */}
+                <div className="absolute left-2 top-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
             ))}
 
+            {/* Questions Validation Error */}
+            {getFieldError('questions') && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-600">{getFieldError('questions')}</p>
+              </div>
+            )}
+
             {/* Add Question Button */}
             <button
-              onClick={addQuestion}
-              className="cursor-pointer w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
+              onClick={() => addQuestion()}
+              className="w-full py-6 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-[#5B94E5] hover:text-[#5B94E5] transition-colors flex items-center justify-center gap-2"
             >
-              <Plus className="w-5 h-5 mx-auto" />
+              <Plus className="w-5 h-5" />
+              Add Question
             </button>
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="w-16 bg-white border-l border-gray-200 p-4 space-y-4">
-          <button
-            onClick={addQuestion}
-            className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-200"
-            title="Add question"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
+        {/* Sidebar - Question Types */}
+        <div className="w-64 bg-white rounded-lg border border-gray-200 p-4 h-fit mx-6 mt-6">
+          <h3 className="font-medium text-gray-900 mb-4">Add Questions</h3>
           
-          <button className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200">
-            📄
-          </button>
-          
-          <button className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200">
-            Tt
-          </button>
-          
-          <button className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200">
-            🖼️
-          </button>
-          
-          <button className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200">
-            ▶️
-          </button>
-          
-          <button className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200">
-            📊
-          </button>
+          <div className="space-y-2">
+            {questionTypes.map((type) => (
+              <button
+                key={type.value}
+                onClick={() => addQuestion(type.value)}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <span>{type.icon}</span>
+                {type.label}
+              </button>
+            ))}
+          </div>
+
         </div>
       </div>
     </div>

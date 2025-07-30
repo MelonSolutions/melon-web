@@ -50,8 +50,16 @@ export interface DashboardStats {
   totalResponses: number;
   avgResponseRate: string;
 }
-
-// Get authorization headers
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
 const getAuthHeaders = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   return {
@@ -60,16 +68,22 @@ const getAuthHeaders = () => {
   };
 };
 
-// Handle API errors
-const handleApiError = async (response: globalThis.Response) => {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ 
-      message: 'An error occurred' 
+const handleApiError = async (res: globalThis.Response) => {
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ 
+      message: 'An error occurred',
+      code: 'UNKNOWN_ERROR'
     }));
-    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    
+    throw new ApiError(
+      errorData.message || `HTTP ${res.status}: ${res.statusText}`,
+      res.status,
+      errorData.code
+    );
   }
-  return response;
+  return res;
 };
+
 
 // Create a new report
 export const createReport = async (data: CreateReportRequest): Promise<any> => {
