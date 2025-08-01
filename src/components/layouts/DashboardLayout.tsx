@@ -38,6 +38,8 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   
+  const isMapView = pathname === '/map-view';
+  
   const navigation: NavItem[] = [
     {
       name: 'Overview',
@@ -100,7 +102,6 @@ export default function DashboardLayout({
   
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
-      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
           className="fixed inset-0 z-40 flex md:hidden"
@@ -177,12 +178,10 @@ export default function DashboardLayout({
           </div>
           
           <div className="flex-shrink-0 w-14" aria-hidden="true">
-            {/* Force sidebar to shrink to fit close icon */}
           </div>
         </div>
       )}
 
-      {/* Static sidebar for desktop */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
           <div className="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
@@ -237,109 +236,111 @@ export default function DashboardLayout({
 
       {/* Main content */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        <header className="bg-white border-b border-gray-200">
-          <div className="px-4 sm:px-6 md:px-8 flex items-center justify-between h-16">
-            <div className="flex-1 flex">
-              <div className="md:hidden">
-                <button
-                  type="button"
-                  className="h-12 w-12 inline-flex items-center justify-center text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  <span className="sr-only">Open sidebar</span>
-                  <Menu className="h-6 w-6" />
-                </button>
-              </div>
-              <h1 className="text-[20px] font-medium text-gray-900">
-                {pathname === '/overview' && 'Program Impact Dashboard'}
-                {pathname === '/reports' && 'Reports'}
-                {pathname === '/visualizations' && 'Visualizations'}
-                {pathname === '/dashboards' && 'Dashboards'}
-                {pathname === '/impact-metrics' && 'Impact Metrics'}
-                {pathname === '/portfolio' && 'Portfolio'}
-                {pathname === '/map-view' && 'Map View'}
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Search */}
-              <div className="relative w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="block w-full pl-10 pr-3 py-2 border text-black border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
-                />
-              </div>
-
-              {/* Notification Bell */}
-              <div className="relative">
-                <button className="cursor-pointer p-1 rounded-full text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  <span className="sr-only">View notifications</span>
-                  <Bell className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                </button>
-              </div>
-
-              {/* User Profile Dropdown */}
-              <div className="relative">
-                <div>
-                  <button 
-                    type="button" 
-                    className="flex items-center space-x-3 focus:outline-none"
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+          <header className="bg-white border-b border-gray-200">
+            <div className="px-4 sm:px-6 md:px-8 flex items-center justify-between h-16">
+              <div className="flex-1 flex">
+                <div className="md:hidden">
+                  <button
+                    type="button"
+                    className="h-12 w-12 inline-flex items-center justify-center text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                    onClick={() => setSidebarOpen(true)}
                   >
-                    <div className="cursor-pointer bg-[#5B94E5] text-white flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center">
-                      <span className="text-lg font-medium">{getInitials()}</span>
-                    </div>
+                    <span className="sr-only">Open sidebar</span>
+                    <Menu className="h-6 w-6" />
+                  </button>
+                </div>
+                <h1 className="text-[20px] font-medium text-gray-900">
+                  {pathname === '/overview' && 'Program Impact Dashboard'}
+                  {pathname === '/reports' && 'Reports'}
+                  {pathname === '/visualizations' && 'Visualizations'}
+                  {pathname === '/dashboards' && 'Dashboards'}
+                  {pathname === '/impact-metrics' && 'Impact Metrics'}
+                  {pathname === '/portfolio' && 'Portfolio'}
+                  {pathname === '/map-view' && 'Map View'}
+                </h1>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="relative w-64">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="block w-full pl-10 pr-3 py-2 border text-black border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+
+                <div className="relative">
+                  <button className="cursor-pointer p-1 rounded-full text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <span className="sr-only">View notifications</span>
+                    <Bell className="h-6 w-6" />
+                    <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
                   </button>
                 </div>
 
-                {userMenuOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{getFullName()}</p>
-                      <p className="text-sm text-gray-500">{user?.email}</p>
-                    </div>
-                    <div className="py-1">
-                      <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <div className="flex items-center">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profile</span>
-                        </div>
-                      </button>
-                      <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <div className="flex items-center">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Settings</span>
-                        </div>
-                      </button>
-                      <button 
-                        onClick={logout}
-                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <div className="flex items-center">
-                          <LogOut className="mr-2 h-4 w-4" />
-                          <span>Logout</span>
-                        </div>
-                      </button>
-                    </div>
+                <div className="relative">
+                  <div>
+                    <button 
+                      type="button" 
+                      className="flex items-center space-x-3 focus:outline-none"
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    >
+                      <div className="cursor-pointer bg-[#5B94E5] text-white flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center">
+                        <span className="text-lg font-medium">{getInitials()}</span>
+                      </div>
+                    </button>
                   </div>
-                )}
+
+                  {userMenuOpen && (
+                    <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{getFullName()}</p>
+                        <p className="text-sm text-gray-500">{user?.email}</p>
+                      </div>
+                      <div className="py-1">
+                        <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          <div className="flex items-center">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </div>
+                        </button>
+                        <button className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          <div className="flex items-center">
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Settings</span>
+                          </div>
+                        </button>
+                        <button 
+                          onClick={logout}
+                          className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <div className="flex items-center">
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Logout</span>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
         
-        {/* Main content */}
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          {isMapView ? (
+            <div className="h-full">
               {children}
             </div>
-          </div>
+          ) : (
+            <div className="py-6">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                {children}
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

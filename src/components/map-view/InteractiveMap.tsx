@@ -15,7 +15,10 @@ import {
   DollarSign, 
   Building2,
   MapPin,
-  Activity
+  Activity,
+  Eye,
+  Users,
+  TrendingUp
 } from 'lucide-react';
 
 // Fix for default markers in Next.js
@@ -34,28 +37,20 @@ interface InteractiveMapProps {
   showHeatmap: boolean;
 }
 
-// Heatmap component
+// Enhanced Heatmap component
 function HeatmapLayer({ projects, show }: { projects: ProjectLocation[]; show: boolean }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!show) return;
+    if (!show || projects.length === 0) return;
 
-    // Create intensity points based on project impact
-    const heatPoints = projects.map(project => ({
-      lat: project.lat,
-      lng: project.lng,
-      intensity: project.impactScore / 100,
-      beneficiaries: project.beneficiaries
-    }));
-
-    // Create canvas overlay for heatmap effect
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const bounds = map.getBounds();
+    const mapContainer = map.getContainer();
     const size = map.getSize();
+    
     canvas.width = size.x;
     canvas.height = size.y;
     canvas.style.position = 'absolute';
@@ -63,30 +58,69 @@ function HeatmapLayer({ projects, show }: { projects: ProjectLocation[]; show: b
     canvas.style.left = '0';
     canvas.style.pointerEvents = 'none';
     canvas.style.zIndex = '400';
+    canvas.style.opacity = '0.6';
 
-    // Draw heatmap points
-    heatPoints.forEach(point => {
-      const pixelPoint = map.latLngToContainerPoint([point.lat, point.lng]);
+    // Create heatmap based on beneficiaries and impact
+    projects.forEach(project => {
+      const point = map.latLngToContainerPoint([project.lat, project.lng]);
+      const intensity = (project.beneficiaries / 20000) * (project.impactScore / 100);
+      const radius = Math.max(30, Math.min(80, project.coverage * 2));
+      
       const gradient = ctx.createRadialGradient(
-        pixelPoint.x, pixelPoint.y, 0,
-        pixelPoint.x, pixelPoint.y, 50
+        point.x, point.y, 0,
+        point.x, point.y, radius
       );
       
-      const alpha = point.intensity * 0.6;
-      gradient.addColorStop(0, `rgba(255, 69, 0, ${alpha})`);
-      gradient.addColorStop(0.5, `rgba(255, 165, 0, ${alpha * 0.5})`);
-      gradient.addColorStop(1, 'rgba(255, 165, 0, 0)');
+      const alpha = Math.min(0.7, intensity);
+      gradient.addColorStop(0, `rgba(59, 130, 246, ${alpha})`); // Blue center
+      gradient.addColorStop(0.4, `rgba(147, 197, 253, ${alpha * 0.7})`); // Light blue
+      gradient.addColorStop(0.8, `rgba(219, 234, 254, ${alpha * 0.3})`); // Very light blue
+      gradient.addColorStop(1, 'rgba(219, 234, 254, 0)'); // Transparent
       
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(pixelPoint.x, pixelPoint.y, 50, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    const mapContainer = map.getContainer();
     mapContainer.appendChild(canvas);
 
+    const updateHeatmap = () => {
+      const newSize = map.getSize();
+      canvas.width = newSize.x;
+      canvas.height = newSize.y;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      projects.forEach(project => {
+        const point = map.latLngToContainerPoint([project.lat, project.lng]);
+        const intensity = (project.beneficiaries / 20000) * (project.impactScore / 100);
+        const radius = Math.max(30, Math.min(80, project.coverage * 2));
+        
+        const gradient = ctx.createRadialGradient(
+          point.x, point.y, 0,
+          point.x, point.y, radius
+        );
+        
+        const alpha = Math.min(0.7, intensity);
+        gradient.addColorStop(0, `rgba(59, 130, 246, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(147, 197, 253, ${alpha * 0.7})`);
+        gradient.addColorStop(0.8, `rgba(219, 234, 254, ${alpha * 0.3})`);
+        gradient.addColorStop(1, 'rgba(219, 234, 254, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    };
+
+    map.on('zoom', updateHeatmap);
+    map.on('move', updateHeatmap);
+
     return () => {
+      map.off('zoom', updateHeatmap);
+      map.off('move', updateHeatmap);
       if (mapContainer.contains(canvas)) {
         mapContainer.removeChild(canvas);
       }
@@ -96,7 +130,7 @@ function HeatmapLayer({ projects, show }: { projects: ProjectLocation[]; show: b
   return null;
 }
 
-// Professional marker component
+// Enhanced Project Marker component
 function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
   project: ProjectLocation;
   isSelected: boolean;
@@ -107,51 +141,73 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
     switch (sector) {
       case 'Health': return '#dc2626';
       case 'Education': return '#7c3aed';
-      case 'Agriculture': return '#ea580c';
-      case 'Energy': return '#ca8a04';
-      case 'Finance': return '#059669';
-      case 'Infrastructure': return '#0284c7';
+      case 'Agriculture': return '#059669';
+      case 'Energy': return '#d97706';
+      case 'Finance': return '#0891b2';
+      case 'Infrastructure': return '#4338ca';
       default: return '#374151';
     }
   };
 
   const getSectorIcon = (sector: string) => {
     switch (sector) {
-      case 'Health': return 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z';
-      case 'Education': return 'M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z';
-      case 'Agriculture': return 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z';
-      case 'Energy': return 'M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z';
-      case 'Finance': return 'M7 15h2c0 1.08 1.37 2 3 2s3-.92 3-2c0-1.1-1.04-1.5-3.24-2.03C9.64 12.44 7 11.78 7 9c0-1.79 1.47-3.31 3.5-3.82V3h3v2.18C15.53 5.69 17 7.21 17 9h-2c0-1.08-1.37-2-3-2s-3 .92-3 2c0 1.1 1.04 1.5 3.24 2.03C14.36 11.56 17 12.22 17 15c0 1.79-1.47 3.31-3.5 3.82V21h-3v-2.18C8.47 18.31 7 16.79 7 15z';
-      default: return 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z';
+      case 'Health': return '🏥';
+      case 'Education': return '🎓';
+      case 'Agriculture': return '🌾';
+      case 'Energy': return '⚡';
+      case 'Finance': return '💰';
+      case 'Infrastructure': return '🏗️';
+      default: return '📍';
     }
   };
 
   const color = getSectorColor(project.sector);
-  const iconPath = getSectorIcon(project.sector);
+  const icon = getSectorIcon(project.sector);
   
   const customIcon = new DivIcon({
     html: `
-      <div style="
-        width: 32px;
-        height: 32px;
-        background-color: ${color};
-        border: 2px solid white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        ${isSelected ? 'transform: scale(1.3); border-width: 3px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);' : ''}
-        transition: all 0.2s ease;
-      ">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-          <path d="${iconPath}"/>
-        </svg>
+      <div class="relative">
+        <div style="
+          width: ${isSelected ? '40px' : '32px'};
+          height: ${isSelected ? '40px' : '32px'};
+          background: ${color};
+          border: ${isSelected ? '3px' : '2px'} solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 ${isSelected ? '4px 12px' : '2px 8px'} rgba(0,0,0,${isSelected ? '0.4' : '0.25'});
+          transition: all 0.2s ease;
+          position: relative;
+          z-index: ${isSelected ? '1000' : '500'};
+        ">
+          <span style="font-size: ${isSelected ? '18px' : '14px'};">${icon}</span>
+        </div>
+        ${project.status === 'active' ? `
+          <div style="
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border: 2px solid white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+          "></div>
+        ` : ''}
       </div>
+      <style>
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.7; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      </style>
     `,
-    className: 'professional-marker',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    className: 'custom-marker',
+    iconSize: [isSelected ? 40 : 32, isSelected ? 40 : 32],
+    iconAnchor: [isSelected ? 20 : 16, isSelected ? 20 : 16],
   });
 
   return (
@@ -163,65 +219,102 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
           click: () => onSelect(project),
         }}
       >
-        <Popup className="professional-popup">
-          <div className="p-3 min-w-[250px]">
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-gray-900 text-base leading-tight">{project.title}</h3>
-              <span 
-                className="px-2 py-1 text-xs font-medium rounded-full ml-2"
-                style={{ 
-                  backgroundColor: `${color}15`,
-                  color: color
-                }}
-              >
-                {project.sector}
-              </span>
+        <Popup className="custom-popup" maxWidth={320}>
+          <div className="p-0 min-w-[300px]">
+            {/* Header */}
+            <div className={`p-4 text-white rounded-t-lg`} style={{ backgroundColor: color }}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg leading-tight mb-1">{project.title}</h3>
+                  <div className="flex items-center space-x-2 text-sm opacity-90">
+                    <span className="px-2 py-1 bg-white bg-opacity-20 rounded-full text-xs font-medium">
+                      {project.sector}
+                    </span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      project.status === 'active' ? 'bg-green-500' :
+                      project.status === 'completed' ? 'bg-blue-500' : 'bg-yellow-500'
+                    }`}>
+                      {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-2xl ml-2">{icon}</div>
+              </div>
             </div>
             
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{project.description}</p>
-            
-            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-              <div className="flex items-center space-x-2">
-                <Activity className="w-4 h-4 text-gray-400" />
-                <div>
+            {/* Content */}
+            <div className="p-4">
+              <p className="text-sm text-gray-600 mb-4 leading-relaxed">{project.description}</p>
+              
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-center mb-1">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="text-lg font-bold text-blue-600">{project.impactScore}%</div>
                   <div className="text-xs text-gray-500">Impact Score</div>
-                  <div className="font-semibold text-gray-900">{project.impactScore}%</div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <div>
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="flex items-center justify-center mb-1">
+                    <Users className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div className="text-lg font-bold text-green-600">{project.beneficiaries.toLocaleString()}</div>
                   <div className="text-xs text-gray-500">Beneficiaries</div>
-                  <div className="font-semibold text-gray-900">{project.beneficiaries.toLocaleString()}</div>
+                </div>
+                <div className="text-center p-3 bg-purple-50 rounded-lg">
+                  <div className="flex items-center justify-center mb-1">
+                    <Activity className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div className="text-lg font-bold text-purple-600">{project.activeAgents}</div>
+                  <div className="text-xs text-gray-500">Active Agents</div>
+                </div>
+                <div className="text-center p-3 bg-orange-50 rounded-lg">
+                  <div className="flex items-center justify-center mb-1">
+                    <MapPin className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div className="text-lg font-bold text-orange-600">{project.coverage}</div>
+                  <div className="text-xs text-gray-500">km² Coverage</div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                project.status === 'active' ? 'bg-green-100 text-green-700' :
-                project.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                project.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-gray-100 text-gray-700'
-              }`}>
-                <div className="w-1.5 h-1.5 rounded-full bg-current mr-1"></div>
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-              </span>
+              {/* Progress Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">Progress</span>
+                  <span className="text-sm font-bold text-gray-900">{project.impactScore}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="h-2 rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${project.impactScore}%`,
+                      backgroundColor: color
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Action Button */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelect(project);
                 }}
-                className="px-3 py-1 bg-gray-900 text-white text-xs rounded-md hover:bg-gray-800 transition-colors"
+                className="w-full py-2 px-4 rounded-lg font-medium text-white transition-colors hover:opacity-90"
+                style={{ backgroundColor: color }}
               >
-                View Details
+                <div className="flex items-center justify-center space-x-2">
+                  <Eye className="w-4 h-4" />
+                  <span>View Details</span>
+                </div>
               </button>
             </div>
           </div>
         </Popup>
       </Marker>
       
-      {/* Coverage Circle */}
+      {/* Enhanced Coverage Circle */}
       {showCoverage && (
         <Circle
           center={[project.lat, project.lng]}
@@ -229,10 +322,10 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
           pathOptions={{
             color: color,
             fillColor: color,
-            fillOpacity: 0.08,
-            weight: 1.5,
-            opacity: 0.4,
-            dashArray: '5, 5'
+            fillOpacity: isSelected ? 0.15 : 0.08,
+            weight: isSelected ? 2.5 : 1.5,
+            opacity: isSelected ? 0.7 : 0.4,
+            dashArray: isSelected ? '10, 5' : '5, 5'
           }}
         />
       )}
@@ -249,44 +342,52 @@ function MapBounds({ projects }: { projects: ProjectLocation[] }) {
       const bounds = new LatLngBounds(
         projects.map(project => [project.lat, project.lng])
       );
-      map.fitBounds(bounds, { padding: [40, 40] });
+      // Add padding and ensure minimum zoom level
+      map.fitBounds(bounds, { 
+        padding: [50, 50],
+        maxZoom: 10 
+      });
+    } else {
+      // Default to Nigeria if no projects
+      map.setView([9.0820, 8.6753], 6);
     }
   }, [projects, map]);
 
   return null;
 }
 
-// Custom zoom controls component
-function ZoomControls({ mapRef }: { mapRef: React.RefObject<any> }) {
-  const handleZoomIn = () => {
-    const map = mapRef.current;
-    if (map) {
-      map.zoomIn();
-    }
-  };
+// Enhanced zoom controls
+function CustomZoomControls() {
+  const map = useMap();
 
-  const handleZoomOut = () => {
-    const map = mapRef.current;
-    if (map) {
-      map.zoomOut();
-    }
+  const handleZoomIn = () => map.zoomIn();
+  const handleZoomOut = () => map.zoomOut();
+  const handleZoomToFit = () => {
+    map.setView([9.0820, 8.6753], 6);
   };
 
   return (
-    <div className="absolute top-4 left-4 z-[1000] bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+    <div className="absolute top-20 left-4 z-[1000] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
       <button 
-        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-b border-gray-200 items-center justify-center text-lg font-semibold transition-colors"
+        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
         onClick={handleZoomIn}
         title="Zoom in"
       >
         +
       </button>
       <button 
-        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-gray-50 items-center justify-center text-lg font-semibold transition-colors"
+        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
         onClick={handleZoomOut}
         title="Zoom out"
       >
         −
+      </button>
+      <button 
+        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 flex items-center justify-center text-xs font-medium transition-colors"
+        onClick={handleZoomToFit}
+        title="Reset view"
+      >
+        ⌂
       </button>
     </div>
   );
@@ -311,13 +412,20 @@ export default function InteractiveMap({
         ref={mapRef}
         center={defaultCenter}
         zoom={defaultZoom}
-        className="w-full h-full professional-map"
+        className="w-full h-full z-0"
         zoomControl={false}
-        attributionControl={false}
+        attributionControl={true}
+        scrollWheelZoom={true}
+        doubleClickZoom={true}
+        touchZoom={true}
+        style={{ height: '100%', width: '100%' }}
       >
+        {/* Enhanced tile layer */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          maxZoom={18}
+          minZoom={2}
         />
         
         {/* Heatmap Layer */}
@@ -334,43 +442,61 @@ export default function InteractiveMap({
           />
         ))}
 
+        {/* Custom zoom controls - MOVED INSIDE MapContainer */}
+        <CustomZoomControls />
+
         <MapBounds projects={projects} />
       </MapContainer>
       
-      {/* Custom zoom controls */}
-      <ZoomControls mapRef={mapRef} />
-      
-      {/* Professional Legend */}
+      {/* Enhanced Map Stats - OUTSIDE MapContainer */}
       <div className="absolute bottom-4 left-4 z-[1000]">
-        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200 max-w-xs">
-          <h4 className="font-semibold text-gray-900 mb-3 text-sm">Project Categories</h4>
-          <div className="space-y-2.5">
-            {[
-              { sector: 'Health', color: '#dc2626', count: projects.filter(p => p.sector === 'Health').length },
-              { sector: 'Energy', color: '#ca8a04', count: projects.filter(p => p.sector === 'Energy').length },
-              { sector: 'Finance', color: '#059669', count: projects.filter(p => p.sector === 'Finance').length },
-              { sector: 'Education', color: '#7c3aed', count: projects.filter(p => p.sector === 'Education').length }
-            ].filter(item => item.count > 0).map(({ sector, color, count }) => (
-              <div key={sector} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-3 h-3 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: color }}
-                  ></div>
-                  <span className="text-sm text-gray-700">{sector}</span>
-                </div>
-                <span className="text-xs text-gray-500 font-medium">{count}</span>
-              </div>
-            ))}
+        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 max-w-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-gray-900 text-sm">Project Overview</h4>
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              {projects.length} total
+            </span>
           </div>
           
-          {/* Scale */}
+          <div className="space-y-2.5">
+            {/* Sector breakdown */}
+            {[
+              { sector: 'Health', color: '#dc2626', icon: '🏥' },
+              { sector: 'Education', color: '#7c3aed', icon: '🎓' },
+              { sector: 'Agriculture', color: '#059669', icon: '🌾' },
+              { sector: 'Energy', color: '#d97706', icon: '⚡' },
+              { sector: 'Finance', color: '#0891b2', icon: '💰' },
+              { sector: 'Infrastructure', color: '#4338ca', icon: '🏗️' }
+            ].map(({ sector, color, icon }) => {
+              const count = projects.filter(p => p.sector === sector).length;
+              if (count === 0) return null;
+              
+              return (
+                <div key={sector} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">{icon}</span>
+                    <div 
+                      className="w-3 h-3 rounded-full border-2 border-white shadow-sm"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-sm text-gray-700 font-medium">{sector}</span>
+                  </div>
+                  <span className="text-xs text-gray-500 font-semibold">{count}</span>
+                </div>
+              );
+            }).filter(Boolean)}
+          </div>
+          
+          {/* Status indicators */}
           <div className="mt-4 pt-3 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500 font-medium">Scale</span>
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-0.5 bg-gray-900"></div>
-                <span className="text-xs text-gray-600 font-medium">50 km</span>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-gray-600">Active: {projects.filter(p => p.status === 'active').length}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                <span className="text-gray-600">Completed: {projects.filter(p => p.status === 'completed').length}</span>
               </div>
             </div>
           </div>
@@ -379,18 +505,60 @@ export default function InteractiveMap({
           {showCoverage && (
             <div className="mt-2 pt-2 border-t border-gray-200">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 border border-gray-400 rounded-full" style={{ borderStyle: 'dashed' }}></div>
-                <span className="text-xs text-gray-600">Coverage Areas</span>
+                <div className="w-3 h-3 border border-gray-400 rounded-full" style={{ borderStyle: 'dashed' }} />
+                <span className="text-xs text-gray-600">Coverage Areas Visible</span>
+              </div>
+            </div>
+          )}
+
+          {/* Heatmap indicator */}
+          {showHeatmap && (
+            <div className="mt-1">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full opacity-60" />
+                <span className="text-xs text-gray-600">Impact Heatmap Active</span>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Attribution */}
-      <div className="absolute bottom-1 right-1 z-[1000] text-xs text-gray-500 bg-white bg-opacity-75 px-2 py-1 rounded">
-        © OpenStreetMap contributors
+      {/* Scale bar - OUTSIDE MapContainer */}
+      <div className="absolute bottom-4 right-4 z-[1000]">
+        <div className="bg-white bg-opacity-90 px-3 py-2 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center space-x-2">
+            <div className="w-16 h-1 bg-gray-900 relative">
+              <div className="absolute -bottom-2 left-0 text-xs text-gray-600">0</div>
+              <div className="absolute -bottom-2 right-0 text-xs text-gray-600">50km</div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Empty state - OUTSIDE MapContainer */}
+      {projects.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white bg-opacity-90">
+          <div className="text-center p-8">
+            <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Data Points</h3>
+            <p className="text-gray-500 mb-4">Import CSV data or load sample data to get started</p>
+            <div className="space-x-3">
+              <button 
+                onClick={() => window.dispatchEvent(new CustomEvent('load-sample-data'))}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Load Sample Data
+              </button>
+              <button 
+                onClick={() => window.dispatchEvent(new CustomEvent('open-import-modal'))}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Import CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -12,11 +13,11 @@ export interface ProjectLocation extends Coordinates {
   beneficiaries: number;
   activeAgents: number;
   coverage: number; // radius in km
-  budget: {
-    total: number;
-    utilized: number;
-  };
-  region: string;
+  // budget: {
+  //   total: number;
+  //   utilized: number;
+  // };
+  // region: string;
   description: string;
   phases?: ProjectPhase[];
 }
@@ -28,47 +29,90 @@ export interface ProjectPhase {
   progress: number;
 }
 
-export interface MapLayer {
+export interface GeoDataPoint {
+  id: string;
+  latitude: number;
+  longitude: number;
+  properties: Record<string, any>; // Flexible properties
+  source: 'report' | 'import' | 'manual';
+  sourceId?: string; // ID from reports or imports
+  timestamp?: string;
+  region?: string;
+  country?: string;
+}
+
+export interface GeoLayer {
   id: string;
   name: string;
-  type: 'projects' | 'heatmap' | 'coverage' | 'demographics' | 'infrastructure';
+  type: 'points' | 'heatmap' | 'choropleth' | 'clusters';
+  source: 'reports' | 'imports' | 'external';
+  sourceId?: string;
   visible: boolean;
+  opacity: number;
   color?: string;
-  opacity?: number;
+  metric?: string; // Which property to visualize
+  styling: LayerStyling;
+  data: GeoDataPoint[];
 }
 
-export interface ServiceGap {
-  sector: 'Health Services' | 'Education Access' | 'Energy Access';
-  level: 'High Gap' | 'Medium Gap' | 'Low Gap';
-  color: string;
-}
-
-export interface EmergencyResponse {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  action: () => void;
-}
-
-export interface GeographicAnalytics {
-  activeProjects: number;
-  kmCoverage: number;
-  beneficiaries: number;
-  avgServiceGap: number;
-}
-
-export interface NearbyProject {
-  id: string;
-  title: string;
-  sector: string;
-  distance: number; // in km
+export interface LayerStyling {
+  colorScale?: 'sequential' | 'diverging' | 'categorical';
+  colorPalette?: string[];
+  sizeRange?: [number, number];
+  strokeWidth?: number;
+  fillOpacity?: number;
 }
 
 export interface MapFilters {
-  sectors: string[];
-  status: string[];
-  impactRange: [number, number];
-  showCoverage: boolean;
-  showHeatmap: boolean;
+  dateRange?: [string, string];
+  regions?: string[];
+  countries?: string[];
+  sources?: string[];
+  metricRange?: [number, number];
+  search?: string;
+  layers: string[]; // Active layer IDs
+}
+
+export interface MapViewConfig {
+  center: [number, number];
+  zoom: number;
+  bounds?: [[number, number], [number, number]];
+  basemap: 'streets' | 'satellite' | 'terrain' | 'light' | 'dark';
+  showControls: boolean;
+  showLegend: boolean;
+  showTimeline: boolean;
+}
+
+export interface DataImport {
+  id: string;
+  name: string;
+  fileName: string;
+  uploadedAt: string;
+  status: 'processing' | 'ready' | 'error';
+  rowCount: number;
+  geoColumnMappings: {
+    latitude: string;
+    longitude: string;
+    label?: string;
+    region?: string;
+  };
+  availableMetrics: string[];
+  preview: GeoDataPoint[];
+}
+
+export interface GeospatialAnalytics {
+  totalPoints: number;
+  dateRange: [string, string];
+  regions: { name: string; count: number }[];
+  topMetrics: { name: string; value: number; unit?: string }[];
+  coverage: {
+    countries: number;
+    regions: number;
+    area: number; // km²
+  };
+  dataQuality: {
+    completeCoordinates: number;
+    missingData: number;
+    duplicates: number;
+  };
 }
