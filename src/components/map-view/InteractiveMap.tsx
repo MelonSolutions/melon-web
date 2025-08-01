@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
@@ -8,12 +7,6 @@ import { LatLngBounds, Icon, DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ProjectLocation } from '@/types/geospatial';
 import { 
-  Heart, 
-  GraduationCap, 
-  Wheat, 
-  Zap, 
-  DollarSign, 
-  Building2,
   MapPin,
   Activity,
   Eye,
@@ -37,94 +30,105 @@ interface InteractiveMapProps {
   showHeatmap: boolean;
 }
 
-// Enhanced Heatmap component
+// Enhanced Heatmap component with comprehensive error handling
 function HeatmapLayer({ projects, show }: { projects: ProjectLocation[]; show: boolean }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!show || projects.length === 0) return;
+    if (!show || projects.length === 0 || !map) return;
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let canvas: HTMLCanvasElement | null = null;
+    let ctx: CanvasRenderingContext2D | null = null;
 
-    const mapContainer = map.getContainer();
-    const size = map.getSize();
-    
-    canvas.width = size.x;
-    canvas.height = size.y;
-    canvas.style.position = 'absolute';
-    canvas.style.top = '0';
-    canvas.style.left = '0';
-    canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '400';
-    canvas.style.opacity = '0.6';
+    try {
+      const mapContainer = map.getContainer();
+      if (!mapContainer) return;
 
-    // Create heatmap based on beneficiaries and impact
-    projects.forEach(project => {
-      const point = map.latLngToContainerPoint([project.lat, project.lng]);
-      const intensity = (project.beneficiaries / 20000) * (project.impactScore / 100);
-      const radius = Math.max(30, Math.min(80, project.coverage * 2));
+      const size = map.getSize();
       
-      const gradient = ctx.createRadialGradient(
-        point.x, point.y, 0,
-        point.x, point.y, radius
-      );
+      canvas = document.createElement('canvas');
+      ctx = canvas.getContext('2d');
+      if (!ctx) return;
       
-      const alpha = Math.min(0.7, intensity);
-      gradient.addColorStop(0, `rgba(59, 130, 246, ${alpha})`); // Blue center
-      gradient.addColorStop(0.4, `rgba(147, 197, 253, ${alpha * 0.7})`); // Light blue
-      gradient.addColorStop(0.8, `rgba(219, 234, 254, ${alpha * 0.3})`); // Very light blue
-      gradient.addColorStop(1, 'rgba(219, 234, 254, 0)'); // Transparent
-      
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-      ctx.fill();
-    });
+      canvas.width = size.x;
+      canvas.height = size.y;
+      canvas.style.position = 'absolute';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '400';
+      canvas.style.opacity = '0.6';
 
-    mapContainer.appendChild(canvas);
-
-    const updateHeatmap = () => {
-      const newSize = map.getSize();
-      canvas.width = newSize.x;
-      canvas.height = newSize.y;
-      
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      projects.forEach(project => {
-        const point = map.latLngToContainerPoint([project.lat, project.lng]);
-        const intensity = (project.beneficiaries / 20000) * (project.impactScore / 100);
-        const radius = Math.max(30, Math.min(80, project.coverage * 2));
+      const drawHeatmap = () => {
+        if (!ctx || !canvas) return;
         
-        const gradient = ctx.createRadialGradient(
-          point.x, point.y, 0,
-          point.x, point.y, radius
-        );
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        const alpha = Math.min(0.7, intensity);
-        gradient.addColorStop(0, `rgba(59, 130, 246, ${alpha})`);
-        gradient.addColorStop(0.4, `rgba(147, 197, 253, ${alpha * 0.7})`);
-        gradient.addColorStop(0.8, `rgba(219, 234, 254, ${alpha * 0.3})`);
-        gradient.addColorStop(1, 'rgba(219, 234, 254, 0)');
+        // Create heatmap based on beneficiaries and impact
+        projects.forEach(project => {
+          try {
+            const point = map.latLngToContainerPoint([project.lat, project.lng]);
+            const intensity = (project.beneficiaries / 20000) * (project.impactScore / 100);
+            const radius = Math.max(30, Math.min(80, project.coverage * 2));
+            
+            if (!ctx) return;
+            
+            const gradient = ctx.createRadialGradient(
+              point.x, point.y, 0,
+              point.x, point.y, radius
+            );
+            
+            const alpha = Math.min(0.7, intensity);
+            gradient.addColorStop(0, `rgba(59, 130, 246, ${alpha})`); // Blue center
+            gradient.addColorStop(0.4, `rgba(147, 197, 253, ${alpha * 0.7})`); // Light blue
+            gradient.addColorStop(0.8, `rgba(219, 234, 254, ${alpha * 0.3})`); // Very light blue
+            gradient.addColorStop(1, 'rgba(219, 234, 254, 0)'); // Transparent
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+          } catch (error) {
+            console.warn('Error drawing heatmap point:', error);
+          }
+        });
+      };
+
+      // Initial draw
+      drawHeatmap();
+      mapContainer.appendChild(canvas);
+
+      const updateHeatmap = () => {
+        if (!canvas || !ctx) return;
         
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    };
+        try {
+          const newSize = map.getSize();
+          canvas.width = newSize.x;
+          canvas.height = newSize.y;
+          drawHeatmap();
+        } catch (error) {
+          console.warn('Error updating heatmap:', error);
+        }
+      };
 
-    map.on('zoom', updateHeatmap);
-    map.on('move', updateHeatmap);
+      map.on('zoom', updateHeatmap);
+      map.on('move', updateHeatmap);
 
-    return () => {
-      map.off('zoom', updateHeatmap);
-      map.off('move', updateHeatmap);
-      if (mapContainer.contains(canvas)) {
-        mapContainer.removeChild(canvas);
-      }
-    };
+      return () => {
+        try {
+          map.off('zoom', updateHeatmap);
+          map.off('move', updateHeatmap);
+          if (canvas && mapContainer && mapContainer.contains(canvas)) {
+            mapContainer.removeChild(canvas);
+          }
+        } catch (error) {
+          console.warn('Error cleaning up heatmap:', error);
+        }
+      };
+    } catch (error) {
+      console.warn('Error initializing heatmap:', error);
+      return;
+    }
   }, [map, projects, show]);
 
   return null;
@@ -333,57 +337,101 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
   );
 }
 
-// Component to fit map bounds to projects
+// Component to fit map bounds to projects with robust error handling
 function MapBounds({ projects }: { projects: ProjectLocation[] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (projects.length > 0) {
-      const bounds = new LatLngBounds(
-        projects.map(project => [project.lat, project.lng])
-      );
-      // Add padding and ensure minimum zoom level
-      map.fitBounds(bounds, { 
-        padding: [50, 50],
-        maxZoom: 10 
-      });
-    } else {
-      // Default to Nigeria if no projects
-      map.setView([9.0820, 8.6753], 6);
+    if (!map) return;
+
+    try {
+      if (projects.length > 0) {
+        const validProjects = projects.filter(p => 
+          p.lat && p.lng && 
+          !isNaN(p.lat) && !isNaN(p.lng) &&
+          p.lat >= -90 && p.lat <= 90 &&
+          p.lng >= -180 && p.lng <= 180
+        );
+
+        if (validProjects.length > 0) {
+          const bounds = new LatLngBounds(
+            validProjects.map(project => [project.lat, project.lng])
+          );
+          // Add padding and ensure minimum zoom level
+          map.fitBounds(bounds, { 
+            padding: [50, 50],
+            maxZoom: 10 
+          });
+        } else {
+          // Default to Nigeria if no valid projects
+          map.setView([9.0820, 8.6753], 6);
+        }
+      } else {
+        // Default to Nigeria if no projects
+        map.setView([9.0820, 8.6753], 6);
+      }
+    } catch (error) {
+      console.warn('Error setting map bounds:', error);
+      // Fallback to default view
+      try {
+        map.setView([9.0820, 8.6753], 6);
+      } catch (fallbackError) {
+        console.error('Error setting fallback map view:', fallbackError);
+      }
     }
   }, [projects, map]);
 
   return null;
 }
 
-// Enhanced zoom controls
+// Enhanced zoom controls with error handling
 function CustomZoomControls() {
   const map = useMap();
 
-  const handleZoomIn = () => map.zoomIn();
-  const handleZoomOut = () => map.zoomOut();
-  const handleZoomToFit = () => {
-    map.setView([9.0820, 8.6753], 6);
+  const handleZoomIn = () => {
+    try {
+      if (map) map.zoomIn();
+    } catch (error) {
+      console.warn('Error zooming in:', error);
+    }
   };
+
+  const handleZoomOut = () => {
+    try {
+      if (map) map.zoomOut();
+    } catch (error) {
+      console.warn('Error zooming out:', error);
+    }
+  };
+
+  const handleZoomToFit = () => {
+    try {
+      if (map) map.setView([9.0820, 8.6753], 6);
+    } catch (error) {
+      console.warn('Error resetting view:', error);
+    }
+  };
+
+  if (!map) return null;
 
   return (
     <div className="absolute top-20 left-4 z-[1000] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
       <button 
-        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
+        className="w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
         onClick={handleZoomIn}
         title="Zoom in"
       >
         +
       </button>
       <button 
-        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
+        className="w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
         onClick={handleZoomOut}
         title="Zoom out"
       >
         −
       </button>
       <button 
-        className="block w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 flex items-center justify-center text-xs font-medium transition-colors"
+        className="w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 flex items-center justify-center text-xs font-medium transition-colors"
         onClick={handleZoomToFit}
         title="Reset view"
       >
@@ -393,6 +441,7 @@ function CustomZoomControls() {
   );
 }
 
+// Main Interactive Map Component
 export default function InteractiveMap({
   projects,
   selectedProject,
@@ -405,6 +454,19 @@ export default function InteractiveMap({
   // Default center (Nigeria)
   const defaultCenter: [number, number] = [9.0820, 8.6753];
   const defaultZoom = 6;
+
+  // Filter out invalid projects
+  const validProjects = projects.filter(project => 
+    project && 
+    project.lat && 
+    project.lng && 
+    !isNaN(project.lat) && 
+    !isNaN(project.lng) &&
+    project.lat >= -90 && 
+    project.lat <= 90 &&
+    project.lng >= -180 && 
+    project.lng <= 180
+  );
 
   return (
     <div className="w-full h-full relative">
@@ -419,6 +481,10 @@ export default function InteractiveMap({
         doubleClickZoom={true}
         touchZoom={true}
         style={{ height: '100%', width: '100%' }}
+        // whenCreated={(map) => {
+        //   // Map is fully initialized
+        //   console.log('Map initialized successfully');
+        // }}
       >
         {/* Enhanced tile layer */}
         <TileLayer
@@ -428,11 +494,13 @@ export default function InteractiveMap({
           minZoom={2}
         />
         
-        {/* Heatmap Layer */}
-        {showHeatmap && <HeatmapLayer projects={projects} show={showHeatmap} />}
+        {/* Heatmap Layer - only render if we have valid projects */}
+        {showHeatmap && validProjects.length > 0 && (
+          <HeatmapLayer projects={validProjects} show={showHeatmap} />
+        )}
         
-        {/* Project Markers */}
-        {projects.map((project) => (
+        {/* Project Markers - only render valid projects */}
+        {validProjects.map((project) => (
           <ProjectMarker
             key={project.id}
             project={project}
@@ -442,19 +510,20 @@ export default function InteractiveMap({
           />
         ))}
 
-        {/* Custom zoom controls - MOVED INSIDE MapContainer */}
+        {/* Custom zoom controls */}
         <CustomZoomControls />
 
-        <MapBounds projects={projects} />
+        {/* Map bounds - use valid projects */}
+        <MapBounds projects={validProjects} />
       </MapContainer>
       
-      {/* Enhanced Map Stats - OUTSIDE MapContainer */}
+      {/* Enhanced Map Stats */}
       <div className="absolute bottom-4 left-4 z-[1000]">
         <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 max-w-sm">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-semibold text-gray-900 text-sm">Project Overview</h4>
             <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-              {projects.length} total
+              {validProjects.length} total
             </span>
           </div>
           
@@ -468,7 +537,7 @@ export default function InteractiveMap({
               { sector: 'Finance', color: '#0891b2', icon: '💰' },
               { sector: 'Infrastructure', color: '#4338ca', icon: '🏗️' }
             ].map(({ sector, color, icon }) => {
-              const count = projects.filter(p => p.sector === sector).length;
+              const count = validProjects.filter(p => p.sector === sector).length;
               if (count === 0) return null;
               
               return (
@@ -492,11 +561,11 @@ export default function InteractiveMap({
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-gray-600">Active: {projects.filter(p => p.status === 'active').length}</span>
+                <span className="text-gray-600">Active: {validProjects.filter(p => p.status === 'active').length}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-blue-400 rounded-full" />
-                <span className="text-gray-600">Completed: {projects.filter(p => p.status === 'completed').length}</span>
+                <span className="text-gray-600">Completed: {validProjects.filter(p => p.status === 'completed').length}</span>
               </div>
             </div>
           </div>
@@ -520,10 +589,22 @@ export default function InteractiveMap({
               </div>
             </div>
           )}
+
+          {/* Data quality indicator */}
+          {projects.length !== validProjects.length && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-yellow-400 rounded-full" />
+                <span className="text-xs text-gray-600">
+                  {projects.length - validProjects.length} invalid coordinates filtered
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Scale bar - OUTSIDE MapContainer */}
+      {/* Scale bar */}
       <div className="absolute bottom-4 right-4 z-[1000]">
         <div className="bg-white bg-opacity-90 px-3 py-2 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center space-x-2">
@@ -535,13 +616,20 @@ export default function InteractiveMap({
         </div>
       </div>
 
-      {/* Empty state - OUTSIDE MapContainer */}
-      {projects.length === 0 && (
+      {/* Empty state */}
+      {validProjects.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white bg-opacity-90">
           <div className="text-center p-8">
             <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Data Points</h3>
-            <p className="text-gray-500 mb-4">Import CSV data or load sample data to get started</p>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">
+              {projects.length > 0 ? 'No Valid Data Points' : 'No Data Points'}
+            </h3>
+            <p className="text-gray-500 mb-4">
+              {projects.length > 0 
+                ? 'All data points have invalid coordinates. Please check your CSV format.'
+                : 'Import CSV data or load sample data to get started'
+              }
+            </p>
             <div className="space-x-3">
               <button 
                 onClick={() => window.dispatchEvent(new CustomEvent('load-sample-data'))}

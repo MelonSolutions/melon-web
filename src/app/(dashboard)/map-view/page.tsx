@@ -266,13 +266,13 @@ export default function MapViewPage() {
             <div className="flex items-center gap-2 border-r border-gray-300 pr-3">
               <button
                 onClick={loadSampleData}
-                className="px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                className="cursor-pointer px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 Load Sample
               </button>
               <button
                 onClick={clearAllData}
-                className="px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
+                className="cursor-pointer px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
               >
                 <Trash2 className="w-4 h-4" />
                 Clear All
@@ -301,7 +301,7 @@ export default function MapViewPage() {
             </div>
 
             {/* Metric Selector */}
-            {availableMetrics.length > 0 && (
+            {/* {availableMetrics.length > 0 && (
               <select
                 value={selectedMetric}
                 onChange={(e) => setSelectedMetric(e.target.value)}
@@ -314,34 +314,34 @@ export default function MapViewPage() {
                   </option>
                 ))}
               </select>
-            )}
+            )} */}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1 border-l border-gray-300 pl-3 ml-3">
               <button
                 onClick={refreshData}
-                className="p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Refresh Data"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Toggle Fullscreen"
               >
                 <Maximize2 className="w-4 h-4" />
               </button>
               <button
                 onClick={handleShare}
-                className="p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Share Map"
               >
                 <Share2 className="w-4 h-4" />
               </button>
               <button
                 onClick={handleExport}
-                className="p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Export Data"
               >
                 <Download className="w-4 h-4" />
