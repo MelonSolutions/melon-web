@@ -249,19 +249,16 @@ export default function MapViewPage() {
 
   return (
     <div className={`${isFullscreen ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col bg-white`}>
-      {/* Enhanced Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 shadow-sm">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <MapPin className="w-6 h-6 text-blue-600" />
+              <h1 className="text-2xl font-semibold text-gray-900">
                 Geospatial Intelligence
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Interactive data exploration and analysis • {allProjects.length} data points
+                <p className="text-sm text-gray-500 mt-1">
+                Interactive data exploration and analysis
               </p>
-            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -319,19 +316,6 @@ export default function MapViewPage() {
               </select>
             )}
 
-            {/* Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                showFilters 
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200' 
-                  : 'text-gray-700 hover:bg-gray-100 border border-gray-300'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              Filters
-            </button>
-
             {/* Action Buttons */}
             <div className="flex items-center gap-1 border-l border-gray-300 pl-3 ml-3">
               <button
@@ -365,142 +349,6 @@ export default function MapViewPage() {
             </div>
           </div>
         </div>
-
-        {/* Enhanced Filters Panel */}
-        {showFilters && (
-          <div className="mt-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {/* Source Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Data Sources
-                </label>
-                <div className="space-y-3">
-                  {['reports', 'imports', 'external'].map(source => (
-                    <label key={source} className="flex items-center group cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.sources?.includes(source) || false}
-                        onChange={(e) => {
-                          const newSources = e.target.checked
-                            ? [...(filters.sources || []), source]
-                            : (filters.sources || []).filter(s => s !== source);
-                          setFilters(prev => ({ ...prev, sources: newSources }));
-                        }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-                      />
-                      <span className="ml-3 text-sm text-gray-700 capitalize font-medium group-hover:text-gray-900">
-                        {source}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Region Filter */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Search Regions
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search regions..."
-                  value={filters.search || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              {/* Display Options */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Display Options
-                </label>
-                <div className="space-y-3">
-                  <label className="flex items-center group cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showCoverage}
-                      onChange={(e) => setShowCoverage(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-                    />
-                    <span className="ml-3 text-sm text-gray-700 font-medium group-hover:text-gray-900">
-                      Show Coverage Areas
-                    </span>
-                  </label>
-                  <label className="flex items-center group cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showHeatmap}
-                      onChange={(e) => setShowHeatmap(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-                    />
-                    <span className="ml-3 text-sm text-gray-700 font-medium group-hover:text-gray-900">
-                      Show Heatmap
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Quick Stats
-                </label>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center p-2 bg-white rounded-lg">
-                    <span className="text-sm text-gray-600">Data Points</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      {allProjects.length.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-white rounded-lg">
-                    <span className="text-sm text-gray-600">Active Projects</span>
-                    <span className="text-sm font-semibold text-green-600">
-                      {allProjects.filter(p => p.status === 'active').length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-white rounded-lg">
-                    <span className="text-sm text-gray-600">Datasets</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      {importedDatasets.length + 1}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Imported Datasets */}
-            {importedDatasets.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-700">Imported Datasets</h3>
-                  <span className="text-xs text-gray-500">{importedDatasets.length} dataset(s)</span>
-                </div>
-                <div className="space-y-2">
-                  {importedDatasets.map((dataset) => (
-                    <div key={dataset.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                      <div className="flex items-center space-x-3">
-                        <BarChart3 className="w-4 h-4 text-blue-600" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{dataset.name}</div>
-                          <div className="text-xs text-gray-500">{dataset.rowCount} points • {new Date(dataset.uploadedAt).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => removeDataset(dataset.id)}
-                        className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
-                        title="Remove dataset"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Main Content - Full Width Map */}
@@ -535,11 +383,11 @@ export default function MapViewPage() {
             onImportClick={() => setShowImportModal(true)}
           />
 
-          {/* Map Legend */}
+          {/* Map Legend
           <MapLegend 
             layers={[]}
             selectedMetric={selectedMetric}
-          />
+          /> */}
 
           {/* Loading Overlay */}
           {loading && (

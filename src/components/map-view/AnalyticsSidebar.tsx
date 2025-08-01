@@ -99,28 +99,28 @@ export function AnalyticsSidebar({ filters, layers, onRegionClick }: AnalyticsSi
             <div className="p-4 bg-gray-50">
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-sm font-semibold text-gray-700">
                     {analytics.countries}
                   </div>
-                  <div className="text-sm text-gray-500">Countries</div>
+                  <div className="text-sm text-gray-900 font-medium">Countries</div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-sm font-semibold text-gray-700">
                     {analytics.regionCount}
                   </div>
-                  <div className="text-sm text-gray-500">Regions</div>
+                  <div className="text-sm text-gray-900 font-medium">Regions</div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-sm font-semibold text-gray-700">
                     {(analytics.coverage / 1000).toFixed(1)}K
                   </div>
-                  <div className="text-sm text-gray-500">km² Coverage</div>
+                  <div className="text-sm text-gray-900 font-medium">km² Coverage</div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-sm font-semibold text-gray-700">
                     {analytics.dataQuality}%
                   </div>
-                  <div className="text-sm text-gray-500">Data Quality</div>
+                  <div className="text-sm text-gray-900 font-medium">Data Quality</div>
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ export function AnalyticsSidebar({ filters, layers, onRegionClick }: AnalyticsSi
         </div>
 
         {/* Regional Breakdown */}
-        <div className="border-b border-gray-200">
+        <div className="cursor-pointer border-b border-gray-200">
           <SectionHeader 
             id="regions" 
             title="Regional Breakdown" 
