@@ -78,7 +78,7 @@ function ReportsContent() {
         </div>
         <Link
           href="/reports/create"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8]transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Report

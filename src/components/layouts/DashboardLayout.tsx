@@ -327,21 +327,23 @@ export default function DashboardLayout({
                 </div>
               </div>
             </div>
-          </header>
-        
-        <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none">
-          {isMapView ? (
-            <div className="h-full">
-              {children}
-            </div>
-          ) : (
-            <div className="py-6">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                {children}
-              </div>
-            </div>
-          )}
-        </main>
+          </header>  
+            <main className={cn(
+              "flex-1 relative z-0 focus:outline-none",
+              isMapView ? "overflow-hidden" : "overflow-y-auto"
+            )}>
+              {isMapView ? (
+                <div className="h-full overflow-hidden">
+                  {children}
+                </div>
+              ) : (
+                <div className="py-6">
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                    {children}
+                  </div>
+                </div>
+              )}
+            </main>
       </div>
     </div>
   );
