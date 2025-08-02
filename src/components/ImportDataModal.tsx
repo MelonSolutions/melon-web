@@ -23,6 +23,10 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
     headers: string[];
     rows: string[][];
   } | null>(null);
+  const [fullData, setFullData] = useState<{
+    headers: string[];
+    rows: string[][];
+  } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,11 +59,11 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
       const reader = new FileReader();
       reader.onload = (event) => {
         const text = event.target?.result as string;
-        const lines = text.split('\n').slice(0, 6).filter(line => line.trim());
-        if (lines.length === 0) return;
+        const allLines = text.split('\n').filter(line => line.trim());
+        if (allLines.length === 0) return;
         
-        const delimiter = lines[0].includes('\t') ? '\t' : ',';
-        const headers = lines[0].split(delimiter).map((h, index) => {
+        const delimiter = allLines[0].includes('\t') ? '\t' : ',';
+        const headers = allLines[0].split(delimiter).map((h, index) => {
           const cleaned = h.trim().replace(/"/g, '');
           return cleaned || `Column_${index + 1}`;
         });
@@ -69,11 +73,15 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
           return duplicateCount > 0 ? `${header}_${duplicateCount + 1}` : header;
         });
         
-        const rows = lines.slice(1).map(line => 
+        const allRows = allLines.slice(1).map(line => 
           line.split(delimiter).map(cell => cell.trim().replace(/"/g, ''))
         ).filter(row => row.length > 1 && row.some(cell => cell.trim()));
         
-        setCsvPreview({ headers: uniqueHeaders, rows });
+        setFullData({ headers: uniqueHeaders, rows: allRows });
+        
+        // Only show first 5 rows for preview
+        const previewRows = allRows.slice(0, 5);
+        setCsvPreview({ headers: uniqueHeaders, rows: previewRows });
         
         // Auto-detect mappings
         const detectedMappings = { ...mappings };
@@ -85,7 +93,7 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
           } else if (lower.includes('lng') || lower.includes('lon') || lower === 'longitude') {
             detectedMappings.longitude = header;
           } else if (lower.includes('geometry') || lower.includes('point')) {
-            const sampleValue = rows[0] && rows[0][index];
+            const sampleValue = allRows[0] && allRows[0][index];
             if (sampleValue && sampleValue.includes('POINT')) {
               detectedMappings.latitude = header + '_lat';
               detectedMappings.longitude = header + '_lng';
@@ -132,17 +140,17 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
   };
 
   const handleImport = async () => {
-    if (!file || !mappings.latitude || !mappings.longitude || !csvPreview) return;
+    if (!file || !mappings.latitude || !mappings.longitude || !fullData) return;
     
     setIsProcessing(true);
     
     try {
-      const processedData = csvPreview.rows.map((row, index) => {
+      const processedData = fullData.rows.map((row, index) => {
         let lat, lng;
         
         if (mappings.latitude.includes('_lat') && mappings.longitude.includes('_lng')) {
           const geometryColumnName = mappings.latitude.replace('_lat', '');
-          const geometryIndex = csvPreview.headers.indexOf(geometryColumnName);
+          const geometryIndex = fullData.headers.indexOf(geometryColumnName);
           
           if (geometryIndex >= 0) {
             const geometryValue = row[geometryIndex];
@@ -156,8 +164,8 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
             }
           }
         } else {
-          const latIndex = csvPreview.headers.indexOf(mappings.latitude);
-          const lngIndex = csvPreview.headers.indexOf(mappings.longitude);
+          const latIndex = fullData.headers.indexOf(mappings.latitude);
+          const lngIndex = fullData.headers.indexOf(mappings.longitude);
           
           if (latIndex >= 0 && lngIndex >= 0) {
             lat = parseFloat(row[latIndex]);
@@ -169,13 +177,13 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
           return null;
         }
 
-        const labelIndex = mappings.label ? csvPreview.headers.indexOf(mappings.label) : -1;
-        const regionIndex = mappings.region ? csvPreview.headers.indexOf(mappings.region) : -1;
+        const labelIndex = mappings.label ? fullData.headers.indexOf(mappings.label) : -1;
+        const regionIndex = mappings.region ? fullData.headers.indexOf(mappings.region) : -1;
 
         const label = labelIndex >= 0 ? row[labelIndex] : `Point ${index + 1}`;
         const region = regionIndex >= 0 ? row[regionIndex] : 'Unknown';
 
-        const malariaIncidenceIndex = csvPreview.headers.findIndex(h => 
+        const malariaIncidenceIndex = fullData.headers.findIndex(h => 
           h.toLowerCase().includes('incidence') || h.toLowerCase().includes('malaria')
         );
         
@@ -215,7 +223,7 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
         rowCount: processedData.length,
         geoColumnMappings: mappings,
         data: processedData,
-        availableMetrics: csvPreview.headers.filter(h => 
+        availableMetrics: fullData.headers.filter(h => 
           !Object.values(mappings).includes(h)
         )
       };
@@ -237,6 +245,7 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
     setImportName('');
     setMappings({ latitude: '', longitude: '', label: '', region: '' });
     setCsvPreview(null);
+    setFullData(null);
     setIsProcessing(false);
     setIsDragOver(false);
   };
@@ -352,7 +361,7 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
             </div>
           )}
 
-          {csvPreview && (
+          {csvPreview && fullData && (
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-700 mb-3">Column Mappings</h4>
               <div className="grid grid-cols-2 gap-4">
@@ -429,7 +438,7 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
                 {mappings.latitude && mappings.longitude ? (
                   <div className="flex items-center text-green-600 text-sm">
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Ready to import {csvPreview.rows.length} rows
+                    Ready to import {fullData.rows.length} rows (showing preview of {csvPreview.rows.length})
                   </div>
                 ) : (
                   <div className="flex items-center text-amber-600 text-sm">
@@ -440,7 +449,7 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
               </div>
 
               <div className="mt-4">
-                <h5 className="text-sm font-medium text-gray-700 mb-2">Data Preview</h5>
+                <h5 className="text-sm font-medium text-gray-700 mb-2">Data Preview (First 3 rows of {fullData.rows.length} total)</h5>
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <div className="overflow-x-auto max-h-32">
                     <table className="min-w-full text-xs">
@@ -483,10 +492,10 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
 
         <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
           <div className="text-sm text-gray-500">
-            {csvPreview && (
+            {fullData && (
               <>
-                {csvPreview.rows.length} rows detected
-                {mappings.latitude && mappings.longitude && ' • Ready to import'}
+                {fullData.rows.length} total rows detected
+                {mappings.latitude && mappings.longitude && ' • Ready to import all data'}
               </>
             )}
           </div>
@@ -511,7 +520,7 @@ export function ImportDataModal({ isOpen, onClose, onImport }: ImportDataModalPr
               ) : (
                 <>
                   <Upload className="w-4 h-4 mr-2" />
-                  Import Data
+                  Import All {fullData?.rows.length || 0} Rows
                 </>
               )}
             </button>
