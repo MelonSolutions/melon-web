@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
 import { LatLngBounds, Icon, DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ProjectLocation } from '@/types/geospatial';
 import { MapPin } from 'lucide-react';
+import { TerrainSelector } from './TerrainSelector';
+import { MAP_TILE_LAYERS } from '@/types/map';
 
 // Fix for default markers in Next.js
 delete (Icon.Default.prototype as any)._getIconUrl;
@@ -345,6 +347,12 @@ export default function InteractiveMap({
   onOpenImportModal
 }: InteractiveMapProps) {
   const mapRef = useRef<any>(null);
+  const [currentTerrain, setCurrentTerrain] = useState('streets');
+  
+  // Get current tile layer configuration
+  const currentTileLayer = Object.values(MAP_TILE_LAYERS).find(
+    layer => layer.id === currentTerrain
+  ) || MAP_TILE_LAYERS.STREETS;
 
   // Default center (Nigeria)
   const defaultCenter: [number, number] = [9.0820, 8.6753];
@@ -376,12 +384,13 @@ export default function InteractiveMap({
         touchZoom={true}
         style={{ height: '100%', width: '100%' }}
       >
+        {/* FIXED: Dynamic TileLayer that changes based on terrain selection */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          maxZoom={18}
+          key={currentTerrain} // This forces re-render when terrain changes
+          url={currentTileLayer.url}
+          attribution={currentTileLayer.attribution}
+          maxZoom={currentTileLayer.maxZoom}
           minZoom={2}
-          
         />
         
         {showHeatmap && validProjects.length > 0 && (
@@ -399,10 +408,13 @@ export default function InteractiveMap({
         ))}
 
         <CustomZoomControls />
-
         <MapBounds projects={validProjects} />
       </MapContainer>
       
+      <TerrainSelector
+        currentTerrain={currentTerrain}
+        onTerrainChange={setCurrentTerrain}
+      />
       
       {/* Scale bar */}
       <div className="absolute bottom-4 right-4 z-[1000]">
@@ -416,43 +428,43 @@ export default function InteractiveMap({
         </div>
       </div>
 
-        {/* Empty State */}
-        {validProjects.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white bg-opacity-95">
-            <div className="text-center max-w-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {projects.length > 0 ? 'Invalid Data Points' : 'No Data Points'}
-              </h3>
-              
-              <p className="text-sm text-gray-600 mb-6">
-                {projects.length > 0 
-                  ? 'All data points have invalid coordinates. Please check your CSV format.'
-                  : 'Import CSV data or load sample data to get started.'
-                }
-              </p>
+      {/* Empty State */}
+      {validProjects.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white bg-opacity-95">
+          <div className="text-center max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {projects.length > 0 ? 'Invalid Data Points' : 'No Data Points'}
+            </h3>
+            
+            <p className="text-sm text-gray-600 mb-6">
+              {projects.length > 0 
+                ? 'All data points have invalid coordinates. Please check your CSV format.'
+                : 'Import CSV data or load sample data to get started.'
+              }
+            </p>
 
-              <div className="flex gap-3 justify-center">
-                {onLoadSampleData && (
-                  <button 
-                    onClick={onLoadSampleData}
-                    className="cursor-pointer px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
-                  >
-                    Load Sample Data
-                  </button>
-                )}
-                
-                {onOpenImportModal && (
-                  <button 
-                    onClick={onOpenImportModal}
-                    className="cursor-pointer px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Import CSV
-                  </button>
-                )}
-              </div>
+            <div className="flex gap-3 justify-center">
+              {onLoadSampleData && (
+                <button 
+                  onClick={onLoadSampleData}
+                  className="cursor-pointer px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
+                >
+                  Load Sample Data
+                </button>
+              )}
+              
+              {onOpenImportModal && (
+                <button 
+                  onClick={onOpenImportModal}
+                  className="cursor-pointer px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Import CSV
+                </button>
+              )}
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }
