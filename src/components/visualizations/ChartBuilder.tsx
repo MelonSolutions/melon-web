@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,6 +34,17 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
     filters: []
   });
 
+  // Helper function to get the correct ID field
+  const getDataSourceId = (dataSource: any): string => {
+    return dataSource.id || dataSource._id || '';
+  };
+
+  // Normalize data sources to ensure they have an 'id' field
+  const normalizedDataSources = dataSources.map(ds => ({
+    ...ds,
+    id: getDataSourceId(ds)
+  }));
+
   useEffect(() => {
     if (selectedDataSource && chartConfig.type && chartConfig.xAxis) {
       generatePreviewData();
@@ -44,7 +54,6 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
   const generatePreviewData = () => {
     if (!selectedDataSource || !chartConfig.xAxis) return;
 
-    // Mock data generation for preview
     const mockData = Array.from({ length: 5 }, (_, i) => ({
       [chartConfig.xAxis!]: `Category ${i + 1}`,
       [chartConfig.yAxis || 'count']: Math.floor(Math.random() * 100) + 10
@@ -60,18 +69,36 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
     }));
   };
 
+  const handleDataSourceChange = (selectedId: string) => {
+    if (!selectedId) {
+      setSelectedDataSource(null);
+      return;
+    }
+
+    const foundDataSource = normalizedDataSources.find(ds => ds.id === selectedId);
+    setSelectedDataSource(foundDataSource || null);
+
+    if (foundDataSource) {
+      setChartConfig(prev => ({
+        ...prev,
+        dataSourceId: foundDataSource.id,
+        xAxis: undefined,
+        yAxis: undefined,
+        groupBy: undefined,
+      }));
+    }
+  };
+
   const canCreateChart = selectedDataSource && chartConfig.type && chartConfig.xAxis;
 
-  if (dataSources.length === 0) {
+  if (normalizedDataSources.length === 0) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Configuration Panel */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-6">Chart Configuration</h3>
           <p className="text-sm text-gray-500">Configure your visualization settings</p>
         </div>
 
-        {/* Empty State */}
         <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
           <div className="text-center py-16">
             <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-6">
@@ -87,35 +114,29 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Configuration Panel */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-6">Chart Configuration</h3>
         <p className="text-sm text-gray-500 mb-6">Configure your visualization settings</p>
 
         <div className="space-y-6">
-          {/* Data Source Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Data Source
             </label>
             <select
               value={selectedDataSource?.id || ''}
-              onChange={(e) => {
-                const ds = dataSources.find(d => d.id === e.target.value);
-                setSelectedDataSource(ds || null);
-              }}
+              onChange={(e) => handleDataSourceChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-colors"
             >
               <option value="">Select data source</option>
-              {dataSources.map((ds) => (
-                <option key={ds.id} value={ds.id}>
-                  {ds.name}
+              {normalizedDataSources.map((ds, index) => (
+                <option key={ds.id || `ds-${index}`} value={ds.id}>
+                  {ds.name} ({ds.rowCount || 0} rows)
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Chart Type Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Chart Type
@@ -133,10 +154,8 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
             </select>
           </div>
 
-          {/* Axis Configuration */}
-          {selectedDataSource && (
+          {selectedDataSource && selectedDataSource.columns && (
             <>
-              {/* X Axis */}
               {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('x') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -148,16 +167,15 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-colors"
                   >
                     <option value="">Select column</option>
-                    {selectedDataSource.columns.map((col) => (
-                      <option key={col.name} value={col.name}>
-                        {col.name}
+                    {selectedDataSource.columns.map((col, index) => (
+                      <option key={col.name || `col-${index}`} value={col.name}>
+                        {col.name} ({col.type})
                       </option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {/* Y Axis */}
               {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('y') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -171,16 +189,15 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
                     <option value="">Select column</option>
                     {selectedDataSource.columns
                       .filter(col => col.type === 'number')
-                      .map((col) => (
-                        <option key={col.name} value={col.name}>
-                          {col.name}
+                      .map((col, index) => (
+                        <option key={col.name || `num-col-${index}`} value={col.name}>
+                          {col.name} ({col.type})
                         </option>
                       ))}
                   </select>
                 </div>
               )}
 
-              {/* Group By */}
               {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('groupBy') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -192,16 +209,15 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-gray-900 transition-colors"
                   >
                     <option value="">Select column</option>
-                    {selectedDataSource.columns.map((col) => (
-                      <option key={col.name} value={col.name}>
-                        {col.name}
+                    {selectedDataSource.columns.map((col, index) => (
+                      <option key={col.name || `group-col-${index}`} value={col.name}>
+                        {col.name} ({col.type})
                       </option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {/* Aggregation */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Aggregation
@@ -223,7 +239,6 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
         </div>
       </div>
 
-      {/* Chart Preview */}
       <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>

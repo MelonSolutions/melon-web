@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreHorizontal, Edit, Eye, Share2, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Eye, Share2, Trash2, Copy } from 'lucide-react';
 import { ChartConfig, CHART_TYPES } from '@/types/visualization';
 import { formatDistanceToNow } from 'date-fns';
 import { ChartPreview } from './ChartPreview';
@@ -21,7 +21,8 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
   const getChartTypeInfo = (type: string) => {
     return CHART_TYPES[type as keyof typeof CHART_TYPES] || {
       name: 'Unknown',
-      description: 'Chart type'
+      description: 'Chart type',
+      requiredAxes: []
     };
   };
 
@@ -138,6 +139,13 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
                             Edit
                           </button>
                           <button
+                            onClick={() => handleAction('duplicate', chart)}
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Duplicate
+                          </button>
+                          <button
                             onClick={() => handleAction('share', chart)}
                             className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
                           >
@@ -165,7 +173,7 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
 
       {/* Preview Modal */}
       {previewChart && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>

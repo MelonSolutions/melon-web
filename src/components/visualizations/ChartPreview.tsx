@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 'use client';
 
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ChartConfig } from '@/types/visualization';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Loader } from 'lucide-react';
 
 interface ChartPreviewProps {
   config: ChartConfig;
   data: any[];
   isEmpty: boolean;
+  loading?: boolean;
 }
 
-export function ChartPreview({ config, data, isEmpty }: ChartPreviewProps) {
-  // Mock data for demonstration when empty
+export function ChartPreview({ config, data, isEmpty, loading = false }: ChartPreviewProps) {
   const mockData = [
     { name: 'North', value: 45, region: 'North', score: 4.2 },
     { name: 'South', value: 32, region: 'South', score: 3.8 },
@@ -31,7 +30,18 @@ export function ChartPreview({ config, data, isEmpty }: ChartPreviewProps) {
         <div className="text-center">
           <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Chart Preview</h3>
-          <p className="text-gray-500">Configure your settings and click &rdquo;Generate&rdquo; to create your visualization</p>
+          <p className="text-gray-500">Configure your settings to create your visualization</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="h-96 flex items-center justify-center bg-gray-50 rounded-lg">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-4" />
+          <p className="text-sm text-gray-600">Generating chart...</p>
         </div>
       </div>
     );
@@ -48,17 +58,17 @@ export function ChartPreview({ config, data, isEmpty }: ChartPreviewProps) {
               {config.styling?.showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
               <XAxis 
                 dataKey={config.xAxis || 'name'} 
-                tick={{ fontSize: 12, fill: '#5B94E5' }}
-                axisLine={{ stroke: '#5B94E5' }}
+                tick={{ fontSize: 12, fill: '#6B7280' }}
+                axisLine={{ stroke: '#E5E7EB' }}
               />
               <YAxis 
-                tick={{ fontSize: 12, fill: '#5B94E5' }}
-                axisLine={{ stroke: '#5B94E5' }}
+                tick={{ fontSize: 12, fill: '#6B7280' }}
+                axisLine={{ stroke: '#E5E7EB' }}
               />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'white', 
-                  border: '1px solid #5B94E5',
+                  border: '1px solid #E5E7EB',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
@@ -234,6 +244,26 @@ export function ChartPreview({ config, data, isEmpty }: ChartPreviewProps) {
       
       <div className="bg-gray-50 rounded-lg p-4">
         {renderChart()}
+      </div>
+
+      {/* Chart Info */}
+      <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center gap-4">
+          <span>Type: {config.type?.charAt(0).toUpperCase() + config.type?.slice(1)}</span>
+          <span>Data points: {chartData.length}</span>
+          {config.aggregation && (
+            <span>Aggregation: {config.aggregation}</span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {config.styling?.showLegend && (
+            <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">Legend</span>
+          )}
+          {config.styling?.showGrid && (
+            <span className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs">Grid</span>
+          )}
+        </div>
       </div>
     </div>
   );

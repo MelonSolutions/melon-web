@@ -1,18 +1,29 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 
-import Link from 'next/link';
-import { BarChart3, Plus, Upload } from 'lucide-react';
+import { BarChart3, Plus, Upload, Database } from 'lucide-react';
 
 interface VisualizationEmptyProps {
-  activeTab: 'charts' | 'data-sources' | 'saved-charts';
+  activeTab: 'chart-builder' | 'data-sources' | 'saved-charts';
+  onImportData?: () => void;
+  onConnectReport?: () => void;
+  onCreateChart?: () => void;
+  onSwitchToChartBuilder?: () => void;
 }
 
-export function VisualizationEmpty({ activeTab }: VisualizationEmptyProps) {
+export function VisualizationEmpty({ 
+  activeTab, 
+  onImportData, 
+  onConnectReport, 
+  onCreateChart,
+  onSwitchToChartBuilder 
+}: VisualizationEmptyProps) {
   if (activeTab === 'data-sources') {
     return (
       <div className="text-center py-16">
         <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-6">
-          <Upload className="w-8 h-8 text-gray-400" />
+          <Database className="w-8 h-8 text-gray-400" />
         </div>
         
         <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -24,16 +35,20 @@ export function VisualizationEmpty({ activeTab }: VisualizationEmptyProps) {
         </p>
         
         <div className="flex items-center justify-center gap-3">
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">
+          <button 
+            onClick={onImportData}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
+          >
             <Upload className="w-4 h-4" />
             Import CSV Data
           </button>
-          <Link
-            href="/reports"
+          <button
+            onClick={onConnectReport}
             className="inline-flex items-center gap-2 px-4 py-2 text-[#5B94E5] bg-blue-50 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
           >
+            <Database className="w-4 h-4" />
             Connect Reports
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -54,7 +69,10 @@ export function VisualizationEmpty({ activeTab }: VisualizationEmptyProps) {
           Create your first chart in the Chart Builder to see it here.
         </p>
         
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors">
+        <button 
+          onClick={onSwitchToChartBuilder}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           Create Your First Chart
         </button>
@@ -78,16 +96,20 @@ export function VisualizationEmpty({ activeTab }: VisualizationEmptyProps) {
       </p>
       
       <div className="flex items-center justify-center gap-3">
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors">
+        <button 
+          onClick={onImportData}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+        >
           <Upload className="w-4 h-4" />
           Import Data
         </button>
-        <Link
-          href="/reports"
+        <button
+          onClick={onConnectReport}
           className="inline-flex items-center gap-2 px-4 py-2 text-[#5B94E5] bg-blue-50 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
         >
+          <Database className="w-4 h-4" />
           Use Report Data
-        </Link>
+        </button>
       </div>
     </div>
   );

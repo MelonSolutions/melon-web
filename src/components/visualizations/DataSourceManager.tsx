@@ -48,6 +48,22 @@ export function DataSourceManager({
     }
   };
 
+  const formatUploadDate = (uploadedAt: string | undefined) => {
+    if (!uploadedAt) {
+      return 'Recently';
+    }
+
+    try {
+      const date = new Date(uploadedAt);
+      if (isNaN(date.getTime())) {
+        return 'Recently';
+      }
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+      return 'Recently';
+    }
+  };
+
   if (dataSources.length === 0) {
     return (
       <div className="space-y-6">
@@ -86,7 +102,6 @@ export function DataSourceManager({
 
   return (
     <div className="space-y-6">
-      {/* Action Buttons */}
       <div className="flex items-center gap-3">
         <button
           onClick={onImport}
@@ -104,18 +119,17 @@ export function DataSourceManager({
         </button>
       </div>
 
-      {/* Data Sources List */}
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">Data Sources</h3>
         </div>
         
         <div className="divide-y divide-gray-200">
-          {dataSources.map((dataSource) => {
+          {dataSources.map((dataSource, index) => {
             const typeInfo = getTypeDisplay(dataSource.type);
             
             return (
-              <div key={dataSource.id} className="px-6 py-4 hover:bg-gray-50">
+              <div key={dataSource.id || `datasource-${index}`} className="px-6 py-4 hover:bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1">
                     <div className="flex-1 min-w-0">
@@ -132,11 +146,9 @@ export function DataSourceManager({
                       </div>
                       
                       <div className="flex items-center gap-6 text-sm text-gray-500">
-                        <span>{dataSource.rowCount.toLocaleString()} rows</span>
-                        <span>{dataSource.columns.length} columns</span>
-                        <span>
-                          Updated {formatDistanceToNow(new Date(dataSource.uploadedAt), { addSuffix: true })}
-                        </span>
+                        <span>{dataSource.rowCount?.toLocaleString() || '0'} rows</span>
+                        <span>{dataSource.columns?.length || 0} columns</span>
+                        <span>Updated {formatUploadDate(dataSource.uploadedAt)}</span>
                       </div>
                       
                       {dataSource.fileName && (
@@ -189,25 +201,26 @@ export function DataSourceManager({
                   </div>
                 </div>
 
-                {/* Column Preview */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex flex-wrap gap-2">
-                    {dataSource.columns.slice(0, 8).map((column) => (
-                      <span
-                        key={column.name}
-                        className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700"
-                      >
-                        {column.name}
-                        <span className="ml-1 text-gray-500">({column.type})</span>
-                      </span>
-                    ))}
-                    {dataSource.columns.length > 8 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-50 text-gray-500">
-                        +{dataSource.columns.length - 8} more
-                      </span>
-                    )}
+                {dataSource.columns && dataSource.columns.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex flex-wrap gap-2">
+                      {dataSource.columns.slice(0, 8).map((column, colIndex) => (
+                        <span
+                          key={column.name || `col-${colIndex}`}
+                          className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700"
+                        >
+                          {column.name}
+                          <span className="ml-1 text-gray-500">({column.type})</span>
+                        </span>
+                      ))}
+                      {dataSource.columns.length > 8 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-50 text-gray-500">
+                          +{dataSource.columns.length - 8} more
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })}

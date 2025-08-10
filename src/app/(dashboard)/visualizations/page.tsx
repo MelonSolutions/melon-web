@@ -1,109 +1,203 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useMemo } from 'react';
 import { Plus, Upload, Database, BarChart3, Share2 } from 'lucide-react';
 import { VisualizationLoading } from '@/components/visualizations/VisualizationLoading';
+import { VisualizationEmpty } from '@/components/visualizations/VisualizationEmpty';
 import { ChartBuilder } from '@/components/visualizations/ChartBuilder';
 import { DataSourceManager } from '@/components/visualizations/DataSourceManager';
 import { SavedCharts } from '@/components/visualizations/SavedCharts';
-import { DataSource, ChartConfig, VisualizationStats } from '@/types/visualization';
-
-const useVisualizations = () => {
-  const [loading, setLoading] = useState(false);
-  
-  // Mock data
-  const stats: VisualizationStats = {
-    totalDataSources: 8,
-    totalRecords: 11200,
-    activeCharts: 15,
-    sharedCharts: 9
-  };
-
-  const dataSources: DataSource[] = [
-    {
-      id: '1',
-      name: 'Health Program Survey Responses',
-      type: 'report',
-      columns: [
-        { name: 'region', type: 'string', nullable: false, unique: false },
-        { name: 'rating', type: 'number', nullable: false, unique: false },
-        { name: 'feedback', type: 'string', nullable: true, unique: false },
-        { name: 'timestamp', type: 'date', nullable: false, unique: false }
-      ],
-      rowCount: 1247,
-      uploadedAt: '2024-08-01T10:00:00Z',
-      status: 'ready'
-    }
-  ];
-
-  const savedCharts: ChartConfig[] = [
-    {
-      id: '1',
-      name: 'Average App Rating by Region',
-      type: 'bar',
-      dataSourceId: '1',
-      xAxis: 'region',
-      yAxis: 'rating',
-      aggregation: 'average',
-      filters: [],
-      styling: {
-        colors: ['#4F46E5'],
-        showLegend: true,
-        showGrid: true,
-        title: 'Average App Rating by Region'
-      },
-      createdAt: '2024-08-01T10:00:00Z',
-      updatedAt: '2024-08-02T15:30:00Z'
-    }
-  ];
-
-  return {
-    stats,
-    dataSources,
-    savedCharts,
-    loading,
-    importCSV: () => console.log('Import CSV'),
-    connectReport: () => console.log('Connect report'),
-    deleteDataSource: (id: string) => console.log('Delete data source:', id),
-    previewDataSource: (ds: DataSource) => console.log('Preview:', ds),
-    saveChart: (config: Partial<ChartConfig>) => console.log('Save chart:', config),
-    editChart: (chart: ChartConfig) => console.log('Edit chart:', chart),
-    duplicateChart: (chart: ChartConfig) => console.log('Duplicate chart:', chart),
-    deleteChart: (id: string) => console.log('Delete chart:', id),
-    shareChart: (chart: ChartConfig) => console.log('Share chart:', chart),
-    refetch: () => console.log('Refetch')
-  };
-};
+import { CSVImportModal } from '@/components/visualizations/CSVImportModal';
+import { ReportConnectionModal } from '@/components/visualizations/ReportConnectionModal';
+import { 
+  useVisualizationStats,
+  useDataSources,
+  useCharts,
+  useCsvImport,
+  useReportsIntegration 
+} from '@/hooks/useVisualizations';
 
 function VisualizationContent() {
   const [activeTab, setActiveTab] = useState<'chart-builder' | 'data-sources' | 'saved-charts'>('chart-builder');
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
-  const {
-    stats,
-    dataSources,
-    savedCharts,
-    loading,
-    importCSV,
-    connectReport,
-    deleteDataSource,
+  const { stats, loading: statsLoading, error: statsError } = useVisualizationStats();
+  const { 
+    dataSources, 
+    loading: dataSourcesLoading, 
+    error: dataSourcesError,
+    deleteDataSource, 
     previewDataSource,
-    saveChart,
-    editChart,
-    duplicateChart,
-    deleteChart,
+    refetch: refetchDataSources 
+  } = useDataSources();
+  
+  const chartFilters = useMemo(() => ({}), []);
+  
+  const { 
+    charts, 
+    loading: chartsLoading, 
+    error: chartsError,
+    createChart, 
+    updateChart, 
+    duplicateChart, 
+    deleteChart, 
     shareChart,
-    refetch
-  } = useVisualizations();
+    refetch: refetchCharts 
+  } = useCharts(chartFilters);
+  
+  const { importCsv, uploading } = useCsvImport();
+  const { createDataSourceFromReport } = useReportsIntegration();
 
-  if (loading) {
+  const isLoading = statsLoading || dataSourcesLoading || chartsLoading;
+  const hasError = statsError || dataSourcesError || chartsError;
+
+  if (isLoading) {
     return <VisualizationLoading />;
   }
 
-  const hasData = dataSources.length > 0 || savedCharts.length > 0;
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto bg-red-100 rounded-lg flex items-center justify-center mb-4">
+            <BarChart3 className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Data</h3>
+          <p className="text-gray-500 mb-4">{hasError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const hasData = dataSources.length > 0 || charts.length > 0;
+
+  // Event handlers
+  const handleImportCsv = async (file: File, mappings: any) => {
+    try {
+      const result = await importCsv(file, mappings);
+      if (result.success) {
+        setShowImportModal(false);
+        refetchDataSources();
+      }
+      return result;
+    } catch (error) {
+      console.error('CSV import error:', error);
+      return { success: false, error: 'Failed to import CSV' };
+    }
+  };
+
+  const handleConnectReport = async (reportData: any) => {
+    try {
+      const result = await createDataSourceFromReport(reportData);
+      if (result.success) {
+        setShowReportModal(false);
+        refetchDataSources();
+      }
+      return result;
+    } catch (error) {
+      console.error('Report connection error:', error);
+      return { success: false, error: 'Failed to connect report' };
+    }
+  };
+
+  const handleSaveChart = async (config: any) => {
+    try {
+      const result = await createChart(config);
+      if (result.success) {
+        refetchCharts();
+        setActiveTab('saved-charts');
+      }
+      return result;
+    } catch (error) {
+      console.error('Chart save error:', error);
+      return { success: false, error: 'Failed to save chart' };
+    }
+  };
+
+  const handleEditChart = (chart: any) => {
+    setActiveTab('chart-builder');
+  };
+
+  const handleDeleteDataSource = async (id: string) => {
+    try {
+      const result = await deleteDataSource(id);
+      return result;
+    } catch (error) {
+      console.error('Delete data source error:', error);
+      return { success: false, error: 'Failed to delete data source' };
+    }
+  };
+
+  const handlePreviewDataSource = async (dataSource: any) => {
+    try {
+      const result = await previewDataSource(dataSource.id);
+      if (result.success) {
+        console.log('Preview data:', result.data);
+      }
+      return result;
+    } catch (error) {
+      console.error('Preview error:', error);
+      return { success: false, error: 'Failed to preview data source' };
+    }
+  };
+
+  const handleDuplicateChart = async (chart: any) => {
+    try {
+      const result = await duplicateChart(chart.id);
+      if (result.success) {
+        refetchCharts();
+      }
+      return result;
+    } catch (error) {
+      console.error('Duplicate chart error:', error);
+      return { success: false, error: 'Failed to duplicate chart' };
+    }
+  };
+
+  const handleDeleteChart = async (chartId: string) => {
+    try {
+      const result = await deleteChart(chartId);
+      if (result.success) {
+        refetchCharts();
+      }
+      return result;
+    } catch (error) {
+      console.error('Delete chart error:', error);
+      return { success: false, error: 'Failed to delete chart' };
+    }
+  };
+
+  const handleShareChart = async (chart: any) => {
+    try {
+      const result = await shareChart(chart.id);
+      if (result.success && result.data) {
+        refetchCharts();
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(result.data.shareUrl);
+        }
+      }
+      return result;
+    } catch (error) {
+      console.error('Share chart error:', error);
+      return { success: false, error: 'Failed to share chart' };
+    }
+  };
+
+  // Empty state handlers
+  const handleImportData = () => setShowImportModal(true);
+  const handleConnectReportModal = () => setShowReportModal(true);
+  const handleCreateChart = () => setActiveTab('chart-builder');
+  const handleSwitchToChartBuilder = () => setActiveTab('chart-builder');
 
   return (
     <div className="space-y-8">
@@ -117,15 +211,15 @@ function VisualizationContent() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={importCSV}
+            onClick={handleImportData}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Upload className="w-4 h-4" />
             Import Data
           </button>
           <button
-            onClick={() => setActiveTab('chart-builder')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
+            onClick={handleCreateChart}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
           >
             <Plus className="w-4 h-4" />
             Create Chart
@@ -183,7 +277,7 @@ function VisualizationContent() {
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('chart-builder')}
-            className={`cursor-pointer py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'chart-builder'
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -193,7 +287,7 @@ function VisualizationContent() {
           </button>
           <button
             onClick={() => setActiveTab('data-sources')}
-            className={`cursor-pointer py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'data-sources'
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -203,7 +297,7 @@ function VisualizationContent() {
           </button>
           <button
             onClick={() => setActiveTab('saved-charts')}
-            className={`cursor-pointer py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'saved-charts'
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -217,33 +311,70 @@ function VisualizationContent() {
       {/* Tab Content */}
       <div className="min-h-[600px]">
         {activeTab === 'chart-builder' && (
-          <ChartBuilder
-            dataSources={dataSources}
-            onSave={saveChart}
-            onPreview={setPreviewData}
-          />
+          dataSources.length === 0 ? (
+            <VisualizationEmpty
+              activeTab={activeTab}
+              onImportData={handleImportData}
+              onConnectReport={handleConnectReportModal}
+            />
+          ) : (
+            <ChartBuilder
+              dataSources={dataSources}
+              onSave={handleSaveChart}
+              onPreview={() => {}}
+            />
+          )
         )}
 
         {activeTab === 'data-sources' && (
-          <DataSourceManager
-            dataSources={dataSources}
-            onImport={importCSV}
-            onConnectReport={connectReport}
-            onDelete={deleteDataSource}
-            onPreview={previewDataSource}
-          />
+          dataSources.length === 0 ? (
+            <VisualizationEmpty
+              activeTab={activeTab}
+              onImportData={handleImportData}
+              onConnectReport={handleConnectReportModal}
+            />
+          ) : (
+            <DataSourceManager
+              dataSources={dataSources}
+              onImport={handleImportData}
+              onConnectReport={handleConnectReportModal}
+              onDelete={handleDeleteDataSource}
+              onPreview={handlePreviewDataSource}
+            />
+          )
         )}
 
         {activeTab === 'saved-charts' && (
-          <SavedCharts
-            charts={savedCharts}
-            onEdit={editChart}
-            onDuplicate={duplicateChart}
-            onDelete={deleteChart}
-            onShare={shareChart}
-          />
+          charts.length === 0 ? (
+            <VisualizationEmpty
+              activeTab={activeTab}
+              onSwitchToChartBuilder={handleSwitchToChartBuilder}
+            />
+          ) : (
+            <SavedCharts
+              charts={charts}
+              onEdit={handleEditChart}
+              onDuplicate={handleDuplicateChart}
+              onDelete={handleDeleteChart}
+              onShare={handleShareChart}
+            />
+          )
         )}
       </div>
+
+      {/* Modals */}
+      <CSVImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportCsv}
+        isUploading={uploading}
+      />
+
+      <ReportConnectionModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onConnect={handleConnectReport}
+      />
     </div>
   );
 }
