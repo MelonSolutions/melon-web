@@ -23,20 +23,20 @@ const useVisualizations = () => {
   };
 
   const dataSources: DataSource[] = [
-    // {
-    //   id: '1',
-    //   name: 'Health Program Survey Responses',
-    //   type: 'report',
-    //   columns: [
-    //     { name: 'region', type: 'string', nullable: false, unique: false },
-    //     { name: 'rating', type: 'number', nullable: false, unique: false },
-    //     { name: 'feedback', type: 'string', nullable: true, unique: false },
-    //     { name: 'timestamp', type: 'date', nullable: false, unique: false }
-    //   ],
-    //   rowCount: 1247,
-    //   uploadedAt: '2024-08-01T10:00:00Z',
-    //   status: 'ready'
-    // }
+    {
+      id: '1',
+      name: 'Health Program Survey Responses',
+      type: 'report',
+      columns: [
+        { name: 'region', type: 'string', nullable: false, unique: false },
+        { name: 'rating', type: 'number', nullable: false, unique: false },
+        { name: 'feedback', type: 'string', nullable: true, unique: false },
+        { name: 'timestamp', type: 'date', nullable: false, unique: false }
+      ],
+      rowCount: 1247,
+      uploadedAt: '2024-08-01T10:00:00Z',
+      status: 'ready'
+    }
   ];
 
   const savedCharts: ChartConfig[] = [
