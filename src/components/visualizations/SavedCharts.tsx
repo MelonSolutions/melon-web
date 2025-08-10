@@ -9,14 +9,15 @@ import { ChartPreview } from './ChartPreview';
 interface SavedChartsProps {
   charts: ChartConfig[];
   onEdit: (chart: ChartConfig) => void;
-  onDuplicate: (chart: ChartConfig) => void;
-  onDelete: (chartId: string) => void;
-  onShare: (chart: ChartConfig) => void;
+  onDuplicate: (chart: ChartConfig) => Promise<{ success: boolean; error?: string }>;
+  onDelete: (chartId: string) => Promise<{ success: boolean; error?: string }>;
+  onShare: (chart: ChartConfig) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: SavedChartsProps) {
   const [showActions, setShowActions] = useState<string | null>(null);
   const [previewChart, setPreviewChart] = useState<ChartConfig | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const getChartTypeInfo = (type: string) => {
     return CHART_TYPES[type as keyof typeof CHART_TYPES] || {
@@ -26,27 +27,48 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
     };
   };
 
-  const handleAction = (action: string, chart: ChartConfig) => {
+  const formatUploadDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Recently';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Recently';
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+      return 'Recently';
+    }
+  };
+
+  const handleAction = async (action: string, chart: ChartConfig) => {
     setShowActions(null);
+    setActionLoading(`${action}-${chart.id}`);
     
-    switch (action) {
-      case 'edit':
-        onEdit(chart);
-        break;
-      case 'duplicate':
-        onDuplicate(chart);
-        break;
-      case 'delete':
-        if (confirm('Are you sure you want to delete this chart?')) {
-          onDelete(chart.id);
-        }
-        break;
-      case 'share':
-        onShare(chart);
-        break;
-      case 'preview':
-        setPreviewChart(chart);
-        break;
+    try {
+      switch (action) {
+        case 'edit':
+          onEdit(chart);
+          break;
+        case 'duplicate':
+          await onDuplicate(chart);
+          break;
+        case 'delete':
+          if (confirm('Are you sure you want to delete this chart?')) {
+            await onDelete(chart.id);
+          }
+          break;
+        case 'share':
+          const result = await onShare(chart);
+          if (result.success) {
+            alert('Chart link copied to clipboard!');
+          }
+          break;
+        case 'preview':
+          setPreviewChart(chart);
+          break;
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} chart:`, error);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -76,17 +98,18 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
         </div>
         
         <div className="divide-y divide-gray-200">
-          {charts.map((chart) => {
+          {charts.map((chart, index) => {
             const typeInfo = getChartTypeInfo(chart.type);
+            const isLoading = actionLoading?.includes(chart.id || '');
             
             return (
-              <div key={chart.id} className="px-6 py-4 hover:bg-gray-50">
+              <div key={chart.id || `chart-${index}`} className="px-6 py-4 hover:bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
                         <h4 className="text-base font-medium text-gray-900 truncate">
-                          {chart.name}
+                          {chart.name || 'Untitled Chart'}
                         </h4>
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                           {typeInfo.name}
@@ -95,9 +118,9 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
                       
                       <div className="flex items-center gap-6 text-sm text-gray-500">
                         <span>{chart.xAxis} {chart.yAxis ? `× ${chart.yAxis}` : ''}</span>
-                        <span className="capitalize">{chart.aggregation}</span>
+                        <span className="capitalize">{chart.aggregation || 'count'}</span>
                         <span>
-                          Updated {formatDistanceToNow(new Date(chart.updatedAt), { addSuffix: true })}
+                          Updated {formatUploadDate(chart.updatedAt)}
                         </span>
                       </div>
                       
@@ -112,7 +135,8 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
                   <div className="relative ml-4">
                     <button
                       onClick={() => setShowActions(showActions === chart.id ? null : chart.id)}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      disabled={isLoading}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                     >
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
@@ -171,17 +195,16 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
         </div>
       </div>
 
-      {/* Preview Modal */}
       {previewChart && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h3 className="text-lg font-medium text-gray-900">
-                  {previewChart.name}
+                  {previewChart.name || 'Untitled Chart'}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  {getChartTypeInfo(previewChart.type).name} • {previewChart.aggregation} aggregation
+                  {getChartTypeInfo(previewChart.type).name} • {previewChart.aggregation || 'count'} aggregation
                 </p>
               </div>
               <button
@@ -202,7 +225,7 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
             
             <div className="flex items-center justify-between p-6 border-t border-gray-200">
               <div className="text-sm text-gray-500">
-                Chart ID: {previewChart.id}
+                Chart ID: {previewChart.id || 'N/A'}
               </div>
               
               <div className="flex items-center gap-3">
