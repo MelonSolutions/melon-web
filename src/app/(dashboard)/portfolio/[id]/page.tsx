@@ -1,13 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Download, Share2, Edit3, TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 import { useProject } from '@/hooks/usePortfolio';
-import { formatDistanceToNow } from 'date-fns';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -19,7 +17,7 @@ export default function ProjectDetailsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5B94E5]"></div>
       </div>
     );
   }
@@ -27,8 +25,8 @@ export default function ProjectDetailsPage() {
   if (!project) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Project not found</p>
-        <Link href="/portfolio" className="text-blue-600 hover:text-blue-700">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Project not found</h3>
+        <Link href="/portfolio" className="text-[#5B94E5] hover:text-[#4A7BC8] text-sm font-medium">
           Back to Portfolio
         </Link>
       </div>
@@ -50,39 +48,51 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'completed':
+        return 'Completed';
+      case 'draft':
+        return 'Draft';
+      case 'paused':
+        return 'Paused';
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link href="/portfolio" className="p-2 hover:bg-gray-100 rounded-lg">
-            <ArrowLeft className="w-5 h-5" />
+        <div className="flex items-center gap-4">
+          <Link href="/portfolio" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <div className="flex items-center space-x-3 mb-1">
-              <h1 className="text-2xl font-bold text-gray-900">{project.title}</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-xl font-semibold text-gray-900">{project.title}</h1>
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                <div className="w-1.5 h-1.5 rounded-full bg-current mr-1"></div>
-                {project.status === 'active' ? 'Active' : 
-                 project.status === 'completed' ? 'Completed' : 
-                 project.status === 'draft' ? 'Draft' : 'Paused'}
+                {getStatusText(project.status)}
               </span>
             </div>
-            <p className="text-gray-600">{project.description}</p>
+            <p className="text-sm text-gray-500">{project.description}</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-            <Download className="w-4 h-4 mr-2" />
+        <div className="flex items-center gap-3">
+          <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <Download className="w-4 h-4" />
             Export
           </button>
-          <button className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-            <Share2 className="w-4 h-4 mr-2" />
+          <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <Share2 className="w-4 h-4" />
             Share
           </button>
-          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            <Edit3 className="w-4 h-4 mr-2" />
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">
+            <Edit3 className="w-4 h-4" />
             Edit Project
           </button>
         </div>
@@ -90,60 +100,28 @@ export default function ProjectDetailsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Impact Score */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-600 mb-2">Impact Score</p>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{project.impactScore}%</p>
-              <p className="text-sm text-green-600">+5% from last month</p>
-            </div>
-            <div className="ml-4">
-              <TrendingUp className="w-5 h-5 text-gray-400" />
-            </div>
-          </div>
+          <p className="text-sm font-medium text-gray-600">Impact Score</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">{project.impactScore}%</p>
+          <p className="text-sm text-green-600 mt-1">+5% from last month</p>
         </div>
 
-        {/* Households Reached */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-600 mb-2">Households Reached</p>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{project.householdsReached.toLocaleString()}</p>
-              <p className="text-sm text-green-600">+12% from target</p>
-            </div>
-            <div className="ml-4">
-              <Users className="w-5 h-5 text-gray-400" />
-            </div>
-          </div>
+          <p className="text-sm font-medium text-gray-600">Households Reached</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">{project.householdsReached.toLocaleString()}</p>
+          <p className="text-sm text-green-600 mt-1">+12% from target</p>
         </div>
 
-        {/* Budget Utilization */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-600 mb-2">Budget Utilization</p>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{project.budget.percentage}%</p>
-              <p className="text-sm text-gray-600">${project.budget.utilized.toLocaleString()} of ${project.budget.total.toLocaleString()}</p>
-            </div>
-            <div className="ml-4">
-              <DollarSign className="w-5 h-5 text-gray-400" />
-            </div>
-          </div>
+          <p className="text-sm font-medium text-gray-600">Budget Utilization</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">{project.budget.percentage}%</p>
+          <p className="text-sm text-gray-500 mt-1">${project.budget.utilized.toLocaleString()} of ${project.budget.total.toLocaleString()}</p>
         </div>
 
-        {/* Active Agents */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-600 mb-2">Active Agents</p>
-              <p className="text-3xl font-bold text-gray-900 mb-1">{project.activeAgents}</p>
-              <p className="text-sm text-gray-600">Across {project.coverage} km²</p>
-            </div>
-            <div className="ml-4">
-              <Activity className="w-5 h-5 text-gray-400" />
-            </div>
-          </div>
+          <p className="text-sm font-medium text-gray-600">Active Agents</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">{project.activeAgents}</p>
+          <p className="text-sm text-gray-500 mt-1">Across {project.coverage} km²</p>
         </div>
       </div>
 
@@ -160,9 +138,9 @@ export default function ProjectDetailsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[#5B94E5] text-[#5B94E5]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -178,8 +156,7 @@ export default function ProjectDetailsPage() {
           {/* Project Progress */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Project Progress</h3>
-              <p className="text-sm text-gray-600 mb-6">Overall completion and milestone tracking</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-6">Project Progress</h3>
               
               {/* Overall Progress */}
               <div className="mb-6">
@@ -189,9 +166,9 @@ export default function ProjectDetailsPage() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div 
-                    className="bg-black h-3 rounded-full transition-all duration-300"
+                    className="bg-[#5B94E5] h-3 rounded-full transition-all duration-300"
                     style={{ width: `${project.progress}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
 
@@ -218,10 +195,10 @@ export default function ProjectDetailsPage() {
                           <div 
                             className={`h-2 rounded-full ${
                               phase.status === 'completed' ? 'bg-green-500' :
-                              phase.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-400'
+                              phase.status === 'in_progress' ? 'bg-[#5B94E5]' : 'bg-gray-400'
                             }`}
                             style={{ width: `${phase.progress}%` }}
-                          ></div>
+                          />
                         </div>
                       </div>
                       <span className="text-sm font-medium text-gray-900">{phase.progress}%</span>
@@ -235,58 +212,50 @@ export default function ProjectDetailsPage() {
           {/* Project Information */}
           <div className="space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Project Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-6">Project Information</h3>
               
               <div className="space-y-4">
-                <div className="flex items-center">
-                  <span className="w-4 h-4 mr-2">📍</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{project.region}</p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Region</p>
+                  <p className="text-sm text-gray-900 mt-1">{project.region}</p>
                 </div>
 
-                <div className="flex items-center">
-                  <span className="w-4 h-4 mr-2">📅</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Timeline</p>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {new Date(project.timeline.startDate).toLocaleDateString()} - {new Date(project.timeline.endDate).toLocaleDateString()}
+                  </p>
                 </div>
 
-                <div className="flex items-center">
-                  <span className="w-4 h-4 mr-2">💰</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">${project.budget.total.toLocaleString()} budget</p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Budget</p>
+                  <p className="text-sm text-gray-900 mt-1">${project.budget.total.toLocaleString()}</p>
                 </div>
 
-                <div className="flex items-center">
-                  <span className="w-4 h-4 mr-2">📄</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{project.reportCount} reports</p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Reports</p>
+                  <p className="text-sm text-gray-900 mt-1">{project.reportCount} reports</p>
                 </div>
 
-                <div className="flex items-center">
-                  <span className="w-4 h-4 mr-2">📎</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{project.fileCount} attachments</p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Files</p>
+                  <p className="text-sm text-gray-900 mt-1">{project.fileCount} attachments</p>
                 </div>
               </div>
 
               {/* Tags */}
-              <div className="mt-6">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Tags</h4>
-                <div className="flex flex-wrap gap-2">
-                  {project.tags.map((tag, index) => (
-                    <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
-                      {tag}
-                    </span>
-                  ))}
+              {project.tags.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-sm font-medium text-gray-500 mb-3">Tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map((tag, index) => (
+                      <span key={index} className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -295,45 +264,45 @@ export default function ProjectDetailsPage() {
       {activeTab === 'metrics' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Impact Metrics</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Impact Metrics</h3>
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Impact Score</span>
-                <span className="text-sm font-medium">{project.impactScore}%</span>
+                <span className="text-sm text-gray-500">Impact Score</span>
+                <span className="text-sm font-medium text-gray-900">{project.impactScore}%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Households Reached</span>
-                <span className="text-sm font-medium">{project.householdsReached.toLocaleString()}</span>
+                <span className="text-sm text-gray-500">Households Reached</span>
+                <span className="text-sm font-medium text-gray-900">{project.householdsReached.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Coverage Area</span>
-                <span className="text-sm font-medium">{project.coverage} km²</span>
+                <span className="text-sm text-gray-500">Coverage Area</span>
+                <span className="text-sm font-medium text-gray-900">{project.coverage} km²</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Active Agents</span>
-                <span className="text-sm font-medium">{project.activeAgents}</span>
+                <span className="text-sm text-gray-500">Active Agents</span>
+                <span className="text-sm font-medium text-gray-900">{project.activeAgents}</span>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Budget Overview</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Budget Overview</h3>
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Total Budget</span>
-                <span className="text-sm font-medium">${project.budget.total.toLocaleString()}</span>
+                <span className="text-sm text-gray-500">Total Budget</span>
+                <span className="text-sm font-medium text-gray-900">${project.budget.total.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Utilized</span>
-                <span className="text-sm font-medium">${project.budget.utilized.toLocaleString()}</span>
+                <span className="text-sm text-gray-500">Utilized</span>
+                <span className="text-sm font-medium text-gray-900">${project.budget.utilized.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Remaining</span>
-                <span className="text-sm font-medium">${(project.budget.total - project.budget.utilized).toLocaleString()}</span>
+                <span className="text-sm text-gray-500">Remaining</span>
+                <span className="text-sm font-medium text-gray-900">${(project.budget.total - project.budget.utilized).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Utilization Rate</span>
-                <span className="text-sm font-medium">{project.budget.percentage}%</span>
+                <span className="text-sm text-gray-500">Utilization Rate</span>
+                <span className="text-sm font-medium text-gray-900">{project.budget.percentage}%</span>
               </div>
             </div>
           </div>
@@ -342,13 +311,12 @@ export default function ProjectDetailsPage() {
 
       {activeTab === 'team' && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Team Members</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-6">Team Members</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Project Lead */}
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="w-12 h-12 bg-[#5B94E5] rounded-full flex items-center justify-center">
+                <span className="text-white font-medium text-sm">
                   {project.team.projectLead.name.split(' ').map(n => n[0]).join('')}
                 </span>
               </div>
@@ -359,10 +327,9 @@ export default function ProjectDetailsPage() {
               </div>
             </div>
 
-            {/* Field Coordinator */}
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
               <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium">
+                <span className="text-white font-medium text-sm">
                   {project.team.fieldCoordinator.name.split(' ').map(n => n[0]).join('')}
                 </span>
               </div>
@@ -378,10 +345,10 @@ export default function ProjectDetailsPage() {
 
       {activeTab === 'reports' && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Reports & Analytics</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-6">Reports & Analytics</h3>
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No reports available yet</p>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button className="px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">
               Generate Report
             </button>
           </div>
@@ -390,10 +357,10 @@ export default function ProjectDetailsPage() {
 
       {activeTab === 'files' && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">File Attachments</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-6">File Attachments</h3>
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No files attached yet</p>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button className="px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">
               Upload Files
             </button>
           </div>

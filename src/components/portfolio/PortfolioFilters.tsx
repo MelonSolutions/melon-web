@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { Search, Grid3x3, List, Filter } from 'lucide-react';
+import { Search, Grid3X3, List } from 'lucide-react';
 import { ProjectStatus, ProjectSector, ProjectRegion } from '@/types/portfolio';
 
 interface PortfolioFiltersProps {
@@ -71,13 +71,13 @@ export function PortfolioFilters({
     <div className="space-y-4">
       {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <input
           type="text"
           placeholder="Search projects..."
           value={filters.search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
         />
       </div>
 
@@ -85,11 +85,10 @@ export function PortfolioFilters({
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         {/* Filter Dropdowns */}
         <div className="flex flex-wrap gap-3">
-          {/* Status Filter */}
           <select
             value={filters.status}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
           >
             {statusOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -98,11 +97,10 @@ export function PortfolioFilters({
             ))}
           </select>
 
-          {/* Sector Filter */}
           <select
             value={filters.sector}
             onChange={(e) => handleSectorChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
           >
             {sectorOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -111,11 +109,10 @@ export function PortfolioFilters({
             ))}
           </select>
 
-          {/* Region Filter */}
           <select
             value={filters.region}
             onChange={(e) => handleRegionChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
           >
             {regionOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -125,35 +122,27 @@ export function PortfolioFilters({
           </select>
         </div>
 
-        {/* View Toggle and Filter Button */}
-        <div className="flex items-center gap-3">
-          {/* View Toggle */}
-          <div className="flex border border-gray-300 rounded-lg">
-            <button
-              onClick={() => onViewChange('grid')}
-              className={`p-2 ${
-                view === 'grid'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <Grid3x3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onViewChange('list')}
-              className={`p-2 ${
-                view === 'list'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Filter Button */}
-          <button className="flex items-center px-3 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-            <Filter className="w-4 h-4" />
+        {/* View Toggle */}
+        <div className="flex border border-gray-300 rounded-lg">
+          <button
+            onClick={() => onViewChange('grid')}
+            className={`p-2 ${
+              view === 'grid'
+                ? 'bg-[#5B94E5] text-white'
+                : 'text-gray-600 hover:text-gray-800'
+            } transition-colors`}
+          >
+            <Grid3X3 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onViewChange('list')}
+            className={`p-2 ${
+              view === 'list'
+                ? 'bg-[#5B94E5] text-white'
+                : 'text-gray-600 hover:text-gray-800'
+            } transition-colors`}
+          >
+            <List className="w-4 h-4" />
           </button>
         </div>
       </div>

@@ -114,36 +114,37 @@ export default function CreateProjectPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/portfolio" className="p-2 hover:bg-gray-100 rounded-lg">
-              <ArrowLeft className="w-5 h-5" />
+          <div className="flex items-center gap-4">
+            <Link href="/portfolio" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">Create New Project</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Create New Project</h1>
               <p className="text-sm text-gray-500">Set up a new project for your portfolio</p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/portfolio')}
-              className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-lg"
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button 
               onClick={() => handleSubmit(true)}
               disabled={loading}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Save as Draft
             </button>
             <button 
               onClick={() => handleSubmit(false)}
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors disabled:opacity-50"
             >
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Create Project
             </button>
           </div>
@@ -154,49 +155,46 @@ export default function CreateProjectPage() {
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         {/* Basic Information */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Basic Information</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-6">Basic Information</h2>
           
           <div className="grid grid-cols-1 gap-6">
-            {/* Project Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project Title *
+                Project Title
               </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                 placeholder="Enter project title"
                 required
               />
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
+                Description
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                 placeholder="Describe your project objectives and scope"
                 required
               />
             </div>
 
-            {/* Sector and Region */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sector *
+                  Sector
                 </label>
                 <select
                   value={formData.sector}
                   onChange={(e) => setFormData(prev => ({ ...prev, sector: e.target.value as ProjectSector }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
                   required
                 >
                   {sectors.map(sector => (
@@ -209,12 +207,12 @@ export default function CreateProjectPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Region *
+                  Region
                 </label>
                 <select
                   value={formData.region}
                   onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value as ProjectRegion }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
                   required
                 >
                   {regions.map(region => (
@@ -226,30 +224,29 @@ export default function CreateProjectPage() {
               </div>
             </div>
 
-            {/* Timeline */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Date *
+                  Start Date
                 </label>
                 <input
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  End Date *
+                  End Date
                 </label>
                 <input
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                   required
                 />
               </div>
@@ -259,46 +256,39 @@ export default function CreateProjectPage() {
 
         {/* Budget & Resources */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Budget & Resources</h2>
-          <p className="text-sm text-gray-600 mb-6">Financial planning and resource allocation</p>
+          <h2 className="text-lg font-medium text-gray-900 mb-6">Budget & Resources</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Total Budget */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Total Budget *
+                Total Budget
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
                 <input
                   type="number"
                   value={formData.totalBudget || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, totalBudget: Number(e.target.value) }))}
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                   placeholder="Enter total budget"
                   required
                 />
               </div>
             </div>
 
-            {/* Target Households */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Target Households
               </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">👥</span>
-                <input
-                  type="number"
-                  value={formData.targetHouseholds || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, targetHouseholds: Number(e.target.value) }))}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Number of households"
-                />
-              </div>
+              <input
+                type="number"
+                value={formData.targetHouseholds || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, targetHouseholds: Number(e.target.value) }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                placeholder="Number of households"
+              />
             </div>
 
-            {/* Funding Source */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Funding Source
@@ -306,7 +296,7 @@ export default function CreateProjectPage() {
               <select
                 value={formData.fundingSource}
                 onChange={(e) => setFormData(prev => ({ ...prev, fundingSource: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
               >
                 <option value="">Select funding source</option>
                 {fundingSources.map(source => (
@@ -321,8 +311,7 @@ export default function CreateProjectPage() {
 
         {/* Tags & Classification */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Tags & Classification</h2>
-          <p className="text-sm text-gray-600 mb-6">Add tags to help organize and categorize this project</p>
+          <h2 className="text-lg font-medium text-gray-900 mb-6">Tags & Classification</h2>
           
           <div>
             <div className="flex gap-2 mb-4">
@@ -331,29 +320,28 @@ export default function CreateProjectPage() {
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                 placeholder="Add a tag"
               />
               <button
                 onClick={handleAddTag}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#4A7BC8] transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Display Tags */}
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
                   >
                     {tag}
                     <button
                       onClick={() => handleRemoveTag(tag)}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -366,19 +354,17 @@ export default function CreateProjectPage() {
 
         {/* Team Assignment */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Team Assignment</h2>
-          <p className="text-sm text-gray-600 mb-6">Assign team members and define roles</p>
+          <h2 className="text-lg font-medium text-gray-900 mb-6">Team Assignment</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Project Lead */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project Lead *
+                Project Lead
               </label>
               <select
                 value={formData.projectLead}
                 onChange={(e) => setFormData(prev => ({ ...prev, projectLead: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
                 required
               >
                 <option value="">Select project lead</option>
@@ -390,7 +376,6 @@ export default function CreateProjectPage() {
               </select>
             </div>
 
-            {/* Field Coordinator */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Field Coordinator
@@ -398,7 +383,7 @@ export default function CreateProjectPage() {
               <select
                 value={formData.fieldCoordinator}
                 onChange={(e) => setFormData(prev => ({ ...prev, fieldCoordinator: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
               >
                 <option value="">Select field coordinator</option>
                 {teamMembers.map(member => (
@@ -413,15 +398,16 @@ export default function CreateProjectPage() {
 
         {/* File Attachments */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">File Attachments</h2>
-          <p className="text-sm text-gray-600 mb-6">Upload project documents, images, and other files</p>
+          <h2 className="text-lg font-medium text-gray-900 mb-6">File Attachments</h2>
+          <p className="text-sm text-gray-500 mb-6">Upload project documents, images, and other files</p>
           
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
             <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <p className="text-gray-600 mb-2">Drag and drop files here, or click to browse</p>
-            <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
               Choose Files
             </button>
+            <p className="text-xs text-gray-500 mt-2">Maximum file size: 10MB</p>
           </div>
         </div>
       </div>

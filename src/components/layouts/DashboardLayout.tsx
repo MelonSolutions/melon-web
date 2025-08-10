@@ -46,6 +46,16 @@ export default function DashboardLayout({
       href: '/overview',
       icon: <Layers className="h-5 w-5" />,
     },
+        {
+      name: 'Portfolio',
+      href: '/portfolio',
+      icon: <Briefcase className="h-5 w-5" />,
+    },
+        {
+      name: 'Impact Metrics',
+      href: '/impact-metrics',
+      icon: <Activity className="h-5 w-5" />,
+    },
     {
       name: 'Reports',
       href: '/reports',
@@ -55,16 +65,6 @@ export default function DashboardLayout({
       name: 'Visualizations',
       href: '/visualizations',
       icon: <BarChart3 className="h-5 w-5" />,
-    },
-    {
-      name: 'Impact Metrics',
-      href: '/impact-metrics',
-      icon: <Activity className="h-5 w-5" />,
-    },
-    {
-      name: 'Portfolio',
-      href: '/portfolio',
-      icon: <Briefcase className="h-5 w-5" />,
     },
     {
       name: 'Map View',

@@ -7,7 +7,7 @@ import { PortfolioFilters } from '@/components/portfolio/PortfolioFilters';
 import { ProjectsList } from '@/components/portfolio/ProjectsList';
 import { PortfolioEmpty } from '@/components/portfolio/PortfolioEmpty';
 import { usePortfolio } from '@/hooks/usePortfolio';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Download } from 'lucide-react';
 import Link from 'next/link';
 
 function PortfolioContent() {
@@ -35,7 +35,7 @@ function PortfolioContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#5B94E5]" />
       </div>
     );
   }
@@ -47,7 +47,7 @@ function PortfolioContent() {
           <p className="text-red-600 mb-4">Error loading projects</p>
           <button 
             onClick={refetch}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#4A7BC8] transition-colors"
           >
             Try Again
           </button>
@@ -56,35 +56,38 @@ function PortfolioContent() {
     );
   }
 
+  const hasFilters = filters.search || filters.status || filters.sector || filters.region;
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Portfolio</h1>
-          <p className="text-gray-600 mt-1 text-base">
-            Manage and monitor all projects across regions and sectors
+          <h1 className="text-2xl font-semibold text-gray-900">Portfolio</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage and analyze your project portfolio
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          <button className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+        <div className="flex items-center gap-3">
+          <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <Download className="w-4 h-4" />
             Export
           </button>
           <Link
             href="/portfolio/create"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-4 h-4" />
             New Project
           </Link>
         </div>
       </div>
 
+      {/* Stats */}
       <PortfolioHeader stats={portfolioStats} />
 
-      {projects.length === 0 && !filters.search && !filters.status && !filters.sector && !filters.region ? (
+      {/* Main Content */}
+      {projects.length === 0 && !hasFilters ? (
         <PortfolioEmpty />
       ) : (
         <>
@@ -101,12 +104,17 @@ function PortfolioContent() {
             onRefetch={refetch}
           />
 
-          {projects.length === 0 && (filters.search || filters.status || filters.sector || filters.region) && (
+          {projects.length === 0 && hasFilters && (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg mb-4">No projects found matching your criteria</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No projects found
+              </h3>
+              <p className="text-gray-500 mb-4">
+                No projects match your current filters
+              </p>
               <button
                 onClick={() => setFilters({ search: '', status: '', sector: '', region: '' })}
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-[#5B94E5] hover:text-[#4A7BC8] font-medium text-sm"
               >
                 Clear filters
               </button>
@@ -124,12 +132,12 @@ function PortfolioLoading() {
       {/* Header Skeleton */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-          <div className="h-4 w-96 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-7 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
+          <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="h-10 w-20 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-20 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-9 w-28 bg-gray-200 rounded animate-pulse"></div>
         </div>
       </div>
 
@@ -139,13 +147,11 @@ function PortfolioLoading() {
           <div key={i} className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mb-1"></div>
-                <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-7 w-12 bg-gray-200 rounded animate-pulse mb-1"></div>
+                <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
               </div>
-              <div className="ml-4">
-                <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
-              </div>
+              <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
             </div>
           </div>
         ))}
@@ -153,7 +159,7 @@ function PortfolioLoading() {
 
       {/* Loading content */}
       <div className="flex items-center justify-center min-h-[200px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#5B94E5]" />
       </div>
     </div>
   );
