@@ -151,13 +151,7 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
 
   const getSectorIcon = (sector: string) => {
     switch (sector) {
-      case 'Health': return '🏥';
-      case 'Education': return '🎓';
-      case 'Agriculture': return '🌾';
-      case 'Energy': return '⚡';
-      case 'Finance': return '💰';
-      case 'Infrastructure': return '🏗️';
-      default: return '📍';
+      default: return '';
     }
   };
 
