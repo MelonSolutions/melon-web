@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const API_BASE_URL = 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -7,33 +7,99 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
+export interface SignupRequest {
   firstName: string;
   lastName: string;
-  username: string;
   email: string;
-  phoneNumber: string;
+  password: string;
+  username?: string;
+  phoneNumber?: string;
+  organizationName?: string;
+}
+
+export interface SigninRequest {
+  email: string;
   password: string;
 }
 
-export interface LoginResponse {
+export interface SignupResponse {
+  message: string;
+  userId: string;
+  organizationId: string;
+}
+
+export interface SigninResponse {
   token: string;
   user: {
     id: string;
     firstName: string;
     lastName: string;
-    username: string;
     email: string;
-    phoneNumber: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
+    role: 'OWNER' | 'ADMIN' | 'MEMBER';
+    organization: {
+      id: string;
+      name: string;
+      plan: 'TRIAL' | 'STARTER' | 'REGULAR' | 'PREMIUM';
+      status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
+    };
   };
+}
+
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER';
+  status: string;
+  emailVerified: boolean;
+  organization: {
+    id: string;
+    name: string;
+    plan: string;
+    status: string;
+    userCount: number;
+    userLimit: number;
+    trialEndsAt?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrganizationDetails {
+  id: string;
+  name: string;
+  domain: string;
+  plan: string;
+  status: string;
+  userCount: number;
+  userLimit: number;
+  trialEndsAt?: string;
+  members: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    status: string;
+    lastLoginAt?: string;
+  }>;
+  planConfig: {
+    name: string;
+    userLimit: number;
+    price: number;
+    features: string[];
+  };
+  usage: {
+    currentUsers: number;
+    userLimit: number;
+    canAddUsers: boolean;
+  };
+}
+
+export interface InviteUserRequest {
+  email: string;
+  role?: 'ADMIN' | 'MEMBER';
 }
 
 class ApiClient {
@@ -57,12 +123,15 @@ class ApiClient {
       ...options,
     };
 
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
+    // Get token from localStorage if available
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+      }
     }
 
     try {
@@ -70,6 +139,16 @@ class ApiClient {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Handle specific error cases
+        if (response.status === 401) {
+          // Clear auth data on 401
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+          }
+        }
+        
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
@@ -81,47 +160,62 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async login(data: LoginRequest): Promise<LoginResponse> {
-    return this.request<LoginResponse>('/auth/login', {
+  async signup(data: SignupRequest): Promise<SignupResponse> {
+    return this.request<SignupResponse>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async register(data: RegisterRequest): Promise<{ message: string }> {
-    return this.request<{ message: string }>('/auth/signup', {
+  async signin(data: SigninRequest): Promise<SigninResponse> {
+    return this.request<SigninResponse>('/auth/signin', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async getCurrentUser(): Promise<LoginResponse['user']> {
-    return this.request<LoginResponse['user']>('/auth/me');
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
   }
 
-  // Reports endpoints
-  async createReport(data: any) {
-    return this.request('/reports/create', {
+  async getCurrentUser(): Promise<User> {
+    return this.request<User>('/auth/me');
+  }
+
+  async getOrganization(): Promise<OrganizationDetails> {
+    return this.request<OrganizationDetails>('/auth/organization');
+  }
+
+  async inviteUser(data: InviteUserRequest): Promise<{ message: string; invitedUserId: string }> {
+    return this.request('/auth/invite', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async getReport(id: string) {
-    return this.request(`/reports/details/${id}`);
-  }
-
-  async updateReport(id: string, data: any) {
-    return this.request(`/reports/update/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
+  async upgradePlan(plan: 'STARTER' | 'REGULAR' | 'PREMIUM'): Promise<{ message: string }> {
+    return this.request(`/auth/organization/upgrade/${plan}`, {
+      method: 'PATCH',
     });
   }
 
-  async deleteReport(id: string) {
-    return this.request(`/reports/delete/${id}`, {
+  async removeUser(userId: string): Promise<{ message: string }> {
+    return this.request(`/auth/organization/users/${userId}`, {
       method: 'DELETE',
     });
+  }
+
+  // Legacy method for backwards compatibility
+  async login(data: SigninRequest): Promise<SigninResponse> {
+    return this.signin(data);
+  }
+
+  // Legacy method for backwards compatibility  
+  async register(data: SignupRequest): Promise<SignupResponse> {
+    return this.signup(data);
   }
 }
 

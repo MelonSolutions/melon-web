@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api/auth';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { signin } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -16,6 +18,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  // Handle URL parameters for messages
+  useEffect(() => {
+    const urlMessage = searchParams.get('message');
+    const verified = searchParams.get('verified');
+    
+    if (verified === 'true') {
+      setMessage('Email verified successfully! You can now sign in.');
+    } else if (urlMessage === 'check-email') {
+      setMessage('Please check your email and verify your account before signing in.');
+    }
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,22 +45,24 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setMessage('');
     
     try {
-      const response = await apiClient.login({
-        email: formData.email,
-        password: formData.password
-      });
-
-      localStorage.setItem('authToken', response.token);
-      localStorage.setItem('userData', JSON.stringify(response.user));
-      
-      // Redirect to dashboard
-      router.push('/overview');
-      
+      await signin(formData.email, formData.password);
+      // Navigation handled by useAuth hook
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'Invalid email or password. Please try again.');
+      
+      // Handle specific error cases
+      if (err.message?.includes('verify your email')) {
+        setError('Please verify your email before signing in. Check your inbox for the verification link.');
+      } else if (err.message?.includes('not active')) {
+        setError('Your account is not active. Please contact support.');
+      } else if (err.message?.includes('expired')) {
+        setError('Your trial has expired. Please contact your organization owner to upgrade.');
+      } else {
+        setError(err.message || 'Invalid email or password. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +87,7 @@ export default function LoginPage() {
           Welcome Back
         </h1>
         <p className="text-gray-600 font-normal">
-          Sign in to access your geospatial intelligence dashboard
+          Sign in to access your impact measurement dashboard
         </p>
       </div>
 
@@ -78,6 +95,12 @@ export default function LoginPage() {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+
+        {message && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-600 text-sm">{message}</p>
           </div>
         )}
 
@@ -146,12 +169,12 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {/* Optional: Add link to register page */}
+      {/* Sign up link */}
       <div className="text-center">
         <p className="text-gray-600 text-sm">
           Don&rsquo;t have an account?{' '}
           <button 
-            onClick={() => router.push('/register')}
+            onClick={() => router.push('/signup')}
             className="text-[#5B94E5] hover:underline font-medium"
           >
             Sign up

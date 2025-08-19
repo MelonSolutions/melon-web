@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
@@ -20,7 +21,28 @@ export default function ReportDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  
   const reportId = params.id as string;
+  
+  if (!reportId || reportId === 'undefined' || reportId === 'null') {
+    return (
+      <div>
+        <ReportNavigation currentPage="edit" />
+        <div className="p-6">
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-sm mb-2">Invalid report ID</div>
+            <button 
+              onClick={() => router.push('/reports')}
+              className="text-sm text-[#5B94E5] hover:text-blue-700 font-medium"
+            >
+              Back to Reports
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   const isPublished = searchParams.get('published') === 'true';
   
   const { report, loading: reportLoading, refetch } = useReport(reportId);
@@ -195,6 +217,12 @@ export default function ReportDetailsPage() {
         <div className="p-6">
           <div className="text-center py-12">
             <div className="text-gray-400 text-sm mb-2">Report not found</div>
+            <button 
+              onClick={() => router.push('/reports')}
+              className="text-sm text-[#5B94E5] hover:text-blue-700 font-medium"
+            >
+              Back to Reports
+            </button>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ModalProvider } from '@/components/ui/Modal';
 import { ToastProvider } from '@/components/ui/Toast';
+import { AuthProvider } from '@/context/AuthContext';
 
 const mabryPro = localFont({
   variable: '--font-mabry',
@@ -33,20 +34,14 @@ const mabryPro = localFont({
       weight: '900',
       style: 'normal',
     },
-    {
-      path: '../../public/fonts/mabry-pro/MabryPro-Italic.ttf',
-      weight: '300',
-      style: 'normal',
-    },
-
   ],
 });
 
 const karla = Karla({ subsets: ['latin'], variable: '--font-karla' });
 
 export const metadata: Metadata = {
-  title: 'Melon',
-  description: 'Melon Web Application',
+  title: 'Melon Impact Platform',
+  description: 'Transform data into measurable impact with intelligent analytics',
 };
 
 export default function RootLayout({
@@ -62,11 +57,13 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
       </head>
       <body className={`${karla.variable} ${mabryPro.variable} antialiased`}>
-        <ToastProvider>
-          <ModalProvider>
-            {children}
-          </ModalProvider>
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ModalProvider>
+              {children}
+            </ModalProvider>
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

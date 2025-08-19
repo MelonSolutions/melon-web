@@ -1,23 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { useState, useRef, useEffect } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { 
   MoreHorizontal, 
   Eye, 
-  Edit, 
-  Share2, 
+  Edit3, 
   Copy, 
   Trash2, 
-  Users,
-  ExternalLink
+  Share2,
+  Settings,
+  BarChart3,
+  Globe,
+  Lock,
+  Loader2
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { duplicateReport, deleteReport } from '@/lib/api/reports';
 
 interface Report {
-  _id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description?: string;
   category: string;
@@ -25,6 +28,8 @@ interface Report {
   responseCount: number;
   createdAt: string;
   updatedAt: string;
+  isPublic?: boolean;
+  shareToken?: string;
 }
 
 interface ReportCardProps {
@@ -34,237 +39,389 @@ interface ReportCardProps {
 }
 
 export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
+  // Get the correct ID - prioritize 'id' field from API response, fallback to '_id'
+  const reportId = report.id || report._id;
+
+  if (!reportId) {
+    console.error('Report missing ID:', report);
+    return null;
+  }
+
+  const handleDuplicate = async () => {
+    try {
+      setLoading(true);
+      await duplicateReport(reportId);
+      onRefetch();
+    } catch (error) {
+      console.error('Error duplicating report:', error);
+    } finally {
+      setLoading(false);
+      setShowDropdown(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmed = confirm(`Are you sure you want to delete "${report.title}"? This action cannot be undone.`);
+    
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      await deleteReport(reportId);
+      onRefetch();
+    } catch (error) {
+      console.error('Error deleting report:', error);
+    } finally {
+      setLoading(false);
+      setShowDropdown(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (report.status !== 'published') {
+      alert('Only published reports can be shared.');
+      return;
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const shareUrl = `${window.location.origin}/reports/public/${report.shareToken || reportId}`;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Share link copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+    }
+    setShowDropdown(false);
+  };
 
-  const getStatusBadge = (status: string) => {
-    const baseClasses = "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'published':
-        return `${baseClasses} bg-green-50 text-green-700`;
+        return 'bg-green-50 text-green-700 border-green-200';
       case 'draft':
-        return `${baseClasses} bg-yellow-50 text-yellow-700`;
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
       case 'closed':
-        return `${baseClasses} bg-gray-50 text-gray-700`;
+        return 'bg-gray-50 text-gray-700 border-gray-200';
       default:
-        return `${baseClasses} bg-gray-50 text-gray-700`;
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
-  const getCategoryBadge = (category: string) => {
-    return "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700";
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      'Impact Assessment': 'bg-blue-50 text-blue-700',
+      'Feedback': 'bg-purple-50 text-purple-700',
+      'Health': 'bg-red-50 text-red-700',
+      'Education': 'bg-indigo-50 text-indigo-700',
+      'Agriculture': 'bg-green-50 text-green-700',
+      'Community': 'bg-orange-50 text-orange-700',
+    };
+    return colors[category as keyof typeof colors] || 'bg-gray-50 text-gray-700';
   };
 
-  const handleAction = async (action: string) => {
-    setShowMenu(false);
-    
-    switch (action) {
-      case 'duplicate':
-        // TODO: Implement duplicate functionality
-        console.log('Duplicate report:', report._id);
-        break;
-      case 'delete':
-        if (confirm('Are you sure you want to delete this report?')) {
-          // TODO: Implement delete functionality
-          console.log('Delete report:', report._id);
-          onRefetch();
-        }
-        break;
-      case 'share':
-        // TODO: Implement share functionality
-        console.log('Share report:', report._id);
-        break;
-    }
-  };
-
-  const MenuDropdown = () => (
-    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10" ref={menuRef}>
-      <Link
-        href={`/reports/${report._id}`}
-        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-        onClick={() => setShowMenu(false)}
-      >
-        <Edit className="w-4 h-4" />
-        Edit Report
-      </Link>
-      <Link
-        href={`/reports/${report._id}/responses`}
-        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-        onClick={() => setShowMenu(false)}
-      >
-        <Eye className="w-4 h-4" />
-        View Responses
-      </Link>
-      {report.status === 'published' && (
-        <a
-          href={`/reports/public/${report._id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-          onClick={() => setShowMenu(false)}
-        >
-          <ExternalLink className="w-4 h-4" />
-          View Public Form
-        </a>
-      )}
-      <button
-        onClick={() => handleAction('share')}
-        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
-      >
-        <Share2 className="w-4 h-4" />
-        Share Report
-      </button>
-      <button
-        onClick={() => handleAction('duplicate')}
-        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
-      >
-        <Copy className="w-4 h-4" />
-        Duplicate
-      </button>
-      <div className="border-t border-gray-100 my-1"></div>
-      <button
-        onClick={() => handleAction('delete')}
-        className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left"
-      >
-        <Trash2 className="w-4 h-4" />
-        Delete Report
-      </button>
-    </div>
-  );
-
-  if (view === 'list') {
+  // Grid View
+  if (view === 'grid') {
     return (
-      <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
-        <div className="grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-4">
-            <Link 
-              href={`/reports/${report._id}`}
-              className="font-medium text-gray-900 hover:text-[#5B94E5] transition-colors line-clamp-1"
-            >
-              {report.title}
-            </Link>
-            {report.description && (
-              <div className="text-sm text-gray-500 line-clamp-1 mt-1">
-                {report.description}
-              </div>
-            )}
+      <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow relative">
+        {/* Header */}
+        <div className="p-6 pb-4">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1 min-w-0">
+              <Link 
+                href={`/reports/${reportId}`}
+                className="block"
+              >
+                <h3 className="text-lg font-medium text-gray-900 truncate hover:text-[#5B94E5] transition-colors">
+                  {report.title}
+                </h3>
+              </Link>
+              {report.description && (
+                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                  {report.description}
+                </p>
+              )}
+            </div>
+
+            {/* Dropdown Menu */}
+            <div className="relative ml-2">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                ) : (
+                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+
+              {showDropdown && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-10">
+                  <div className="py-1">
+                    <Link
+                      href={`/reports/${reportId}`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      Edit
+                    </Link>
+                    <Link
+                      href={`/reports/${reportId}/responses`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Responses
+                    </Link>
+                    <Link
+                      href={`/reports/${reportId}/settings`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </Link>
+                    
+                    <div className="border-t border-gray-100 my-1"></div>
+                    
+                    {report.status === 'published' && (
+                      <>
+                        <a
+                          href={`/reports/public/${report.shareToken || reportId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <Eye className="w-4 h-4" />
+                          Preview
+                        </a>
+                        <button
+                          onClick={handleShare}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          Share
+                        </button>
+                      </>
+                    )}
+                    
+                    <button
+                      onClick={handleDuplicate}
+                      disabled={loading}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Duplicate
+                    </button>
+                    
+                    <div className="border-t border-gray-100 my-1"></div>
+                    
+                    <button
+                      onClick={handleDelete}
+                      disabled={loading}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="col-span-2">
-            <span className={getStatusBadge(report.status)}>
+          {/* Status and Category Badges */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(report.status)}`}>
+              {report.status === 'published' && report.isPublic && <Globe className="w-3 h-3" />}
+              {report.status === 'published' && !report.isPublic && <Lock className="w-3 h-3" />}
               {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
             </span>
-          </div>
-
-          <div className="col-span-2">
-            <span className={getCategoryBadge(report.category)}>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(report.category)}`}>
               {report.category}
             </span>
           </div>
+        </div>
 
-          <div className="col-span-2">
-            <div className="flex items-center gap-1 text-sm text-gray-600">
-              <Users className="w-4 h-4" />
-              {report.responseCount}
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-4">
+              <span className="text-gray-600">
+                <span className="font-medium">{report.responseCount}</span> responses
+              </span>
+              <span className="text-gray-400">
+                Updated {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
+              </span>
             </div>
-          </div>
-
-          <div className="col-span-1">
-            <div className="text-sm text-gray-500">
-              {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
-            </div>
-          </div>
-
-          <div className="col-span-1 relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-            {showMenu && <MenuDropdown />}
           </div>
         </div>
+
+        {/* Click overlay to close dropdown */}
+        {showDropdown && (
+          <div 
+            className="fixed inset-0 z-5"
+            onClick={() => setShowDropdown(false)}
+          />
+        )}
       </div>
     );
   }
 
+  // List View
   return (
-    <div className="bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0">
-            <Link 
-              href={`/reports/${report._id}`}
-              className="font-medium text-gray-900 hover:text-[#5B94E5] transition-colors line-clamp-2"
-            >
+    <div className="hover:bg-gray-50 transition-colors">
+      <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
+        {/* Name */}
+        <div className="col-span-4">
+          <Link 
+            href={`/reports/${reportId}`}
+            className="block"
+          >
+            <div className="font-medium text-gray-900 hover:text-[#5B94E5] transition-colors truncate">
               {report.title}
-            </Link>
+            </div>
             {report.description && (
-              <div className="text-sm text-gray-500 line-clamp-2 mt-2">
+              <div className="text-sm text-gray-500 truncate mt-1">
                 {report.description}
               </div>
             )}
-          </div>
-          <div className="ml-4 relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-            {showMenu && <MenuDropdown />}
-          </div>
+          </Link>
         </div>
 
-        <div className="flex items-center gap-2 mb-4">
-          <span className={getStatusBadge(report.status)}>
+        {/* Status */}
+        <div className="col-span-2">
+          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(report.status)}`}>
+            {report.status === 'published' && report.isPublic && <Globe className="w-3 h-3" />}
+            {report.status === 'published' && !report.isPublic && <Lock className="w-3 h-3" />}
             {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
           </span>
-          <span className={getCategoryBadge(report.category)}>
+        </div>
+
+        {/* Category */}
+        <div className="col-span-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(report.category)}`}>
             {report.category}
           </span>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            {report.responseCount} responses
-          </div>
-          <div>
-            {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
-          </div>
+        {/* Responses */}
+        <div className="col-span-2">
+          <span className="text-sm text-gray-900 font-medium">{report.responseCount}</span>
         </div>
-      </div>
 
-      <div className="border-t border-gray-200 px-6 py-3">
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/reports/${report._id}/responses`}
-            className="flex-1 text-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
-          >
-            View Responses
-          </Link>
-          {report.status === 'published' && (
-            <button
-              onClick={() => handleAction('share')}
-              className="px-3 py-2 text-sm font-medium text-[#5B94E5] bg-blue-50 rounded hover:bg-blue-100 transition-colors"
-            >
-              Share
-            </button>
-          )}
+        {/* Updated */}
+        <div className="col-span-1">
+          <span className="text-sm text-gray-500">
+            {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
+          </span>
         </div>
+
+        {/* Actions */}
+        <div className="col-span-1 flex justify-end">
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              ) : (
+                <MoreHorizontal className="w-4 h-4 text-gray-400" />
+              )}
+            </button>
+
+            {showDropdown && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-10">
+                <div className="py-1">
+                  <Link
+                    href={`/reports/${reportId}`}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit
+                  </Link>
+                  <Link
+                    href={`/reports/${reportId}/responses`}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Responses
+                  </Link>
+                  <Link
+                    href={`/reports/${reportId}/settings`}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </Link>
+                  
+                  <div className="border-t border-gray-100 my-1"></div>
+                  
+                  {report.status === 'published' && (
+                    <>
+                      <a
+                        href={`/reports/public/${report.shareToken || reportId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <Eye className="w-4 h-4" />
+                        Preview
+                      </a>
+                      <button
+                        onClick={handleShare}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        Share
+                      </button>
+                    </>
+                  )}
+                  
+                  <button
+                    onClick={handleDuplicate}
+                    disabled={loading}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Duplicate
+                  </button>
+                  
+                  <div className="border-t border-gray-100 my-1"></div>
+                  
+                  <button
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Click overlay to close dropdown */}
+        {showDropdown && (
+          <div 
+            className="fixed inset-0 z-5"
+            onClick={() => setShowDropdown(false)}
+          />
+        )}
       </div>
     </div>
   );

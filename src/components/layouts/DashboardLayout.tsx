@@ -17,6 +17,7 @@ import {
   Search,
   Bell,
   Menu,
+  Bot,
 } from "lucide-react";
 
 interface NavItem {
@@ -66,6 +67,11 @@ export default function DashboardLayout({
       name: 'Map View',
       href: '/map-view',
       icon: <MapIcon className="h-5 w-5" />,
+    },
+        {
+      name: 'AI Reporting',
+      href: '/ai-reporting',
+      icon: <Bot className="h-5 w-5" />,
     },
   ];
 

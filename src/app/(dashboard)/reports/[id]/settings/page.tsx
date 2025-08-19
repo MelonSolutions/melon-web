@@ -11,22 +11,27 @@ import {
   Lock, 
   Mail,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useReport } from '@/hooks/useReports';
 import { updateReport, deleteReport, getShareLink } from '@/lib/api/reports';
 import { ReportCategory } from '@/types/reports';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
+import { useToast } from '@/components/ui/Toast';
 
 export default function ReportSettingsPage() {
   const params = useParams();
   const router = useRouter();
   const reportId = params.id as string;
+  const { addToast } = useToast();
   
   const { report, loading: reportLoading, refetch } = useReport(reportId);
   const [loading, setLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('general');
   const [formData, setFormData] = useState({
     title: '',
@@ -59,9 +64,9 @@ export default function ReportSettingsPage() {
         title: report.title,
         description: report.description || '',
         category: report.category as ReportCategory,
-        allowMultipleResponses: false, 
-        collectEmail: false,
-        isPublic: false,
+        allowMultipleResponses: report.allowMultipleResponses || false, 
+        collectEmail: report.collectEmail || false,
+        isPublic: report.isPublic || false,
       });
     }
   }, [report]);
@@ -71,36 +76,102 @@ export default function ReportSettingsPage() {
       setLoading(true);
       await updateReport(reportId, formData);
       await refetch();
-      // Show success feedback
+      
+      addToast({
+        type: 'success',
+        title: 'Settings Saved',
+        message: 'Your report settings have been updated successfully.',
+      });
     } catch (error) {
       console.error('Error saving settings:', error);
-      // Show error feedback
+      addToast({
+        type: 'error',
+        title: 'Failed to Save',
+        message: 'There was an error saving your settings. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
-      try {
-        setLoading(true);
-        await deleteReport(reportId);
-        router.push('/reports');
-      } catch (error) {
-        console.error('Error deleting report:', error);
-        setLoading(false);
-      }
+    const confirmed = confirm(
+      `Are you sure you want to delete "${report?.title}"? This will permanently delete the report and all its responses. This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setLoading(true);
+      await deleteReport(reportId);
+      
+      addToast({
+        type: 'success',
+        title: 'Report Deleted',
+        message: 'The report has been permanently deleted.',
+      });
+      
+      router.push('/reports');
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to Delete',
+        message: 'There was an error deleting the report. Please try again.',
+      });
+      setLoading(false);
     }
   };
 
   const handleGenerateShareLink = async () => {
+    if (!report) return;
+    
+    if (report.status !== 'published') {
+      addToast({
+        type: 'warning',
+        title: 'Report Not Published',
+        message: 'Only published reports can be shared. Please publish the report first.',
+      });
+      return;
+    }
+
     try {
-      const { shareUrl } = await getShareLink(reportId);
-      setShareUrl(shareUrl);
-      navigator.clipboard.writeText(shareUrl);
+      setShareLoading(true);
+      const { shareUrl: newShareUrl } = await getShareLink(reportId);
+      setShareUrl(newShareUrl);
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(newShareUrl);
+      
+      addToast({
+        type: 'success',
+        title: 'Link Copied!',
+        message: 'Share link has been copied to your clipboard.',
+      });
     } catch (error) {
       console.error('Error generating share link:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to Generate Link',
+        message: 'There was an error generating the share link. Please try again.',
+      });
+    } finally {
+      setShareLoading(false);
     }
+  };
+
+  const handleEmailLink = () => {
+    if (!shareUrl) {
+      handleGenerateShareLink();
+      return;
+    }
+    
+    const subject = encodeURIComponent(`Please fill out: ${report?.title || 'Report'}`);
+    const body = encodeURIComponent(
+      `Hi,\n\nI'd like you to fill out this form: ${report?.title || 'Report'}\n\n${shareUrl}\n\nThank you!`
+    );
+    
+    window.open(`mailto:?subject=${subject}&body=${body}`);
   };
 
   if (reportLoading) {
@@ -108,7 +179,6 @@ export default function ReportSettingsPage() {
       <div>
         <ReportNavigation currentPage="settings" />
         <div className="p-6 space-y-6">
-          {/* Header Skeleton */}
           <div className="flex items-center justify-between">
             <div>
               <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
@@ -117,7 +187,6 @@ export default function ReportSettingsPage() {
             <div className="h-9 w-28 bg-gray-200 rounded-lg animate-pulse"></div>
           </div>
 
-          {/* Content Skeleton */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="space-y-3">
@@ -163,12 +232,9 @@ export default function ReportSettingsPage() {
 
   return (
     <div>
-      {/* Integrated Navigation */}
       <ReportNavigation currentPage="settings" />
       
-      {/* Page Content */}
       <div className="p-6 space-y-6">
-        {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-medium text-gray-900">Settings</h1>
@@ -180,12 +246,11 @@ export default function ReportSettingsPage() {
             disabled={loading}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
           >
-            <Save className="w-4 h-4" />
-            Save Changes
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Navigation */}
           <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -350,7 +415,7 @@ export default function ReportSettingsPage() {
                   </div>
 
                   {/* Share Link */}
-                  {report.status === 'published' && (
+                  {report.status === 'published' ? (
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -365,9 +430,14 @@ export default function ReportSettingsPage() {
                           />
                           <button
                             onClick={handleGenerateShareLink}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                            disabled={shareLoading}
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
                           >
-                            <Copy className="w-4 h-4" />
+                            {shareLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
                             Copy
                           </button>
                         </div>
@@ -380,16 +450,43 @@ export default function ReportSettingsPage() {
                       <div className="flex gap-3">
                         <button
                           onClick={handleGenerateShareLink}
-                          className="flex items-center gap-2 px-4 py-2 text-[#5B94E5] bg-blue-50 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
+                          disabled={shareLoading}
+                          className="flex items-center gap-2 px-4 py-2 text-[#5B94E5] bg-blue-50 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
                         >
                           <Share2 className="w-4 h-4" />
                           Generate New Link
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-50 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors">
+                        <button 
+                          onClick={handleEmailLink}
+                          className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-50 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                        >
                           <Mail className="w-4 h-4" />
                           Email Link
                         </button>
+                        <a
+                          href={`/reports/public/${reportId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-50 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Preview Form
+                        </a>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                      <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                      <h3 className="text-sm font-medium text-gray-900 mb-1">Report Not Published</h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Publish your report to generate a share link and start collecting responses.
+                      </p>
+                      <Link
+                        href={`/reports/${reportId}`}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        Go to Edit & Publish
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -435,21 +532,28 @@ export default function ReportSettingsPage() {
                 <h2 className="text-lg font-medium text-red-600 mb-6">Advanced Settings</h2>
                 
                 <div className="space-y-6">
-                  <div className="border border-red-200 rounded-lg p-4">
+                  <div className="border border-red-200 rounded-lg p-4 bg-red-50">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-sm font-medium text-gray-900 mb-1">Delete Report</h3>
                         <p className="text-sm text-gray-500">
                           Permanently delete this report and all its responses. This action cannot be undone.
                         </p>
+                        <div className="mt-2 text-xs text-red-600">
+                          ⚠️ This will delete {report.responseCount} responses and cannot be recovered.
+                        </div>
                       </div>
                       <button
                         onClick={handleDelete}
                         disabled={loading}
                         className="ml-4 inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                       >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Report
+                        {loading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                        {loading ? 'Deleting...' : 'Delete Report'}
                       </button>
                     </div>
                   </div>

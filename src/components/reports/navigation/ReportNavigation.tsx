@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Eye, Settings, Edit3, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Eye, Settings, Edit3, BarChart3, Loader2 } from 'lucide-react';
 import { useReport } from '@/hooks/useReports';
 
 interface ReportNavigationProps {
@@ -15,9 +16,51 @@ export function ReportNavigation({ showBackButton = true, currentPage }: ReportN
   const params = useParams();
   const reportId = params?.id as string;
   
-  const { report } = useReport(reportId);
+  const { report, loading } = useReport(reportId);
 
-  if (!reportId || !report) return null;
+  const getCurrentPage = () => {
+    if (currentPage) return currentPage;
+    if (pathname.includes('/responses')) return 'responses';
+    if (pathname.includes('/settings')) return 'settings';
+    return 'edit';
+  };
+
+  const activePage = getCurrentPage();
+
+  // Skeleton Navigation for loading state
+  if (loading || !report) {
+    return (
+      <div className="border-b border-gray-200 bg-white">
+        <div className="px-6 py-4">
+          {/* Loading Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              {showBackButton && (
+                <Link 
+                  href="/reports"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Link>
+              )}
+              <div>
+                <div className="h-5 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+            <div className="h-9 w-24 bg-gray-200 rounded-lg animate-pulse"></div>
+          </div>
+
+          {/* Loading Tabs */}
+          <nav className="flex space-x-1">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-9 w-20 bg-gray-200 rounded-lg animate-pulse"></div>
+            ))}
+          </nav>
+        </div>
+      </div>
+    );
+  }
 
   const navItems = [
     {
@@ -43,15 +86,6 @@ export function ReportNavigation({ showBackButton = true, currentPage }: ReportN
       description: 'Configure form settings'
     }
   ];
-
-  const getCurrentPage = () => {
-    if (currentPage) return currentPage;
-    if (pathname.includes('/responses')) return 'responses';
-    if (pathname.includes('/settings')) return 'settings';
-    return 'edit';
-  };
-
-  const activePage = getCurrentPage();
 
   return (
     <div className="border-b border-gray-200 bg-white">
