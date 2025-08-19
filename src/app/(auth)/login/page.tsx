@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signin } = useAuth();
@@ -182,5 +182,53 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <div className="space-y-8">
+      {/* Logo */}
+      <div className="text-center">
+        <Image
+          src="/images/melon-logo.svg"
+          alt="Melon"
+          width={120}
+          height={32}
+          className="mx-auto mb-8"
+          priority
+        />
+      </div>
+
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-[#1c2331] mb-3">
+          Welcome Back
+        </h1>
+        <p className="text-gray-600 font-normal">
+          Sign in to access your impact measurement dashboard
+        </p>
+      </div>
+
+      {/* Loading skeleton */}
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+        </div>
+        <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginContent />
+    </Suspense>
   );
 }
