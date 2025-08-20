@@ -19,12 +19,11 @@ import {
 import { duplicateReport, deleteReport } from '@/lib/api/reports';
 
 interface Report {
-  _id?: string;
-  id?: string;
+  _id: string;
   title: string;
   description?: string;
   category: string;
-  status: 'draft' | 'published' | 'closed';
+  status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   responseCount: number;
   createdAt: string;
   updatedAt: string;
@@ -42,8 +41,7 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Get the correct ID - prioritize 'id' field from API response, fallback to '_id'
-  const reportId = report.id || report._id;
+  const reportId = report._id;
 
   if (!reportId) {
     console.error('Report missing ID:', report);
@@ -81,7 +79,7 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
   };
 
   const handleShare = async () => {
-    if (report.status !== 'published') {
+    if (report.status !== 'PUBLISHED') {
       alert('Only published reports can be shared.');
       return;
     }
@@ -97,14 +95,25 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
     setShowDropdown(false);
   };
 
+  const handleNavigate = (path: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    window.location.href = path;
+    setShowDropdown(false);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published':
+      case 'PUBLISHED':
         return 'bg-green-50 text-green-700 border-green-200';
-      case 'draft':
+      case 'DRAFT':
         return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'closed':
+      case 'CLOSED':
         return 'bg-gray-50 text-gray-700 border-gray-200';
+      case 'ARCHIVED':
+        return 'bg-gray-100 text-gray-600 border-gray-300';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
@@ -125,148 +134,159 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
   // Grid View
   if (view === 'grid') {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow relative">
-        {/* Header */}
-        <div className="p-6 pb-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <Link 
-                href={`/reports/${reportId}`}
-                className="block"
-              >
-                <h3 className="text-lg font-medium text-gray-900 truncate hover:text-[#5B94E5] transition-colors">
+      <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow relative flex flex-col h-full cursor-pointer group">
+        <Link href={`/reports/${reportId}`} className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-6 pb-4 flex-1">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-medium text-gray-900 truncate group-hover:text-[#5B94E5] transition-colors">
                   {report.title}
                 </h3>
-              </Link>
-              {report.description && (
-                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                  {report.description}
-                </p>
-              )}
-            </div>
-
-            {/* Dropdown Menu */}
-            <div className="relative ml-2">
-              <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                ) : (
-                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                {report.description && (
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                    {report.description}
+                  </p>
                 )}
-              </button>
+              </div>
 
-              {showDropdown && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-10">
-                  <div className="py-1">
-                    <Link
-                      href={`/reports/${reportId}`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setShowDropdown(false)}
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      Edit
-                    </Link>
-                    <Link
-                      href={`/reports/${reportId}/responses`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setShowDropdown(false)}
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      Responses
-                    </Link>
-                    <Link
-                      href={`/reports/${reportId}/settings`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      onClick={() => setShowDropdown(false)}
-                    >
-                      <Settings className="w-4 h-4" />
-                      Settings
-                    </Link>
-                    
-                    <div className="border-t border-gray-100 my-1"></div>
-                    
-                    {report.status === 'published' && (
-                      <>
-                        <a
-                          href={`/reports/public/${report.shareToken || reportId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          onClick={() => setShowDropdown(false)}
-                        >
-                          <Eye className="w-4 h-4" />
-                          Preview
-                        </a>
-                        <button
-                          onClick={handleShare}
-                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Share2 className="w-4 h-4" />
-                          Share
-                        </button>
-                      </>
-                    )}
-                    
-                    <button
-                      onClick={handleDuplicate}
-                      disabled={loading}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      <Copy className="w-4 h-4" />
-                      Duplicate
-                    </button>
-                    
-                    <div className="border-t border-gray-100 my-1"></div>
-                    
-                    <button
-                      onClick={handleDelete}
-                      disabled={loading}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </button>
+              <div className="relative ml-2">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowDropdown(!showDropdown);
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded transition-colors z-10"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                  ) : (
+                    <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                  )}
+                </button>
+
+                {showDropdown && (
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
+                    <div className="py-1">
+                      <button
+                        onClick={(e) => handleNavigate(`/reports/${reportId}`, e)}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => handleNavigate(`/reports/${reportId}/responses`, e)}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                        Responses
+                      </button>
+                      <button
+                        onClick={(e) => handleNavigate(`/reports/${reportId}/settings`, e)}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </button>
+                      
+                      <div className="border-t border-gray-100 my-1"></div>
+
+                      {report.status === 'PUBLISHED' && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
+                              setShowDropdown(false);
+                            }}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Preview
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleShare();
+                            }}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                          >
+                            <Share2 className="w-4 h-4" />
+                            Share
+                          </button>
+                        </>
+                      )}
+                      
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDuplicate();
+                        }}
+                        disabled={loading}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-left"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Duplicate
+                      </button>
+                      
+                      <div className="border-t border-gray-100 my-1"></div>
+                      
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDelete();
+                        }}
+                        disabled={loading}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 text-left"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Status and Category Badges */}
-          <div className="flex items-center gap-2 mb-4">
-            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(report.status)}`}>
-              {report.status === 'published' && report.isPublic && <Globe className="w-3 h-3" />}
-              {report.status === 'published' && !report.isPublic && <Lock className="w-3 h-3" />}
-              {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-            </span>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(report.category)}`}>
-              {report.category}
-            </span>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
-              <span className="text-gray-600">
-                <span className="font-medium">{report.responseCount}</span> responses
+            {/* Status and Category Badges */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(report.status)}`}>
+                {report.status === 'PUBLISHED' && report.isPublic && <Globe className="w-3 h-3" />}
+                {report.status === 'PUBLISHED' && !report.isPublic && <Lock className="w-3 h-3" />}
+                {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
               </span>
-              <span className="text-gray-400">
-                Updated {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(report.category)}`}>
+                {report.category}
               </span>
             </div>
           </div>
-        </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 mt-auto">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-4">
+                <span className="text-gray-600">
+                  <span className="font-medium">{report.responseCount}</span> responses
+                </span>
+                <span className="text-gray-400">
+                  Updated {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
+                </span>
+              </div>
+            </div>
+          </div>
+        </Link>
 
         {/* Click overlay to close dropdown */}
         {showDropdown && (
           <div 
-            className="fixed inset-0 z-5"
+            className="fixed inset-0 z-10"
             onClick={() => setShowDropdown(false)}
           />
         )}
@@ -274,7 +294,6 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
     );
   }
 
-  // List View
   return (
     <div className="hover:bg-gray-50 transition-colors">
       <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
@@ -298,8 +317,8 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
         {/* Status */}
         <div className="col-span-2">
           <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(report.status)}`}>
-            {report.status === 'published' && report.isPublic && <Globe className="w-3 h-3" />}
-            {report.status === 'published' && !report.isPublic && <Lock className="w-3 h-3" />}
+            {report.status === 'PUBLISHED' && report.isPublic && <Globe className="w-3 h-3" />}
+            {report.status === 'PUBLISHED' && !report.isPublic && <Lock className="w-3 h-3" />}
             {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
           </span>
         </div>
@@ -341,48 +360,45 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
             {showDropdown && (
               <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-10">
                 <div className="py-1">
-                  <Link
-                    href={`/reports/${reportId}`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => setShowDropdown(false)}
+                  <button
+                    onClick={() => handleNavigate(`/reports/${reportId}`)}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                   >
                     <Edit3 className="w-4 h-4" />
                     Edit
-                  </Link>
-                  <Link
-                    href={`/reports/${reportId}/responses`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => setShowDropdown(false)}
+                  </button>
+                  <button
+                    onClick={() => handleNavigate(`/reports/${reportId}/responses`)}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                   >
                     <BarChart3 className="w-4 h-4" />
                     Responses
-                  </Link>
-                  <Link
-                    href={`/reports/${reportId}/settings`}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => setShowDropdown(false)}
+                  </button>
+                  <button
+                    onClick={() => handleNavigate(`/reports/${reportId}/settings`)}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                   >
                     <Settings className="w-4 h-4" />
                     Settings
-                  </Link>
+                  </button>
                   
                   <div className="border-t border-gray-100 my-1"></div>
-                  
-                  {report.status === 'published' && (
+
+                  {report.status === 'PUBLISHED' && (
                     <>
-                      <a
-                        href={`/reports/public/${report.shareToken || reportId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowDropdown(false)}
+                      <button
+                        onClick={() => {
+                          window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
+                          setShowDropdown(false);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                       >
                         <Eye className="w-4 h-4" />
                         Preview
-                      </a>
+                      </button>
                       <button
                         onClick={handleShare}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                       >
                         <Share2 className="w-4 h-4" />
                         Share
@@ -393,7 +409,7 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
                   <button
                     onClick={handleDuplicate}
                     disabled={loading}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-left"
                   >
                     <Copy className="w-4 h-4" />
                     Duplicate
@@ -404,7 +420,7 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
                   <button
                     onClick={handleDelete}
                     disabled={loading}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 text-left"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -418,7 +434,7 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
         {/* Click overlay to close dropdown */}
         {showDropdown && (
           <div 
-            className="fixed inset-0 z-5"
+            className="fixed inset-0 z-10"
             onClick={() => setShowDropdown(false)}
           />
         )}

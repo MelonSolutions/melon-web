@@ -21,6 +21,7 @@ import { updateReport, deleteReport, getShareLink } from '@/lib/api/reports';
 import { ReportCategory } from '@/types/reports';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import { useToast } from '@/components/ui/Toast';
+import { EmailSharingModal } from '@/components/reports/EmailSharingModal';
 
 export default function ReportSettingsPage() {
   const params = useParams();
@@ -33,6 +34,7 @@ export default function ReportSettingsPage() {
   const [shareUrl, setShareUrl] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('general');
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -126,7 +128,7 @@ export default function ReportSettingsPage() {
   const handleGenerateShareLink = async () => {
     if (!report) return;
     
-    if (report.status !== 'published') {
+    if (report.status !== 'PUBLISHED') {
       addToast({
         type: 'warning',
         title: 'Report Not Published',
@@ -160,19 +162,14 @@ export default function ReportSettingsPage() {
     }
   };
 
-  const handleEmailLink = () => {
-    if (!shareUrl) {
-      handleGenerateShareLink();
-      return;
-    }
-    
-    const subject = encodeURIComponent(`Please fill out: ${report?.title || 'Report'}`);
-    const body = encodeURIComponent(
-      `Hi,\n\nI'd like you to fill out this form: ${report?.title || 'Report'}\n\n${shareUrl}\n\nThank you!`
-    );
-    
-    window.open(`mailto:?subject=${subject}&body=${body}`);
-  };
+const handleEmailLink = () => {
+  if (!shareUrl) {
+    handleGenerateShareLink();
+    return;
+  }
+  
+  setShowEmailModal(true);
+};
 
   if (reportLoading) {
     return (
@@ -415,7 +412,7 @@ export default function ReportSettingsPage() {
                   </div>
 
                   {/* Share Link */}
-                  {report.status === 'published' ? (
+                  {report.status === 'PUBLISHED' ? (
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -506,13 +503,13 @@ export default function ReportSettingsPage() {
                     </div>
                     <div className="text-center">
                       <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        report.status === 'published' 
+                        report.status === 'PUBLISHED' 
                           ? 'bg-green-50 text-green-700' 
-                          : report.status === 'draft'
+                          : report.status === 'DRAFT'
                           ? 'bg-yellow-50 text-yellow-700'
                           : 'bg-gray-50 text-gray-700'
                       }`}>
-                        {report.status === 'published' ? (
+                        {report.status === 'PUBLISHED' ? (
                           <CheckCircle className="w-3 h-3 mr-1" />
                         ) : (
                           <AlertCircle className="w-3 h-3 mr-1" />
@@ -559,6 +556,14 @@ export default function ReportSettingsPage() {
                   </div>
                 </div>
               </div>
+            )}
+            {showEmailModal && (
+              <EmailSharingModal
+                isOpen={showEmailModal}
+                onClose={() => setShowEmailModal(false)}
+                report={report}
+                shareUrl={shareUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/reports/public/${reportId}`}
+              />
             )}
           </div>
         </div>

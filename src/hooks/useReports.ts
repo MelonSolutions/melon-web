@@ -31,11 +31,12 @@ export interface Question {
 }
 
 export interface Report {
+  id: string;
   _id: string;
   title: string;
   description?: string;
   category: string;
-  status: 'draft' | 'published' | 'closed';
+  status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   responseCount: number;
   createdAt: string;
   updatedAt: string;

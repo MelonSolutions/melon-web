@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// Create this file: app/reports/public/[shareToken]/page.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle, AlertCircle, Loader2, Send, ArrowLeft, Shield } from 'lucide-react';
-import { getPublicReport } from '@/lib/api/reports';
-import { useResponseSubmission } from '@/hooks/useResponses';
+import { useParams } from 'next/navigation';
+import { Send, CheckCircle } from 'lucide-react';
 
 interface Question {
   id: string;
@@ -16,7 +16,6 @@ interface Question {
   required: boolean;
   options?: string[];
   impactMetricId?: string;
-  settings?: any;
 }
 
 interface Report {
@@ -25,156 +24,151 @@ interface Report {
   description?: string;
   questions: Question[];
   collectEmail: boolean;
-  allowMultipleResponses: boolean;
-  category?: string;
-  organization?: {
-    name: string;
-    domain: string;
-  };
+  isPublic: boolean;
+  status: string;
 }
 
-export default function PublicResponseForm() {
+export default function PublicFormPage() {
   const params = useParams();
-  const router = useRouter();
-  const shareToken = params.shareToken as string;
+  const shareToken = params?.shareToken as string;
   
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  
-  const [formData, setFormData] = useState<{
-    respondentName?: string;
-    respondentEmail?: string;
-    responses: Record<string, any>;
-  }>({
-    responses: {},
-  });
-  
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const { submitResponse, loading: submitting, error: submitError } = useResponseSubmission();
+  const [error, setError] = useState<string | null>(null);
+  const [responses, setResponses] = useState<Record<string, any>>({});
+  const [respondentName, setRespondentName] = useState('');
+  const [respondentEmail, setRespondentEmail] = useState('');
 
-  // Fetch the public report
   useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const reportData = await getPublicReport(shareToken);
-        setReport(reportData);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load form';
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (shareToken) {
-      fetchReport();
+      fetchPublicReport();
     }
   }, [shareToken]);
 
-  const handleInputChange = (questionId: string, value: any, isImpactMetric = false) => {
-    setFormData(prev => ({
-      ...prev,
-      responses: {
-        ...prev.responses,
-        [questionId]: isImpactMetric ? { actualValue: value } : { answer: value },
-      },
-    }));
-
-    // Clear validation error when user starts typing
-    if (validationErrors[questionId]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[questionId];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (report?.collectEmail && !formData.respondentEmail) {
-      errors.email = 'Email is required';
-    }
-
-    if (report?.collectEmail && formData.respondentEmail && !/\S+@\S+\.\S+/.test(formData.respondentEmail)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    report?.questions.forEach(question => {
-      if (question.required) {
-        const response = formData.responses[question.id];
-        if (!response || (response.answer === '' && response.actualValue === undefined)) {
-          errors[question.id] = 'This field is required';
+  const fetchPublicReport = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/reports/public/${shareToken}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Form not found');
+        } else if (response.status === 403) {
+          throw new Error('This form is not publicly accessible');
+        } else {
+          throw new Error('Failed to load form');
         }
       }
+      
+      const data = await response.json();
+      setReport(data);
+    } catch (err) {
+      console.error('Error fetching public report:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load form');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResponseChange = (questionId: string, value: any) => {
+    setResponses(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!report) return;
+
+  const missingRequired = report.questions
+    .filter(q => q.required)
+    .filter(q => !responses[q.id] || responses[q.id] === '');
+  
+  if (missingRequired.length > 0) {
+    alert('Please fill in all required fields');
+    return;
+  }
+
+  if (report.collectEmail && !respondentEmail) {
+    alert('Email address is required');
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+    
+    const formattedResponses = Object.entries(responses).map(([questionId, value]) => {
+      const question = report.questions.find(q => q.id === questionId);
+      
+      if (question?.type === 'impact_metric') {
+        return {
+          questionId,
+          impactMetricId: question.impactMetricId,
+          actualValue: parseFloat(value) || 0
+        };
+      }
+
+      return {
+        questionId,
+        answer: Array.isArray(value) ? value.join(', ') : value.toString()
+      };
     });
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+    const submitData = {
+      reportId: report._id,
+      responses: formattedResponses,
+      respondentName: respondentName || undefined,
+      respondentEmail: respondentEmail || undefined,
+    };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    console.log('Submitting data:', submitData);
 
-    if (!validateForm()) {
-      // Scroll to first error
-      const firstErrorElement = document.querySelector('.error-field');
-      if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
+    const response = await fetch('/api/responses/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(submitData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Failed to submit' }));
+      throw new Error(errorData.message || 'Failed to submit response');
     }
 
-    try {
-      const responseData = {
-        reportId: report!._id,
-        respondentName: formData.respondentName,
-        respondentEmail: formData.respondentEmail,
-        responses: Object.entries(formData.responses).map(([questionId, response]) => ({
-          questionId,
-          answer: response.answer,
-          actualValue: response.actualValue,
-          impactMetricId: report!.questions.find(q => q.id === questionId)?.impactMetricId,
-        })),
-      };
+    setSubmitted(true);
+  } catch (err) {
+    console.error('Error submitting response:', err);
+    setError(err instanceof Error ? err.message : 'Failed to submit response');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
-      await submitResponse(responseData);
-      setSubmitted(true);
-    } catch (err) {
-      console.error('Failed to submit response:', err);
-    }
-  };
-
-  const renderQuestionInput = (question: Question) => {
-    const response = formData.responses[question.id];
-    const hasError = validationErrors[question.id];
-    const isImpactMetric = question.type === 'impact_metric';
-
-    const inputClasses = `w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-      hasError ? 'border-red-300 bg-red-50 focus:ring-red-200' : 'border-gray-300 hover:border-gray-400 focus:border-blue-500'
-    }`;
+  const renderQuestion = (question: Question) => {
+    const value = responses[question.id] || '';
 
     switch (question.type) {
       case 'multiple_choice':
         return (
           <div className="space-y-3">
             {question.options?.map((option, index) => (
-              <label key={index} className="flex items-center space-x-3 cursor-pointer group p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <label key={index} className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="radio"
                   name={question.id}
                   value={option}
-                  checked={response?.answer === option}
-                  onChange={(e) => handleInputChange(question.id, e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  checked={value === option}
+                  onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                  className="w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5]"
                 />
-                <span className="text-gray-700 group-hover:text-gray-900 flex-1">{option}</span>
+                <span className="text-gray-900">{option}</span>
               </label>
             ))}
           </div>
@@ -184,21 +178,21 @@ export default function PublicResponseForm() {
         return (
           <div className="space-y-3">
             {question.options?.map((option, index) => (
-              <label key={index} className="flex items-center space-x-3 cursor-pointer group p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <label key={index} className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  value={option}
-                  checked={Array.isArray(response?.answer) && response.answer.includes(option)}
+                  checked={Array.isArray(value) ? value.includes(option) : false}
                   onChange={(e) => {
-                    const currentAnswers = Array.isArray(response?.answer) ? response.answer : [];
-                    const newAnswers = e.target.checked
-                      ? [...currentAnswers, option]
-                      : currentAnswers.filter((a: string) => a !== option);
-                    handleInputChange(question.id, newAnswers);
+                    const currentValues = Array.isArray(value) ? value : [];
+                    if (e.target.checked) {
+                      handleResponseChange(question.id, [...currentValues, option]);
+                    } else {
+                      handleResponseChange(question.id, currentValues.filter(v => v !== option));
+                    }
                   }}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] rounded"
                 />
-                <span className="text-gray-700 group-hover:text-gray-900 flex-1">{option}</span>
+                <span className="text-gray-900">{option}</span>
               </label>
             ))}
           </div>
@@ -207,9 +201,9 @@ export default function PublicResponseForm() {
       case 'dropdown':
         return (
           <select
-            value={response?.answer || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            className={inputClasses}
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
           >
             <option value="">Select an option</option>
             {question.options?.map((option, index) => (
@@ -224,50 +218,50 @@ export default function PublicResponseForm() {
         return (
           <input
             type="text"
-            value={response?.answer || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            placeholder={question.settings?.placeholder || 'Type your answer here...'}
-            className={inputClasses}
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+            placeholder="Your answer"
           />
         );
 
       case 'paragraph':
         return (
           <textarea
-            value={response?.answer || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            placeholder={question.settings?.placeholder || 'Type your detailed answer here...'}
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
             rows={4}
-            className={inputClasses}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
+            placeholder="Your answer"
           />
         );
 
       case 'linear_scale':
-        const min = question.settings?.min || 1;
-        const max = question.settings?.max || 5;
         return (
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Strongly Disagree ({min})</span>
-              <span>Strongly Agree ({max})</span>
-            </div>
-            <div className="flex space-x-2 justify-center bg-gray-50 p-4 rounded-lg">
-              {Array.from({ length: max - min + 1 }, (_, i) => min + i).map((value) => (
-                <label key={value} className="flex flex-col items-center space-y-2 cursor-pointer group">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">1</span>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map(num => (
+                <label key={num} className="cursor-pointer">
                   <input
                     type="radio"
                     name={question.id}
-                    value={value}
-                    checked={response?.answer === value}
-                    onChange={(e) => handleInputChange(question.id, parseInt(e.target.value))}
-                    className="w-4 h-4 text-blue-600"
+                    value={num}
+                    checked={value === num.toString()}
+                    onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                    className="sr-only"
                   />
-                  <span className="text-sm font-medium group-hover:text-blue-600 bg-white px-3 py-1 rounded-full border group-hover:border-blue-300 transition-colors">
-                    {value}
-                  </span>
+                  <div className={`w-8 h-8 border-2 rounded-full flex items-center justify-center text-sm transition-colors ${
+                    value === num.toString()
+                      ? 'border-[#5B94E5] bg-[#5B94E5] text-white'
+                      : 'border-gray-300 text-gray-600 hover:border-[#5B94E5]'
+                  }`}>
+                    {num}
+                  </div>
                 </label>
               ))}
             </div>
+            <span className="text-sm text-gray-600">5</span>
           </div>
         );
 
@@ -275,9 +269,9 @@ export default function PublicResponseForm() {
         return (
           <input
             type="date"
-            value={response?.answer || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            className={inputClasses}
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
           />
         );
 
@@ -285,80 +279,76 @@ export default function PublicResponseForm() {
         return (
           <input
             type="time"
-            value={response?.answer || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            className={inputClasses}
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
           />
         );
 
       case 'impact_metric':
         return (
-          <div className="space-y-4">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <h4 className="text-sm font-semibold text-blue-800">Impact Metric Question</h4>
-              </div>
-              <p className="text-sm text-blue-700">
-                This question tracks measurable impact data. Please enter the actual value achieved for this metric.
-              </p>
-            </div>
-            <input
-              type="number"
-              value={response?.actualValue || ''}
-              onChange={(e) => handleInputChange(question.id, parseFloat(e.target.value) || 0, true)}
-              placeholder="Enter actual value achieved"
-              step="any"
-              min="0"
-              className={inputClasses}
-            />
-          </div>
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, parseFloat(e.target.value) || 0)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+            placeholder="Enter numeric value"
+            min="0"
+          />
         );
 
       default:
         return (
           <input
             type="text"
-            value={response?.answer || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
-            placeholder="Type your answer here..."
-            className={inputClasses}
+            value={value}
+            onChange={(e) => handleResponseChange(question.id, e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+            placeholder="Your answer"
           />
         );
     }
   };
 
-  if (loading) {
+  // Show loading if shareToken is not available yet
+  if (!shareToken) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Form</h3>
-          <p className="text-gray-600">Please wait while we prepare your form...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5B94E5] mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !report) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-6" />
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">Form Not Available</h1>
-          <p className="text-gray-600 mb-6">{error || 'This form could not be loaded or may no longer be available.'}</p>
-          <div className="space-y-3">
-            <button
-              onClick={() => window.history.back()}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Go Back
-            </button>
-            <p className="text-xs text-gray-500">
-              If you believe this is an error, please contact the form creator.
-            </p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5B94E5] mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading form...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg border border-gray-200 p-8 max-w-md w-full mx-4 text-center">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Form Not Available</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Go Back
+          </button>
+          <p className="text-sm text-gray-500 mt-4">
+            If you believe this is an error, please contact the form creator.
+          </p>
         </div>
       </div>
     );
@@ -366,221 +356,164 @@ export default function PublicResponseForm() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-        <div className="text-center max-w-lg mx-auto bg-white p-8 rounded-xl shadow-lg">
-          <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6" />
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Thank You!</h1>
-          <p className="text-lg text-gray-600 mb-6">
-            Your response has been submitted successfully. We appreciate your time and participation.
-          </p>
-          
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-600">
-              <strong>What happens next?</strong> Your submission helps us track impact and improve our programs. 
-              The data you provided will be analyzed to measure progress toward our goals.
-            </p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg border border-gray-200 p-8 max-w-md w-full mx-4 text-center">
+          <div className="text-green-500 mb-4">
+            <CheckCircle className="w-16 h-16 mx-auto" />
           </div>
-
-          {report.allowMultipleResponses && (
-            <div className="space-y-3">
-              <button
-                onClick={() => {
-                  setSubmitted(false);
-                  setFormData({ responses: {} });
-                  setValidationErrors({});
-                  setCurrentQuestionIndex(0);
-                }}
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-              >
-                Submit Another Response
-              </button>
-              <p className="text-xs text-gray-500">This form allows multiple submissions</p>
-            </div>
-          )}
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Thank You!</h1>
+          <p className="text-gray-600 mb-6">
+            Your response has been submitted successfully.
+          </p>
+          <button
+            onClick={() => window.close()}
+            className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Close
+          </button>
         </div>
       </div>
     );
   }
 
-  const progressPercentage = report.questions.length > 0 
-    ? (Object.keys(formData.responses).length / report.questions.length) * 100 
-    : 0;
+  if (!report) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg border border-gray-200 p-8 max-w-md w-full mx-4 text-center">
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Form Not Found</h1>
+          <p className="text-gray-600 mb-6">
+            The form you&rsquo;re looking for doesn&rsquo;t exist or has been removed.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (report.status !== 'PUBLISHED' || !report.isPublic) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg border border-gray-200 p-8 max-w-md w-full mx-4 text-center">
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Form Not Available</h1>
+          <p className="text-gray-600 mb-6">
+            This form is not currently accepting responses.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Form Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-          <div className="text-center">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-2xl mx-auto px-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form Header */}
+          <div className="bg-white rounded-lg border border-gray-200 border-l-4 border-l-[#5B94E5] p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{report.title}</h1>
             {report.description && (
-              <p className="text-lg text-gray-600 mb-6">{report.description}</p>
-            )}
-            
-            {report.organization && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
-                <Shield className="w-4 h-4" />
-                {report.organization.name}
-              </div>
+              <p className="text-gray-600 text-lg leading-relaxed">{report.description}</p>
             )}
           </div>
-          
-          {/* Progress Bar */}
-          {report.questions.length > 1 && (
-            <div className="mt-8">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>Progress</span>
-                <span>{Math.round(progressPercentage)}% Complete</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${progressPercentage}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                {Object.keys(formData.responses).length} of {report.questions.length} questions answered
-              </p>
-            </div>
-          )}
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Respondent Information */}
-          {report.collectEmail && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-bold text-sm">i</span>
-                </div>
-                Your Information
-              </h2>
+          {/* Respondent Info */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Your Information</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={respondentName}
+                  onChange={(e) => setRespondentName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                  placeholder="Your name"
+                />
+              </div>
               
-              <div className="space-y-4">
+              {report.collectEmail && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.respondentName || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, respondentName: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
-                <div className={validationErrors.email ? 'error-field' : ''}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
+                    Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
-                    value={formData.respondentEmail || ''}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, respondentEmail: e.target.value }));
-                      if (validationErrors.email) {
-                        setValidationErrors(prev => {
-                          const newErrors = { ...prev };
-                          delete newErrors.email;
-                          return newErrors;
-                        });
-                      }
-                    }}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      validationErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                    }`}
-                    placeholder="your.email@example.com"
+                    value={respondentEmail}
+                    onChange={(e) => setRespondentEmail(e.target.value)}
+                    required={report.collectEmail}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                    placeholder="your@email.com"
                   />
-                  {validationErrors.email && (
-                    <p className="text-red-600 text-sm mt-2 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
-                      {validationErrors.email}
-                    </p>
-                  )}
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Questions */}
           {report.questions.map((question, index) => (
-            <div 
-              key={question.id} 
-              className={`bg-white rounded-xl shadow-sm border transition-all duration-200 p-6 ${
-                validationErrors[question.id] ? 'error-field border-red-200 bg-red-50' : 'border-gray-200'
-              }`}
-            >
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-start gap-3 mb-3">
-                  <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 text-sm font-bold rounded-full flex-shrink-0 mt-1">
+            <div key={question.id} className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                  <span className="text-sm bg-[#5B94E5] text-white rounded-full w-6 h-6 flex items-center justify-center">
                     {index + 1}
                   </span>
-                  <span className="flex-1">
-                    {question.title}
-                    {question.required && <span className="text-red-500 ml-2">*</span>}
-                  </span>
+                  {question.title}
+                  {question.required && <span className="text-red-500">*</span>}
                 </h3>
                 {question.description && (
-                  <p className="text-gray-600 ml-11 text-sm">{question.description}</p>
+                  <p className="text-gray-600 mt-2">{question.description}</p>
                 )}
               </div>
-
-              <div className="ml-11">
-                {renderQuestionInput(question)}
+              
+              <div className="mt-4">
+                {renderQuestion(question)}
               </div>
-
-              {validationErrors[question.id] && (
-                <p className="text-red-600 text-sm mt-3 ml-11 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  {validationErrors[question.id]}
-                </p>
-              )}
             </div>
           ))}
 
           {/* Submit Button */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            {submitError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-red-800 mb-1">Submission Failed</h4>
-                  <p className="text-red-700 text-sm">{submitError}</p>
-                </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                <span className="text-red-500">*</span> Required fields
               </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin mr-3" />
-                  Submitting Your Response...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5 mr-3" />
-                  Submit Response
-                </>
-              )}
-            </button>
-            
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500">
-                🔒 Your response is securely encrypted and will be used to measure impact and improve programs.
-              </p>
-              {report.category && (
-                <p className="text-xs text-gray-400 mt-1">
-                  Category: {report.category}
-                </p>
-              )}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#5B94E5] text-white font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Submit Response
+                  </>
+                )}
+              </button>
             </div>
           </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
         </form>
       </div>
     </div>

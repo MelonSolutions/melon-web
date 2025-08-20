@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type ReportStatus = 'draft' | 'published' | 'closed';
+export type ReportStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
 
 export type ReportCategory =
   | 'Impact Assessment'

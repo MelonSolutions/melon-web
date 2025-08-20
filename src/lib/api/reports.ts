@@ -18,7 +18,7 @@ export interface CreateReportRequest {
   title: string;
   description?: string;
   category?: string;
-  status?: 'draft' | 'published' | 'closed';
+  status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   allowMultipleResponses?: boolean;
   collectEmail?: boolean;
   isPublic?: boolean;
@@ -29,7 +29,7 @@ export interface UpdateReportRequest {
   title?: string;
   description?: string;
   category?: string;
-  status?: 'draft' | 'published' | 'closed';
+  status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   allowMultipleResponses?: boolean;
   collectEmail?: boolean;
   isPublic?: boolean;

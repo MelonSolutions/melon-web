@@ -32,7 +32,7 @@ export default function CreateReportPage() {
     title: '',
     description: '',
     category: 'Impact Assessment',
-    status: 'draft',
+    status: 'DRAFT',
     allowMultipleResponses: false,
     collectEmail: false,
     isPublic: false,
@@ -109,7 +109,7 @@ export default function CreateReportPage() {
     try {
       const dataToSave = {
         ...formData,
-        status: shouldPublish ? 'published' as const : 'draft' as const,
+        status: shouldPublish ? 'PUBLISHED' as const : 'DRAFT' as const,
       };
 
       await handleSubmit(dataToSave);
@@ -126,7 +126,7 @@ export default function CreateReportPage() {
       });
       
       if (shouldPublish) {
-        router.push(`/reports/${result._id}?published=true`);
+        router.push(`/reports/${result._id}?PUBLISHED=true`);
       } else {
         router.push(`/reports/${result._id}`);
       }

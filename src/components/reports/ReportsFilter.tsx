@@ -39,9 +39,10 @@ export function ReportsFilters({ filters, onFilterChange, view, onViewChange }: 
           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="closed">Closed</option>
+          <option value="DRAFT">Draft</option>
+          <option value="PUBLISHED">Published</option>
+          <option value="CLOSED">Closed</option>
+          <option value="ARCHIVED">Archived</option>
         </select>
 
         <select

@@ -12,11 +12,12 @@ import { ReportsLoading } from '@/components/reports/ReportsLoading';
 import { ReportCard } from '@/components/reports/ReportCard';
 
 interface Report {
-  _id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description?: string;
   category: string;
-  status: 'draft' | 'published' | 'closed';
+  status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   responseCount: number;
   createdAt: string;
   updatedAt: string;
@@ -128,9 +129,10 @@ function ReportsContent() {
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
             >
               <option value="">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="closed">Closed</option>
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="CLOSED">Closed</option>
+              <option value="ARCHIVED">Archived</option>
             </select>
 
             <select
@@ -171,9 +173,12 @@ function ReportsContent() {
       ) : hasReports ? (
         view === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reports.map((report) => (
-              <ReportCard key={report._id} report={report} view="grid" onRefetch={refetch} />
-            ))}
+            {reports.map((report) => {
+              const reportId = report.id || report._id;
+              return reportId ? (
+                <ReportCard key={reportId} report={report} view="grid" onRefetch={refetch} />
+              ) : null;
+            }).filter(Boolean)}
           </div>
         ) : (
           <div className="bg-white rounded-lg border border-gray-200">
@@ -188,9 +193,13 @@ function ReportsContent() {
               </div>
             </div>
             <div className="divide-y divide-gray-200">
-              {reports.map((report) => (
-                <ReportCard key={report._id} report={report} view="list" onRefetch={refetch} />
-              ))}
+              {reports.map((report) => {
+                // Use the same ID resolution logic as ReportCard
+                const reportId = report.id || report._id;
+                return reportId ? (
+                  <ReportCard key={reportId} report={report} view="list" onRefetch={refetch} />
+                ) : null;
+              }).filter(Boolean)}
             </div>
           </div>
         )

@@ -105,10 +105,10 @@ export function ReportNavigation({ showBackButton = true, currentPage }: ReportN
               <h1 className="text-lg font-medium text-gray-900">{report.title}</h1>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <span className={`inline-flex items-center gap-1 ${
-                  report.status === 'published' ? 'text-green-600' : 'text-yellow-600'
+                  report.status === 'PUBLISHED' ? 'text-green-600' : 'text-yellow-600'
                 }`}>
                   <div className={`w-2 h-2 rounded-full ${
-                    report.status === 'published' ? 'bg-green-500' : 'bg-yellow-500'
+                    report.status === 'PUBLISHED' ? 'bg-green-500' : 'bg-yellow-500'
                   }`}></div>
                   {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                 </span>
@@ -120,7 +120,7 @@ export function ReportNavigation({ showBackButton = true, currentPage }: ReportN
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2">
-            {report.status === 'published' && (
+            {report.status === 'PUBLISHED' && (
               <a
                 href={`/reports/public/${reportId}`}
                 target="_blank"

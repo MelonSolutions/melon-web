@@ -9,7 +9,7 @@ interface Report {
   title: string;
   description?: string;
   category?: string;
-  status: 'draft' | 'published' | 'closed';
+  status: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   responseCount: number;
   createdAt: string;
   updatedAt: string;
@@ -24,9 +24,10 @@ interface ReportsListProps {
 function ReportCard({ report }: { report: Report }) {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
+      case 'PUBLISHED': return 'bg-green-100 text-green-800';
+      case 'DRAFT': return 'bg-yellow-100 text-yellow-800';
+      case 'CLOSED': return 'bg-gray-100 text-gray-800';
+      case 'ARCHIVED': return 'bg-gray-100 text-gray-600';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -122,8 +123,10 @@ export function ReportsList({ reports, view, onRefetch }: ReportsListProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      report.status === 'published' ? 'bg-green-100 text-green-800' :
-                      report.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                      report.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
+                      report.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' :
+                      report.status === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
+                      report.status === 'ARCHIVED' ? 'bg-gray-100 text-gray-600' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {report.status.charAt(0).toUpperCase() + report.status.slice(1)}

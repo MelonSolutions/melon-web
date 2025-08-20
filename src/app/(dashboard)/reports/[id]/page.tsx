@@ -43,7 +43,7 @@ export default function ReportDetailsPage() {
     );
   }
   
-  const isPublished = searchParams.get('published') === 'true';
+  const isPublished = searchParams.get('PUBLISHED') === 'true';
   
   const { report, loading: reportLoading, refetch } = useReport(reportId);
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,7 @@ export default function ReportDetailsPage() {
       setLoading(true);
       const dataToSave = {
         ...formData,
-        status: shouldPublish ? 'published' as const : 'draft' as const,
+        status: shouldPublish ? 'PUBLISHED' as const : 'DRAFT' as const,
       };
       
       await updateReport(reportId, dataToSave);

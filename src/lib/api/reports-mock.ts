@@ -7,7 +7,7 @@ export interface CreateReportData {
   title: string;
   description?: string;
   category?: string;
-  status?: 'draft' | 'published' | 'closed';
+  status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   allowMultipleResponses?: boolean;
   collectEmail?: boolean;
   isPublic?: boolean;
@@ -18,7 +18,7 @@ export interface UpdateReportData {
   title?: string;
   description?: string;
   category?: string;
-  status?: 'draft' | 'published' | 'closed';
+  status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   allowMultipleResponses?: boolean;
   collectEmail?: boolean;
   isPublic?: boolean;
@@ -40,7 +40,7 @@ const mockReports = [
     title: 'Program Impact Assessment',
     description: 'Quarterly assessment form for measuring program effectiveness',
     category: 'Impact Assessment',
-    status: 'published' as const,
+    status: 'PUBLISHED' as const,
     responseCount: 45,
     createdAt: '2024-01-10T08:00:00Z',
     updatedAt: '2024-01-15T10:30:00Z',
@@ -51,7 +51,7 @@ const mockReports = [
     title: 'Beneficiary Feedback Survey',
     description: 'Collecting feedback from program beneficiaries',
     category: 'Feedback',
-    status: 'draft' as const,
+    status: 'DRAFT' as const,
     responseCount: 0,
     createdAt: '2024-01-12T14:20:00Z',
     updatedAt: '2024-01-12T14:20:00Z',
@@ -61,7 +61,7 @@ const mockReports = [
     title: 'Health Program Monitoring',
     description: 'Monthly monitoring form for health initiatives',
     category: 'Health',
-    status: 'published' as const,
+    status: 'PUBLISHED' as const,
     responseCount: 128,
     createdAt: '2024-01-08T11:15:00Z',
     updatedAt: '2024-01-14T16:22:00Z',
@@ -72,7 +72,7 @@ const mockReports = [
     title: 'Education Outcome Tracker',
     description: 'Tracking educational outcomes and progress',
     category: 'Education',
-    status: 'published' as const,
+    status: 'PUBLISHED' as const,
     responseCount: 89,
     createdAt: '2024-01-05T09:00:00Z',
     updatedAt: '2024-01-13T12:45:00Z',
@@ -83,7 +83,7 @@ const mockReports = [
     title: 'Community Engagement Survey',
     description: 'Measuring community engagement levels',
     category: 'Community',
-    status: 'closed' as const,
+    status: 'CLOSED' as const,
     responseCount: 203,
     createdAt: '2024-01-01T10:00:00Z',
     updatedAt: '2024-01-10T18:30:00Z',
@@ -216,7 +216,7 @@ export const publishReport = async (id: string) => {
   
   return {
     ...report,
-    status: 'published' as const,
+    status: 'PUBLISHED' as const,
     updatedAt: new Date().toISOString(),
   };
 };
