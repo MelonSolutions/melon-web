@@ -1,54 +1,13 @@
-export * from './portfolio-mock';
+import { 
+  Project, 
+  CreateProjectRequest, 
+  UpdateProjectRequest, 
+  PortfolioFilters, 
+  PortfolioStats,
+  PaginatedResponse 
+} from '@/types/portfolio';
 
-// Uncomment below when ready to connect to real backend
-/*
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-export interface CreateProjectData {
-  title: string;
-  description: string;
-  sector: string;
-  region: string;
-  totalBudget: number;
-  targetHouseholds: number;
-  fundingSource: string;
-  startDate: string;
-  endDate: string;
-  projectLead: string;
-  fieldCoordinator: string;
-  tags: string[];
-  attachments?: File[];
-}
-
-export interface UpdateProjectData {
-  title?: string;
-  description?: string;
-  sector?: string;
-  region?: string;
-  status?: string;
-  budget?: {
-    total: number;
-    utilized: number;
-  };
-  timeline?: {
-    startDate: string;
-    endDate: string;
-  };
-  team?: {
-    projectLead: string;
-    fieldCoordinator: string;
-  };
-  tags?: string[];
-}
-
-export interface PortfolioFilters {
-  search?: string;
-  status?: string;
-  sector?: string;
-  region?: string;
-  pageSize?: number;
-  currentPage?: number;
-}
+const API_BASE_URL = 'https://melon-core.onrender.com';
 
 // Get authorization header
 const getAuthHeaders = () => {
@@ -59,23 +18,28 @@ const getAuthHeaders = () => {
   };
 };
 
+// Handle API errors
+const handleApiError = async (response: Response) => {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `API Error: ${response.status}`);
+  }
+  return response.json();
+};
+
 // Create a new project
-export const createProject = async (data: CreateProjectData) => {
-  const response = await fetch(`${API_BASE_URL}/api/portfolio/create`, {
+export const createProject = async (data: CreateProjectRequest): Promise<Project> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/create`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to create project');
-  }
-
-  return response.json();
+  return handleApiError(response);
 };
 
-// Get all projects with filters
-export const getProjects = async (filters: PortfolioFilters = {}) => {
+// Get all projects with filters and pagination
+export const getProjects = async (filters: PortfolioFilters = {}): Promise<PaginatedResponse<Project>> => {
   const params = new URLSearchParams();
   
   if (filters.search) params.append('search', filters.search);
@@ -85,69 +49,78 @@ export const getProjects = async (filters: PortfolioFilters = {}) => {
   if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
   if (filters.currentPage) params.append('currentPage', filters.currentPage.toString());
 
-  const response = await fetch(`${API_BASE_URL}/api/portfolio/all?${params}`, {
+  const response = await fetch(`${API_BASE_URL}/portfolio/all?${params}`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch projects');
-  }
-
-  return response.json();
+  return handleApiError(response);
 };
 
-// Get portfolio statistics
-export const getPortfolioStats = async () => {
-  const response = await fetch(`${API_BASE_URL}/api/portfolio/dashboard`, {
+// Get portfolio dashboard statistics
+export const getPortfolioStats = async (): Promise<PortfolioStats> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/dashboard`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch portfolio stats');
-  }
-
-  return response.json();
+  return handleApiError(response);
 };
 
 // Get single project by ID
-export const getProject = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/portfolio/details/${id}`, {
+export const getProject = async (id: string): Promise<Project> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/details/${id}`, {
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch project');
-  }
-
-  return response.json();
+  return handleApiError(response);
 };
 
 // Update project
-export const updateProject = async (id: string, data: UpdateProjectData) => {
-  const response = await fetch(`${API_BASE_URL}/api/portfolio/update/${id}`, {
+export const updateProject = async (id: string, data: UpdateProjectRequest): Promise<Project> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/update/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to update project');
-  }
+  return handleApiError(response);
+};
 
-  return response.json();
+// Update project status
+export const updateProjectStatus = async (id: string, status: string): Promise<Project> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/${id}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status }),
+  });
+
+  return handleApiError(response);
+};
+
+// Duplicate project
+export const duplicateProject = async (id: string): Promise<Project> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/${id}/duplicate`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  return handleApiError(response);
 };
 
 // Delete project
-export const deleteProject = async (id: string) => {
-  const response = await fetch(`${API_BASE_URL}/api/portfolio/delete/${id}`, {
+export const deleteProject = async (id: string): Promise<{ message: string }> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/delete/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to delete project');
-  }
-
-  return response.json();
+  return handleApiError(response);
 };
-*/
+
+// Get project summary with metrics
+export const getProjectSummaryWithMetrics = async (): Promise<Project[]> => {
+  const response = await fetch(`${API_BASE_URL}/portfolio/summary-with-metrics`, {
+    headers: getAuthHeaders(),
+  });
+
+  return handleApiError(response);
+};

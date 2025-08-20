@@ -123,12 +123,14 @@ export default function DashboardLayout({
           <span className="mr-3 flex-shrink-0 text-gray-300">
             {item.icon}
           </span>
-          <span className="flex-1">{item.name}</span>
-          {item.comingSoon && (
-            <span className="ml-2 px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
-              Coming Soon
-            </span>
-          )}
+          <span className="flex-1 flex items-center">
+            {item.name}
+            {item.comingSoon && (
+              <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded-full whitespace-nowrap">
+                Coming Soon
+              </span>
+            )}
+          </span>
         </div>
       );
     }

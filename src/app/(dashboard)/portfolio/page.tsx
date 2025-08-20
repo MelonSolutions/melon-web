@@ -44,7 +44,8 @@ function PortfolioContent() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Error loading projects</p>
+          <p className="text-red-600 mb-4">Error loading portfolio</p>
+          <p className="text-sm text-gray-500 mb-4">{error}</p>
           <button 
             onClick={refetch}
             className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#4A7BC8] transition-colors"

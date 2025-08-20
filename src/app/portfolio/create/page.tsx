@@ -1,73 +1,86 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, X, Upload, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, X, Upload, Loader2, Users } from 'lucide-react';
 import Link from 'next/link';
-import { createProject } from '@/lib/api/portfolio';
-import { CreateProjectRequest, ProjectSector, ProjectRegion } from '@/types/portfolio';
+import { useProjectActions } from '@/hooks/usePortfolio';
+import { 
+  CreateProjectRequest, 
+  ProjectSector, 
+  ProjectRegion, 
+  FundingSource,
+  getSectorDisplayName,
+  getRegionDisplayName 
+} from '@/types/portfolio';
 
 export default function CreateProjectPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { createProject, loading } = useProjectActions();
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [formData, setFormData] = useState<CreateProjectRequest>({
     title: '',
     description: '',
-    sector: 'Health',
-    region: 'Northern Region',
-    totalBudget: 0,
-    targetHouseholds: 0,
-    fundingSource: '',
+    sector: 'HEALTH',
+    region: 'NORTHERN_REGION',
     startDate: '',
     endDate: '',
-    projectLead: '',
-    fieldCoordinator: '',
+    totalBudget: 0,
+    targetHouseholds: 0,
+    fundingSource: undefined,
+    teamMembers: [],
     tags: [],
   });
 
-  const sectors: ProjectSector[] = [
-    'Health', 'Education', 'Agriculture', 'Energy', 'Finance', 'Infrastructure', 'Environment'
+  const sectors: { value: ProjectSector; label: string }[] = [
+    { value: 'HEALTH', label: 'Health' },
+    { value: 'EDUCATION', label: 'Education' },
+    { value: 'ENERGY', label: 'Energy' },
+    { value: 'AGRICULTURE', label: 'Agriculture' },
+    { value: 'FINANCE', label: 'Finance' },
+    { value: 'ENVIRONMENT', label: 'Environment' },
+    { value: 'TECHNOLOGY', label: 'Technology' },
+    { value: 'INFRASTRUCTURE', label: 'Infrastructure' },
+    { value: 'SOCIAL_SERVICES', label: 'Social Services' },
+    { value: 'ECONOMIC_DEVELOPMENT', label: 'Economic Development' },
   ];
 
-  const regions: ProjectRegion[] = [
-    'Northern Region', 'Eastern Region', 'Central Region', 'Western Region', 'Southern Region', 'Urban Areas'
+  const regions: { value: ProjectRegion; label: string }[] = [
+    { value: 'NORTHERN_REGION', label: 'Northern Region' },
+    { value: 'SOUTHERN_REGION', label: 'Southern Region' },
+    { value: 'EASTERN_REGION', label: 'Eastern Region' },
+    { value: 'WESTERN_REGION', label: 'Western Region' },
+    { value: 'CENTRAL_REGION', label: 'Central Region' },
+    { value: 'NORTH_EAST', label: 'North East' },
+    { value: 'NORTH_WEST', label: 'North West' },
+    { value: 'SOUTH_EAST', label: 'South East' },
+    { value: 'SOUTH_WEST', label: 'South West' },
   ];
 
-  const fundingSources = [
-    'Government Grant',
-    'Private Foundation',
-    'International Aid',
-    'Corporate Sponsorship',
-    'Crowdfunding',
-    'Internal Budget',
-    'World Bank',
-    'UN Development Fund',
-    'Gates Foundation',
-    'Other'
-  ];
-
-  const teamMembers = [
-    'Dr. Sarah Johnson',
-    'Michael Chen',
-    'James Wilson',
-    'Alice Brown',
-    'Maria Garcia',
-    'David Kim',
-    'Dr. Jennifer Lee',
-    'Robert Taylor',
-    'Thomas Anderson',
-    'Lisa Wang',
-    'Rachel Green',
-    'Kevin Park'
+  const fundingSources: { value: FundingSource; label: string }[] = [
+    { value: 'GOVERNMENT', label: 'Government' },
+    { value: 'PRIVATE_FOUNDATION', label: 'Private Foundation' },
+    { value: 'INTERNATIONAL_DONOR', label: 'International Donor' },
+    { value: 'CORPORATE_SPONSOR', label: 'Corporate Sponsor' },
+    { value: 'CROWDFUNDING', label: 'Crowdfunding' },
+    { value: 'BANK_LOAN', label: 'Bank Loan' },
+    { value: 'VENTURE_CAPITAL', label: 'Venture Capital' },
+    { value: 'GRANT', label: 'Grant' },
+    { value: 'INTERNAL_FUNDING', label: 'Internal Funding' },
+    { value: 'MIXED_FUNDING', label: 'Mixed Funding' },
   ];
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
       const updatedTags = [...tags, newTag.trim()];
       setTags(updatedTags);
-      setFormData(prev => ({ ...prev, tags: updatedTags }));
+      setFormData(prev => ({ 
+        ...prev, 
+        tags: updatedTags.map(name => ({ name, color: '#3B82F6' }))
+      }));
       setNewTag('');
     }
   };
@@ -75,30 +88,52 @@ export default function CreateProjectPage() {
   const handleRemoveTag = (tagToRemove: string) => {
     const updatedTags = tags.filter(tag => tag !== tagToRemove);
     setTags(updatedTags);
-    setFormData(prev => ({ ...prev, tags: updatedTags }));
+    setFormData(prev => ({ 
+      ...prev, 
+      tags: updatedTags.map(name => ({ name, color: '#3B82F6' }))
+    }));
   };
 
   const handleSubmit = async (isDraft = false) => {
     try {
-      setLoading(true);
-      
-      const projectData = {
+      // Validation
+      if (!formData.title.trim()) {
+        alert('Please enter a project title');
+        return;
+      }
+
+      if (!formData.startDate || !formData.endDate) {
+        alert('Please select start and end dates');
+        return;
+      }
+
+      if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+        alert('End date must be after start date');
+        return;
+      }
+
+      if (formData.totalBudget <= 0) {
+        alert('Please enter a valid budget amount');
+        return;
+      }
+
+      const projectData: CreateProjectRequest = {
         ...formData,
-        tags
+        status: isDraft ? 'DRAFT' : 'ACTIVE',
+        progressPercentage: 0,
+        impactScore: 0,
+        spentBudget: 0,
+        actualHouseholds: 0,
       };
       
       const result = await createProject(projectData);
       
-      if (isDraft) {
-        router.push(`/portfolio?created=${result._id}&draft=true`);
-      } else {
-        router.push(`/portfolio?created=${result._id}&active=true`);
+      if (result) {
+        router.push(`/portfolio/${result._id}?created=true`);
       }
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('Failed to create project');
-    } finally {
-      setLoading(false);
+      alert('Failed to create project. Please try again.');
     }
   };
 
@@ -160,7 +195,7 @@ export default function CreateProjectPage() {
           <div className="grid grid-cols-1 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project Title
+                Project Title *
               </label>
               <input
                 type="text"
@@ -182,14 +217,13 @@ export default function CreateProjectPage() {
                 rows={4}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                 placeholder="Describe your project objectives and scope"
-                required
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sector
+                  Sector *
                 </label>
                 <select
                   value={formData.sector}
@@ -198,8 +232,8 @@ export default function CreateProjectPage() {
                   required
                 >
                   {sectors.map(sector => (
-                    <option key={sector} value={sector}>
-                      {sector}
+                    <option key={sector.value} value={sector.value}>
+                      {sector.label}
                     </option>
                   ))}
                 </select>
@@ -207,7 +241,7 @@ export default function CreateProjectPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Region
+                  Region *
                 </label>
                 <select
                   value={formData.region}
@@ -216,8 +250,8 @@ export default function CreateProjectPage() {
                   required
                 >
                   {regions.map(region => (
-                    <option key={region} value={region}>
-                      {region}
+                    <option key={region.value} value={region.value}>
+                      {region.label}
                     </option>
                   ))}
                 </select>
@@ -227,7 +261,7 @@ export default function CreateProjectPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Date
+                  Start Date *
                 </label>
                 <input
                   type="date"
@@ -240,7 +274,7 @@ export default function CreateProjectPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  End Date
+                  End Date *
                 </label>
                 <input
                   type="date"
@@ -261,7 +295,7 @@ export default function CreateProjectPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Total Budget
+                Total Budget *
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
@@ -289,22 +323,119 @@ export default function CreateProjectPage() {
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Coverage Area (km²)
+              </label>
+              <input
+                type="number"
+                value={formData.coverageArea || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, coverageArea: Number(e.target.value) }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                placeholder="Coverage area in km²"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Funding Source
               </label>
               <select
-                value={formData.fundingSource}
-                onChange={(e) => setFormData(prev => ({ ...prev, fundingSource: e.target.value }))}
+                value={formData.fundingSource || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, fundingSource: e.target.value as FundingSource }))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
               >
                 <option value="">Select funding source</option>
                 {fundingSources.map(source => (
-                  <option key={source} value={source}>
-                    {source}
+                  <option key={source.value} value={source.value}>
+                    {source.label}
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Location
+              </label>
+              <input
+                type="text"
+                value={formData.location || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                placeholder="Specific location or address"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Project Goals */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-6">Project Goals</h2>
+          
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Objectives
+              </label>
+              <textarea
+                value={formData.objectives?.join('\n') || ''}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  objectives: e.target.value.split('\n').filter(line => line.trim()) 
+                }))}
+                rows={4}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                placeholder="Enter project objectives (one per line)"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter each objective on a new line</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expected Outcomes
+              </label>
+              <textarea
+                value={formData.expectedOutcomes?.join('\n') || ''}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  expectedOutcomes: e.target.value.split('\n').filter(line => line.trim()) 
+                }))}
+                rows={4}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                placeholder="Enter expected outcomes (one per line)"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter each expected outcome on a new line</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Potential Risks
+              </label>
+              <textarea
+                value={formData.risks?.join('\n') || ''}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  risks: e.target.value.split('\n').filter(line => line.trim()) 
+                }))}
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                placeholder="Enter potential risks (one per line)"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter each risk on a new line</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Additional Notes
+              </label>
+              <textarea
+                value={formData.notes || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                placeholder="Any additional notes or comments"
+              />
             </div>
           </div>
         </div>
@@ -324,6 +455,7 @@ export default function CreateProjectPage() {
                 placeholder="Add a tag"
               />
               <button
+                type="button"
                 onClick={handleAddTag}
                 className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#4A7BC8] transition-colors"
               >
@@ -340,6 +472,7 @@ export default function CreateProjectPage() {
                   >
                     {tag}
                     <button
+                      type="button"
                       onClick={() => handleRemoveTag(tag)}
                       className="text-blue-600 hover:text-blue-800 transition-colors"
                     >
@@ -352,46 +485,19 @@ export default function CreateProjectPage() {
           </div>
         </div>
 
-        {/* Team Assignment */}
+        {/* Team Members */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Team Assignment</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-6">Team Members</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project Lead
-              </label>
-              <select
-                value={formData.projectLead}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectLead: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
-                required
-              >
-                <option value="">Select project lead</option>
-                {teamMembers.map(member => (
-                  <option key={member} value={member}>
-                    {member}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Field Coordinator
-              </label>
-              <select
-                value={formData.fieldCoordinator}
-                onChange={(e) => setFormData(prev => ({ ...prev, fieldCoordinator: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
-              >
-                <option value="">Select field coordinator</option>
-                {teamMembers.map(member => (
-                  <option key={member} value={member}>
-                    {member}
-                  </option>
-                ))}
-              </select>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Add team members who will be working on this project. You can add their contact information and role details.
+            </p>
+            
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+              <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+              <p className="text-gray-500 mb-2">Team member management coming soon</p>
+              <p className="text-xs text-gray-400">You&rsquo;ll be able to add team members after creating the project</p>
             </div>
           </div>
         </div>
@@ -403,11 +509,8 @@ export default function CreateProjectPage() {
           
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
             <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-600 mb-2">Drag and drop files here, or click to browse</p>
-            <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
-              Choose Files
-            </button>
-            <p className="text-xs text-gray-500 mt-2">Maximum file size: 10MB</p>
+            <p className="text-gray-600 mb-2">File attachments coming soon</p>
+            <p className="text-xs text-gray-500">You&rsquo;ll be able to upload files after creating the project</p>
           </div>
         </div>
       </div>

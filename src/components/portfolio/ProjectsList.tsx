@@ -34,6 +34,9 @@ export function ProjectsList({ projects, view, onRefetch }: ProjectsListProps) {
                   Households
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Budget
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Updated
                 </th>
                 <th className="relative px-6 py-3">
@@ -43,10 +46,10 @@ export function ProjectsList({ projects, view, onRefetch }: ProjectsListProps) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {projects.map((project) => (
-                <ProjectListItem 
-                  key={project._id} 
-                  project={project} 
-                  onRefetch={onRefetch} 
+                <ProjectListItem
+                  key={project._id}
+                  project={project}
+                  onRefetch={onRefetch}
                 />
               ))}
             </tbody>
@@ -59,10 +62,10 @@ export function ProjectsList({ projects, view, onRefetch }: ProjectsListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {projects.map((project) => (
-        <ProjectCard 
-          key={project._id} 
-          project={project} 
-          onRefetch={onRefetch} 
+        <ProjectCard
+          key={project._id}
+          project={project}
+          onRefetch={onRefetch}
         />
       ))}
     </div>

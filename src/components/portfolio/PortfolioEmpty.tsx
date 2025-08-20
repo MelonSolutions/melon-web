@@ -15,7 +15,7 @@ export function PortfolioEmpty() {
       </h3>
       
       <p className="text-gray-500 mb-6 max-w-md mx-auto">
-        Start building your portfolio by creating your first project
+        Start building your portfolio by creating your first project. Track progress, manage budgets, and measure impact all in one place.
       </p>
       
       <Link
