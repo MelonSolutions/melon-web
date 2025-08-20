@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { X, Mail, Plus, Trash2, Send, Loader2, CheckCircle } from 'lucide-react';
+import { useAuthContext } from '@/context/AuthContext';
 
 interface EmailSharingModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export function EmailSharingModal({ isOpen, onClose, report, shareUrl }: EmailSh
   const [personalMessage, setPersonalMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  
+  const { isAuthenticated } = useAuthContext();
 
   if (!isOpen) return null;
 
@@ -54,10 +57,22 @@ export function EmailSharingModal({ isOpen, onClose, report, shareUrl }: EmailSh
       return;
     }
 
+    if (!isAuthenticated) {
+      alert('You are not logged in. Please log in again.');
+      return;
+    }
+
+    const token = localStorage.getItem('authToken');
+    console.log('Token from localStorage:', token ? 'Token exists' : 'Token is null');
+    
+    if (!token) {
+      alert('Authentication token not found. Please log in again.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/reports/${report._id}/share-email`, {
         method: 'POST',
         headers: {
@@ -107,6 +122,7 @@ export function EmailSharingModal({ isOpen, onClose, report, shareUrl }: EmailSh
 
   return (
     <>
+      {/* Blurred Backdrop */}
       <div 
         className="fixed inset-0 bg-white/20 backdrop-blur-sm z-40 transition-opacity"
         onClick={handleClose}
