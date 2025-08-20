@@ -15,7 +15,16 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createReport, ApiError } from '@/lib/api/reports';
-import { CreateReportRequest, Question, QuestionType, ReportCategory } from '@/types/reports';
+import { 
+  CreateReportRequest, 
+  Question, 
+  QuestionType, 
+  ReportCategory,
+  CATEGORY_DISPLAY_NAMES,
+  QUESTION_TYPE_DISPLAY_NAMES,
+  getCategoryDisplayName,
+  getQuestionTypeDisplayName
+} from '@/types/reports';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -31,7 +40,7 @@ export default function CreateReportPage() {
   const [formData, setFormData] = useState<CreateReportRequest>({
     title: '',
     description: '',
-    category: 'Impact Assessment',
+    category: 'IMPACT_ASSESSMENT',
     status: 'DRAFT',
     allowMultipleResponses: false,
     collectEmail: false,
@@ -39,7 +48,7 @@ export default function CreateReportPage() {
     questions: [
       {
         id: '1',
-        type: 'multiple_choice',
+        type: 'MULTIPLE_CHOICE',
         title: 'Untitled Question',
         description: '',
         required: false,
@@ -49,23 +58,25 @@ export default function CreateReportPage() {
   });
 
   const questionTypes: { value: QuestionType; label: string; icon: string }[] = [
-    { value: 'multiple_choice', label: 'Multiple Choice', icon: '🔘' },
-    { value: 'checkboxes', label: 'Checkboxes', icon: '☑️' },
-    { value: 'dropdown', label: 'Dropdown', icon: '📝' },
-    { value: 'short_answer', label: 'Short Answer', icon: '📄' },
-    { value: 'paragraph', label: 'Paragraph', icon: '📝' },
-    { value: 'linear_scale', label: 'Linear Scale', icon: '📊' },
-    { value: 'date', label: 'Date', icon: '📅' },
-    { value: 'time', label: 'Time', icon: '🕐' },
+    { value: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: '🔘' },
+    { value: 'CHECKBOXES', label: 'Checkboxes', icon: '☑️' },
+    { value: 'DROPDOWN', label: 'Dropdown', icon: '📝' },
+    { value: 'SHORT_ANSWER', label: 'Short Answer', icon: '📄' },
+    { value: 'PARAGRAPH', label: 'Paragraph', icon: '📝' },
+    { value: 'LINEAR_SCALE', label: 'Linear Scale', icon: '📊' },
+    { value: 'DATE', label: 'Date', icon: '📅' },
+    { value: 'TIME', label: 'Time', icon: '🕐' },
   ];
 
   const categories: ReportCategory[] = [
-    'Impact Assessment',
-    'Feedback',
-    'Health',
-    'Education',
-    'Agriculture',
-    'Community',
+    'IMPACT_ASSESSMENT',
+    'FEEDBACK',
+    'HEALTH',
+    'EDUCATION',
+    'AGRICULTURE',
+    'COMMUNITY',
+    'ENVIRONMENT',
+    'ECONOMIC',
   ];
 
   // Form validation
@@ -185,14 +196,14 @@ export default function CreateReportPage() {
     }));
   };
 
-  const addQuestion = (type: QuestionType = 'multiple_choice') => {
+  const addQuestion = (type: QuestionType = 'MULTIPLE_CHOICE') => {
     const newQuestion: Question = {
       id: Date.now().toString(),
       type,
       title: 'Untitled Question',
       description: '',
       required: false,
-      ...(type === 'multiple_choice' || type === 'checkboxes' ? { options: ['Option 1'] } : {}),
+      ...(type === 'MULTIPLE_CHOICE' || type === 'CHECKBOXES' ? { options: ['Option 1'] } : {}),
     };
 
     setFormData(prev => ({
@@ -347,7 +358,7 @@ export default function CreateReportPage() {
                 >
                   {categories.map(category => (
                     <option key={category} value={category}>
-                      {category}
+                      {getCategoryDisplayName(category)}
                     </option>
                   ))}
                 </select>
@@ -466,12 +477,12 @@ export default function CreateReportPage() {
                 {/* Question Content */}
                 <div className="p-6">
                   {/* Multiple Choice & Checkboxes */}
-                  {(question.type === 'multiple_choice' || question.type === 'checkboxes') && (
+                  {(question.type === 'MULTIPLE_CHOICE' || question.type === 'CHECKBOXES') && (
                     <div className="space-y-3">
                       {question.options?.map((option, optionIndex) => (
                         <div key={optionIndex} className="flex items-center gap-3">
                           <div className={`w-4 h-4 border-2 border-gray-300 flex-shrink-0 ${
-                            question.type === 'multiple_choice' ? 'rounded-full' : 'rounded'
+                            question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : 'rounded'
                           }`}></div>
                           <input
                             type="text"
@@ -495,7 +506,7 @@ export default function CreateReportPage() {
                         className="flex items-center gap-3 text-[#5B94E5] hover:text-blue-700 transition-colors"
                       >
                         <div className={`w-4 h-4 border-2 border-gray-300 ${
-                          question.type === 'multiple_choice' ? 'rounded-full' : 'rounded'
+                          question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : 'rounded'
                         }`}></div>
                         <span className="text-sm">Add option</span>
                       </button>
@@ -503,7 +514,7 @@ export default function CreateReportPage() {
                   )}
 
                   {/* Short Answer */}
-                  {question.type === 'short_answer' && (
+                  {question.type === 'SHORT_ANSWER' && (
                     <div>
                       <input
                         type="text"
@@ -515,7 +526,7 @@ export default function CreateReportPage() {
                   )}
 
                   {/* Paragraph */}
-                  {question.type === 'paragraph' && (
+                  {question.type === 'PARAGRAPH' && (
                     <div>
                       <textarea
                         disabled
@@ -527,7 +538,7 @@ export default function CreateReportPage() {
                   )}
 
                   {/* Linear Scale */}
-                  {question.type === 'linear_scale' && (
+                  {question.type === 'LINEAR_SCALE' && (
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-gray-600">1</span>
                       <div className="flex gap-2">
@@ -542,7 +553,7 @@ export default function CreateReportPage() {
                   )}
 
                   {/* Date */}
-                  {question.type === 'date' && (
+                  {question.type === 'DATE' && (
                     <div>
                       <input
                         type="date"
@@ -553,7 +564,7 @@ export default function CreateReportPage() {
                   )}
 
                   {/* Time */}
-                  {question.type === 'time' && (
+                  {question.type === 'TIME' && (
                     <div>
                       <input
                         type="time"
@@ -635,7 +646,6 @@ export default function CreateReportPage() {
               </button>
             ))}
           </div>
-
         </div>
       </div>
     </div>

@@ -2,23 +2,28 @@
 export type ReportStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
 
 export type ReportCategory =
-  | 'Impact Assessment'
-  | 'Feedback'
-  | 'Health'
-  | 'Education'
-  | 'Agriculture'
-  | 'Community';
+  | 'IMPACT_ASSESSMENT'
+  | 'FEEDBACK'
+  | 'HEALTH'
+  | 'EDUCATION'
+  | 'AGRICULTURE'
+  | 'COMMUNITY'
+  | 'ENVIRONMENT'
+  | 'ECONOMIC';
 
 export type QuestionType =
-  | 'multiple_choice'
-  | 'checkboxes'
-  | 'dropdown'
-  | 'short_answer'
-  | 'paragraph'
-  | 'linear_scale'
-  | 'date'
-  | 'time'
-  | 'impact_metric';
+  | 'MULTIPLE_CHOICE'
+  | 'CHECKBOXES'
+  | 'DROPDOWN'
+  | 'SHORT_ANSWER'
+  | 'PARAGRAPH'
+  | 'LINEAR_SCALE'
+  | 'DATE'
+  | 'TIME'
+  | 'EMAIL'
+  | 'PHONE'
+  | 'NUMBER'
+  | 'IMPACT_METRIC';
 
 export interface QuestionSettings {
   min?: number;
@@ -118,3 +123,38 @@ export interface ShareLinkResponse {
   shareToken: string;
   shareUrl: string;
 }
+
+export const CATEGORY_DISPLAY_NAMES: Record<ReportCategory, string> = {
+  IMPACT_ASSESSMENT: 'Impact Assessment',
+  FEEDBACK: 'Feedback',
+  HEALTH: 'Health',
+  EDUCATION: 'Education',
+  AGRICULTURE: 'Agriculture',
+  COMMUNITY: 'Community',
+  ENVIRONMENT: 'Environment',
+  ECONOMIC: 'Economic',
+};
+
+export const QUESTION_TYPE_DISPLAY_NAMES: Record<QuestionType, string> = {
+  MULTIPLE_CHOICE: 'Multiple Choice',
+  CHECKBOXES: 'Checkboxes',
+  DROPDOWN: 'Dropdown',
+  SHORT_ANSWER: 'Short Answer',
+  PARAGRAPH: 'Paragraph',
+  LINEAR_SCALE: 'Linear Scale',
+  DATE: 'Date',
+  TIME: 'Time',
+  EMAIL: 'Email',
+  PHONE: 'Phone',
+  NUMBER: 'Number',
+  IMPACT_METRIC: 'Impact Metric',
+};
+
+// Helper functions
+export const getCategoryDisplayName = (category: ReportCategory): string => {
+  return CATEGORY_DISPLAY_NAMES[category] || category;
+};
+
+export const getQuestionTypeDisplayName = (type: QuestionType): string => {
+  return QUESTION_TYPE_DISPLAY_NAMES[type] || type;
+};
