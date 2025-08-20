@@ -15,7 +15,7 @@ import {
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import { useReport } from '@/hooks/useReports';
 import { updateReport } from '@/lib/api/reports';
-import { Question, QuestionType } from '@/types/reports';
+import { Question, QuestionType, QUESTION_TYPE_DISPLAY_NAMES } from '@/types/reports';
 
 export default function ReportDetailsPage() {
   const params = useParams();
@@ -54,14 +54,14 @@ export default function ReportDetailsPage() {
   });
 
   const questionTypes: { value: QuestionType; label: string; icon: string }[] = [
-    { value: 'multiple_choice', label: 'Multiple Choice', icon: '🔘' },
-    { value: 'checkboxes', label: 'Checkboxes', icon: '☑️' },
-    { value: 'dropdown', label: 'Dropdown', icon: '📝' },
-    { value: 'short_answer', label: 'Short Answer', icon: '📄' },
-    { value: 'paragraph', label: 'Paragraph', icon: '📝' },
-    { value: 'linear_scale', label: 'Linear Scale', icon: '📊' },
-    { value: 'date', label: 'Date', icon: '📅' },
-    { value: 'time', label: 'Time', icon: '🕐' },
+    { value: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: '🔘' },
+    { value: 'CHECKBOXES', label: 'Checkboxes', icon: '☑️' },
+    { value: 'DROPDOWN', label: 'Dropdown', icon: '📝' },
+    { value: 'SHORT_ANSWER', label: 'Short Answer', icon: '📄' },
+    { value: 'PARAGRAPH', label: 'Paragraph', icon: '📝' },
+    { value: 'LINEAR_SCALE', label: 'Linear Scale', icon: '📊' },
+    { value: 'DATE', label: 'Date', icon: '📅' },
+    { value: 'TIME', label: 'Time', icon: '🕐' },
   ];
 
   useEffect(() => {
@@ -108,14 +108,14 @@ export default function ReportDetailsPage() {
     }));
   };
 
-  const addQuestion = (type: QuestionType = 'multiple_choice') => {
+  const addQuestion = (type: QuestionType = 'MULTIPLE_CHOICE') => {
     const newQuestion: Question = {
       id: Date.now().toString(),
       type,
       title: 'Untitled Question',
       description: '',
       required: false,
-      ...(type === 'multiple_choice' || type === 'checkboxes' ? { options: ['Option 1'] } : {}),
+      ...(type === 'MULTIPLE_CHOICE' || type === 'CHECKBOXES' ? { options: ['Option 1'] } : {}),
     };
 
     setFormData(prev => ({
@@ -177,7 +177,6 @@ export default function ReportDetailsPage() {
       <div>
         <ReportNavigation currentPage="edit" />
         <div className="p-6 space-y-6">
-          {/* Header Skeleton */}
           <div className="flex items-center justify-between">
             <div className="h-6 w-48 bg-gray-200 rounded animate-pulse"></div>
             <div className="flex gap-2">
@@ -187,7 +186,6 @@ export default function ReportDetailsPage() {
             </div>
           </div>
 
-          {/* Form Skeleton */}
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-4"></div>
@@ -231,12 +229,9 @@ export default function ReportDetailsPage() {
 
   return (
     <div>
-      {/* Integrated Navigation */}
       <ReportNavigation currentPage="edit" />
       
-      {/* Page Content */}
       <div className="p-6">
-        {/* Action Bar */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <input
@@ -268,12 +263,9 @@ export default function ReportDetailsPage() {
           </div>
         </div>
 
-        {/* Form Builder */}
         <div className="flex gap-6">
-          {/* Main Editor */}
           <div className="flex-1">
             <div className="max-w-3xl mx-auto space-y-6">
-              {/* Form Header */}
               <div className="bg-white rounded-lg border border-gray-200 border-l-4 border-l-[#5B94E5] p-6">
                 <input
                   type="text"
@@ -291,10 +283,8 @@ export default function ReportDetailsPage() {
                 />
               </div>
 
-              {/* Questions */}
               {formData.questions?.map((question, index) => (
                 <div key={question.id} className="bg-white rounded-lg border border-gray-200 relative group">
-                  {/* Question Header */}
                   <div className="p-6 border-b border-gray-100">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
@@ -328,15 +318,13 @@ export default function ReportDetailsPage() {
                     </div>
                   </div>
 
-                  {/* Question Content */}
                   <div className="p-6">
-                    {/* Multiple Choice & Checkboxes */}
-                    {(question.type === 'multiple_choice' || question.type === 'checkboxes') && (
+                    {(question.type === 'MULTIPLE_CHOICE' || question.type === 'CHECKBOXES') && (
                       <div className="space-y-3">
                         {question.options?.map((option, optionIndex) => (
                           <div key={optionIndex} className="flex items-center gap-3">
                             <div className={`w-4 h-4 border-2 border-gray-300 flex-shrink-0 ${
-                              question.type === 'multiple_choice' ? 'rounded-full' : 'rounded'
+                              question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : 'rounded'
                             }`}></div>
                             <input
                               type="text"
@@ -360,15 +348,14 @@ export default function ReportDetailsPage() {
                           className="flex items-center gap-3 text-[#5B94E5] hover:text-blue-700 transition-colors"
                         >
                           <div className={`w-4 h-4 border-2 border-gray-300 ${
-                            question.type === 'multiple_choice' ? 'rounded-full' : 'rounded'
+                            question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : 'rounded'
                           }`}></div>
                           <span className="text-sm">Add option</span>
                         </button>
                       </div>
                     )}
 
-                    {/* Short Answer */}
-                    {question.type === 'short_answer' && (
+                    {question.type === 'SHORT_ANSWER' && (
                       <div>
                         <input
                           type="text"
@@ -379,8 +366,7 @@ export default function ReportDetailsPage() {
                       </div>
                     )}
 
-                    {/* Paragraph */}
-                    {question.type === 'paragraph' && (
+                    {question.type === 'PARAGRAPH' && (
                       <div>
                         <textarea
                           disabled
@@ -391,8 +377,7 @@ export default function ReportDetailsPage() {
                       </div>
                     )}
 
-                    {/* Linear Scale */}
-                    {question.type === 'linear_scale' && (
+                    {question.type === 'LINEAR_SCALE' && (
                       <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-600">1</span>
                         <div className="flex gap-2">
@@ -406,8 +391,7 @@ export default function ReportDetailsPage() {
                       </div>
                     )}
 
-                    {/* Date */}
-                    {question.type === 'date' && (
+                    {question.type === 'DATE' && (
                       <div>
                         <input
                           type="date"
@@ -417,8 +401,7 @@ export default function ReportDetailsPage() {
                       </div>
                     )}
 
-                    {/* Time */}
-                    {question.type === 'time' && (
+                    {question.type === 'TIME' && (
                       <div>
                         <input
                           type="time"
@@ -429,7 +412,6 @@ export default function ReportDetailsPage() {
                     )}
                   </div>
 
-                  {/* Question Footer */}
                   <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
                     <div className="flex items-center gap-3">
                       <button
@@ -459,14 +441,12 @@ export default function ReportDetailsPage() {
                     </label>
                   </div>
 
-                  {/* Drag Handle */}
                   <div className="absolute left-2 top-6 opacity-0 group-hover:opacity-100 transition-opacity">
                     <GripVertical className="w-4 h-4 text-gray-400" />
                   </div>
                 </div>
               ))}
 
-              {/* Add Question Button */}
               <button
                 onClick={() => addQuestion()}
                 className="w-full py-6 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-[#5B94E5] hover:text-[#5B94E5] transition-colors flex items-center justify-center gap-2"
@@ -477,7 +457,6 @@ export default function ReportDetailsPage() {
             </div>
           </div>
 
-          {/* Sidebar - Question Types */}
           <div className="w-64 bg-white rounded-lg border border-gray-200 p-4 h-fit">
             <h3 className="font-medium text-gray-900 mb-4">Add Questions</h3>
             

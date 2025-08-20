@@ -45,12 +45,12 @@ export default function ReportSettingsPage() {
   });
 
   const categories: ReportCategory[] = [
-    'Impact Assessment',
-    'Feedback',
-    'Health',
-    'Education',
-    'Agriculture',
-    'Community',
+    'IMPACT_ASSESSMENT',
+    'FEEDBACK',
+    'HEALTH',
+    'EDUCATION',
+    'AGRICULTURE',
+    'COMMUNITY',
   ];
 
   const sections = [
