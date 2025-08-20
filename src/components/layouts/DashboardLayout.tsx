@@ -24,6 +24,8 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ReactNode;
+  disabled?: boolean;
+  comingSoon?: boolean;
 }
 
 export default function DashboardLayout({
@@ -68,10 +70,12 @@ export default function DashboardLayout({
       href: '/map-view',
       icon: <MapIcon className="h-5 w-5" />,
     },
-        {
+    {
       name: 'AI Reporting',
       href: '/ai-reporting',
       icon: <Bot className="h-5 w-5" />,
+      disabled: true,
+      comingSoon: true,
     },
   ];
 
@@ -100,6 +104,60 @@ export default function DashboardLayout({
       </div>
     </div>
   );
+
+  const NavigationItem = ({ item, isMobile = false }: { item: NavItem; isMobile?: boolean }) => {
+    const isActive = pathname === item.href;
+    const baseClasses = cn(
+      'group flex items-center px-4 py-3 rounded-lg transition-colors relative',
+      isMobile ? 'text-base font-medium' : 'text-sm font-medium'
+    );
+
+    if (item.disabled) {
+      return (
+        <div
+          className={cn(
+            baseClasses,
+            'text-gray-400 cursor-not-allowed opacity-60'
+          )}
+        >
+          <span className="mr-3 flex-shrink-0 text-gray-300">
+            {item.icon}
+          </span>
+          <span className="flex-1">{item.name}</span>
+          {item.comingSoon && (
+            <span className="ml-2 px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+              Coming Soon
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        href={item.href}
+        className={cn(
+          baseClasses,
+          isActive
+            ? 'bg-blue-50 text-blue-600'
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        )}
+        onClick={() => isMobile && setSidebarOpen(false)}
+      >
+        <span
+          className={cn(
+            isActive
+              ? 'text-blue-600'
+              : 'text-gray-400 group-hover:text-gray-500',
+            'mr-3 flex-shrink-0'
+          )}
+        >
+          {item.icon}
+        </span>
+        {item.name}
+      </Link>
+    );
+  };
   
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
@@ -142,34 +200,9 @@ export default function DashboardLayout({
                 />
               </div>
               <nav className="mt-8 px-6 space-y-2">
-                {navigation.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        isActive
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                        'group flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors'
-                      )}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <span
-                        className={cn(
-                          isActive
-                            ? 'text-blue-600'
-                            : 'text-gray-400 group-hover:text-gray-500',
-                          'mr-4 flex-shrink-0'
-                        )}
-                      >
-                        {item.icon}
-                      </span>
-                      {item.name}
-                    </Link>
-                  );
-                })}
+                {navigation.map((item) => (
+                  <NavigationItem key={item.name} item={item} isMobile={true} />
+                ))}
               </nav>
             </div>
             
@@ -197,33 +230,9 @@ export default function DashboardLayout({
                 />
               </div>
               <nav className="mt-4 flex-1 px-4 bg-white space-y-2">
-                {navigation.map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        isActive
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                        'group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors'
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          isActive
-                            ? 'text-blue-600'
-                            : 'text-gray-400 group-hover:text-gray-500',
-                          'mr-3 flex-shrink-0'
-                        )}
-                      >
-                        {item.icon}
-                      </span>
-                      {item.name}
-                    </Link>
-                  );
-                })}
+                {navigation.map((item) => (
+                  <NavigationItem key={item.name} item={item} />
+                ))}
               </nav>
             </div>
             <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
@@ -283,7 +292,6 @@ export default function DashboardLayout({
                 </button>
               </div>
 
-              {/* Use the new ProfileDropdown component */}
               <ProfileDropdown />
             </div>
           </div>
