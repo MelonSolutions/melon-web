@@ -163,11 +163,6 @@ export default function ReportSettingsPage() {
   };
 
 const handleEmailLink = () => {
-  if (!shareUrl) {
-    handleGenerateShareLink();
-    return;
-  }
-  
   setShowEmailModal(true);
 };
 

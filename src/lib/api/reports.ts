@@ -50,6 +50,16 @@ export interface DashboardStats {
   totalResponses: number;
   avgResponseRate: string;
 }
+
+export interface ShareReportEmailRequest {
+  recipients: string[];
+  personalMessage?: string;
+}
+
+export interface ShareReportEmailResponse {
+  message: string;
+  recipientCount: number;
+}
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -208,6 +218,21 @@ export const updateReportStatus = async (id: string, status: string): Promise<an
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Share report via email
+export const shareReportViaEmail = async (
+  reportId: string, 
+  data: ShareReportEmailRequest
+): Promise<ShareReportEmailResponse> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/share-email`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
   });
 
   await handleApiError(response);

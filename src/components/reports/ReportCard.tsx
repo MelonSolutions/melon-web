@@ -17,6 +17,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { duplicateReport, deleteReport } from '@/lib/api/reports';
+import { EmailSharingModal } from '@/components/reports/EmailSharingModal';
 
 interface Report {
   _id: string;
@@ -40,6 +41,7 @@ interface ReportCardProps {
 export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   const reportId = report._id;
 
@@ -78,22 +80,29 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
     }
   };
 
-  const handleShare = async () => {
-    if (report.status !== 'PUBLISHED') {
-      alert('Only published reports can be shared.');
-      return;
-    }
+const handleShare = async () => {
+  if (report.status !== 'PUBLISHED') {
+    alert('Only published reports can be shared.');
+    return;
+  }
 
-    const shareUrl = `${window.location.origin}/reports/public/${report.shareToken || reportId}`;
-    
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Share link copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy link:', error);
-    }
-    setShowDropdown(false);
-  };
+  const shareUrl = `${window.location.origin}/reports/public/${report.shareToken || reportId}`;
+  
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    alert('Share link copied to clipboard!');
+  } catch (error) {
+    console.error('Failed to copy link:', error);
+    const textArea = document.createElement('textarea');
+    textArea.value = shareUrl;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert('Share link copied to clipboard!');
+  }
+  setShowDropdown(false);
+};
 
   const handleNavigate = (path: string, e?: React.MouseEvent) => {
     if (e) {
@@ -436,6 +445,14 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
           <div 
             className="fixed inset-0 z-10"
             onClick={() => setShowDropdown(false)}
+          />
+        )}
+        {showEmailModal && (
+          <EmailSharingModal
+            isOpen={showEmailModal}
+            onClose={() => setShowEmailModal(false)}
+            report={report}
+            shareUrl={`${window.location.origin}/reports/public/${report.shareToken || reportId}`}
           />
         )}
       </div>
