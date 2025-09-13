@@ -1,172 +1,226 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { 
+  getImpactMetrics, 
+  getImpactMetricsStats, 
+  getImpactMetric,
+  createImpactMetric,
+  updateImpactMetric,
+  deleteImpactMetric,
+  duplicateImpactMetric,
+  updateImpactMetricValue
+} from '@/lib/api/impact-metrics';
+import { 
+  ImpactMetric, 
+  ImpactMetricsStats, 
+  ImpactMetricsFilters, 
+  CreateImpactMetricRequest,
+  UpdateImpactMetricRequest
+} from '@/types/impact-metrics';
 
-interface Metric {
-  id: string;
-  label: string;
-  unit: string;
-  sector: string;
-  actualValue: number;
-  targetValue: number;
-  status: 'achieved' | 'on-track' | 'failed';
-  progress: number;
-  weight: number;
-  lastUpdated: string;
-  isAutoUpdated: boolean;
-  linkedToReport: boolean;
-}
-
-interface MetricsStats {
-  totalMetrics: number;
-  achieved: number;
-  failed: number;
-  avgPerformance: number;
-  achievedPercentage: number;
-  failedPercentage: number;
-}
-
-interface UseImpactMetricsReturn {
-  metrics: Metric[];
-  metricsStats: MetricsStats;
-  loading: boolean;
-  error: string | null;
-  refetch: () => void;
-}
-
-const mockMetrics: Metric[] = [
-  {
-    id: '1',
-    label: 'Households Reached',
-    unit: 'households',
-    sector: 'Health',
-    actualValue: 870,
-    targetValue: 1000,
-    status: 'on-track',
-    progress: 87,
-    weight: 20,
-    lastUpdated: '2 hours ago',
-    isAutoUpdated: true,
-    linkedToReport: true,
-  },
-  {
-    id: '2',
-    label: 'Students Enrolled',
-    unit: 'students',
-    sector: 'Education',
-    actualValue: 520,
-    targetValue: 500,
-    status: 'achieved',
-    progress: 104,
-    weight: 25,
-    lastUpdated: '1 day ago',
-    isAutoUpdated: true,
-    linkedToReport: true,
-  },
-  {
-    id: '3',
-    label: 'Clean Water Access',
-    unit: 'people',
-    sector: 'Infrastructure',
-    actualValue: 340,
-    targetValue: 800,
-    status: 'failed',
-    progress: 43,
-    weight: 30,
-    lastUpdated: '3 days ago',
-    isAutoUpdated: false,
-    linkedToReport: false,
-  },
-  {
-    id: '4',
-    label: 'Microloans Disbursed',
-    unit: 'loans',
-    sector: 'Finance',
-    actualValue: 150,
-    targetValue: 200,
-    status: 'on-track',
-    progress: 75,
-    weight: 25,
-    lastUpdated: '1 day ago',
-    isAutoUpdated: true,
-    linkedToReport: true,
-  },
-];
-
-export function useImpactMetrics(filters: {
-  search: string;
-  status: string;
-  sector: string;
-  timeframe: string;
-}): UseImpactMetricsReturn {
-  const [metrics, setMetrics] = useState<Metric[]>([]);
+// Main impact metrics hook
+export function useImpactMetrics(filters: ImpactMetricsFilters = {}) {
+  const [metrics, setMetrics] = useState<ImpactMetric[]>([]);
+  const [metricsStats, setMetricsStats] = useState<ImpactMetricsStats>({
+    totalMetrics: 0,
+    activeMetrics: 0,
+    achieved: 0,
+    failed: 0,
+    avgPerformance: 0,
+    onTrackPercentage: '0%',
+    achievedPercentage: '0%',
+    failedPercentage: '0%',
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
 
-  const filterMetrics = (metrics: Metric[]) => {
-    return metrics.filter(metric => {
-      const matchesSearch = !filters.search || 
-        metric.label.toLowerCase().includes(filters.search.toLowerCase()) ||
-        metric.sector.toLowerCase().includes(filters.search.toLowerCase());
-      
-      const matchesStatus = !filters.status || metric.status === filters.status;
-      const matchesSector = !filters.sector || metric.sector.toLowerCase() === filters.sector.toLowerCase();
-      
-      return matchesSearch && matchesStatus && matchesSector;
-    });
-  };
-
-  const calculateStats = (metrics: Metric[]): MetricsStats => {
-    const totalMetrics = metrics.length;
-    const achieved = metrics.filter(m => m.status === 'achieved').length;
-    const failed = metrics.filter(m => m.status === 'failed').length;
-    const avgPerformance = totalMetrics > 0 
-      ? Math.round(metrics.reduce((sum, m) => sum + m.progress, 0) / totalMetrics)
-      : 0;
-    
-    return {
-      totalMetrics,
-      achieved,
-      failed,
-      avgPerformance,
-      achievedPercentage: totalMetrics > 0 ? Math.round((achieved / totalMetrics) * 100) : 0,
-      failedPercentage: totalMetrics > 0 ? Math.round((failed / totalMetrics) * 100) : 0,
-    };
-  };
-
-  const fetchMetrics = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Fetch both metrics and stats in parallel
+      const [metricsResponse, statsData] = await Promise.all([
+        getImpactMetrics({
+          ...filters,
+          pageSize: filters.pageSize || 10,
+          currentPage: filters.currentPage || 1,
+        }),
+        getImpactMetricsStats(),
+      ]);
+
+      setMetrics(metricsResponse.data);
+      setMetricsStats(statsData);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const filteredMetrics = filterMetrics(mockMetrics);
-      setMetrics(filteredMetrics);
+      if (metricsResponse.pagination) {
+        setPagination(metricsResponse.pagination);
+      }
     } catch (err) {
-      setError('Failed to fetch metrics');
+      console.error('Error fetching impact metrics data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load impact metrics data');
     } finally {
       setLoading(false);
     }
-  };
-
-  const refetch = () => {
-    fetchMetrics();
-  };
+  }, [filters]);
 
   useEffect(() => {
-    fetchMetrics();
-  }, [filters.search, filters.status, filters.sector, filters.timeframe]);
+    fetchData();
+  }, [fetchData]);
 
-  const metricsStats = calculateStats(metrics);
+  const refetch = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   return {
     metrics,
     metricsStats,
     loading,
     error,
+    pagination,
     refetch,
+  };
+}
+
+// Single impact metric hook
+export function useImpactMetric(id: string) {
+  const [metric, setMetric] = useState<ImpactMetric | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMetric = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const metricData = await getImpactMetric(id);
+      setMetric(metricData);
+    } catch (err) {
+      console.error('Error fetching impact metric:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load impact metric');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchMetric();
+  }, [fetchMetric]);
+
+  const refetch = useCallback(() => {
+    fetchMetric();
+  }, [fetchMetric]);
+
+  return {
+    metric,
+    loading,
+    error,
+    refetch,
+  };
+}
+
+// Impact metrics actions hook
+export function useImpactMetricActions() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const createNewMetric = useCallback(async (data: CreateImpactMetricRequest): Promise<ImpactMetric | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const metric = await createImpactMetric(data);
+      return metric;
+    } catch (err) {
+      console.error('Error creating impact metric:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create impact metric');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateExistingMetric = useCallback(async (id: string, data: UpdateImpactMetricRequest): Promise<ImpactMetric | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const metric = await updateImpactMetric(id, data);
+      return metric;
+    } catch (err) {
+      console.error('Error updating impact metric:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update impact metric');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateMetricValue = useCallback(async (id: string, actualValue: number): Promise<ImpactMetric | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const metric = await updateImpactMetricValue(id, actualValue);
+      return metric;
+    } catch (err) {
+      console.error('Error updating metric value:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update metric value');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const duplicateExistingMetric = useCallback(async (id: string): Promise<ImpactMetric | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const metric = await duplicateImpactMetric(id);
+      return metric;
+    } catch (err) {
+      console.error('Error duplicating impact metric:', err);
+      setError(err instanceof Error ? err.message : 'Failed to duplicate impact metric');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteExistingMetric = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await deleteImpactMetric(id);
+      return true;
+    } catch (err) {
+      console.error('Error deleting impact metric:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete impact metric');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    error,
+    createMetric: createNewMetric,
+    updateMetric: updateExistingMetric,
+    updateValue: updateMetricValue,
+    duplicateMetric: duplicateExistingMetric,
+    deleteMetric: deleteExistingMetric,
   };
 }

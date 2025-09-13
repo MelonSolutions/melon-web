@@ -1,69 +1,88 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { Search, Grid, List } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { 
+  TrackingStatus, 
+  MetricType,
+  getTrackingStatusDisplayName,
+  getMetricTypeDisplayName
+} from '@/types/impact-metrics';
 
 interface MetricsFiltersProps {
   filters: {
     search: string;
     status: string;
-    sector: string;
+    metricType: string;
     timeframe: string;
   };
   onFilterChange: (filters: any) => void;
-  view?: 'grid' | 'list';
-  onViewChange?: (view: 'grid' | 'list') => void;
 }
 
-const statusOptions = [
+const statusOptions: { value: TrackingStatus | ''; label: string }[] = [
   { value: '', label: 'All Status' },
-  { value: 'achieved', label: 'Achieved' },
-  { value: 'on-track', label: 'On Track' },
-  { value: 'failed', label: 'Failed' },
+  { value: 'ON_TRACK', label: 'On Track' },
+  { value: 'ACHIEVED', label: 'Achieved' },
+  { value: 'FAIL', label: 'Failed' },
+  { value: 'PAUSED', label: 'Paused' },
 ];
 
-const sectorOptions = [
-  { value: '', label: 'All Sectors' },
-  { value: 'health', label: 'Health' },
-  { value: 'education', label: 'Education' },
-  { value: 'agriculture', label: 'Agriculture' },
-  { value: 'energy', label: 'Energy' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'infrastructure', label: 'Infrastructure' },
-  { value: 'environment', label: 'Environment' },
+const metricTypeOptions: { value: MetricType | ''; label: string }[] = [
+  { value: '', label: 'All Types' },
+  { value: 'NUMBER', label: 'Number' },
+  { value: 'PERCENTAGE', label: 'Percentage' },
+  { value: 'CURRENCY', label: 'Currency' },
+  { value: 'BOOLEAN', label: 'Yes/No' },
 ];
 
 const timeframeOptions = [
   { value: '', label: 'All Time' },
-  { value: 'current', label: 'Current' },
+  { value: 'current', label: 'Current Period' },
   { value: 'last-month', label: 'Last Month' },
   { value: 'last-quarter', label: 'Last Quarter' },
   { value: 'last-year', label: 'Last Year' },
 ];
 
-export function MetricsFilters({ filters, onFilterChange, view, onViewChange }: MetricsFiltersProps) {
-  const handleFilterUpdate = (key: string, value: string) => {
-    onFilterChange({ ...filters, [key]: value });
+export function MetricsFilters({ 
+  filters, 
+  onFilterChange
+}: MetricsFiltersProps) {
+  const handleSearchChange = (search: string) => {
+    onFilterChange({ ...filters, search });
+  };
+
+  const handleStatusChange = (status: string) => {
+    onFilterChange({ ...filters, status });
+  };
+
+  const handleMetricTypeChange = (metricType: string) => {
+    onFilterChange({ ...filters, metricType });
+  };
+
+  const handleTimeframeChange = (timeframe: string) => {
+    onFilterChange({ ...filters, timeframe });
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-      <div className="flex items-center space-x-4 flex-1">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search metrics..."
-            value={filters.search}
-            onChange={(e) => handleFilterUpdate('search', e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-transparent cursor-text"
-          />
-        </div>
-        
+    <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <input
+          type="text"
+          placeholder="Search metrics..."
+          value={filters.search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors bg-white"
+        />
+      </div>
+
+      {/* Filter Dropdowns */}
+      <div className="flex flex-wrap gap-3">
         <select
           value={filters.status}
-          onChange={(e) => handleFilterUpdate('status', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-transparent cursor-pointer"
+          onChange={(e) => handleStatusChange(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors min-w-[120px]"
         >
           {statusOptions.map(option => (
             <option key={option.value} value={option.value}>
@@ -73,11 +92,11 @@ export function MetricsFilters({ filters, onFilterChange, view, onViewChange }: 
         </select>
 
         <select
-          value={filters.sector}
-          onChange={(e) => handleFilterUpdate('sector', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-transparent cursor-pointer"
+          value={filters.metricType}
+          onChange={(e) => handleMetricTypeChange(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors min-w-[120px]"
         >
-          {sectorOptions.map(option => (
+          {metricTypeOptions.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -86,8 +105,8 @@ export function MetricsFilters({ filters, onFilterChange, view, onViewChange }: 
 
         <select
           value={filters.timeframe}
-          onChange={(e) => handleFilterUpdate('timeframe', e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-transparent cursor-pointer"
+          onChange={(e) => handleTimeframeChange(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors min-w-[120px]"
         >
           {timeframeOptions.map(option => (
             <option key={option.value} value={option.value}>
@@ -97,23 +116,35 @@ export function MetricsFilters({ filters, onFilterChange, view, onViewChange }: 
         </select>
       </div>
 
-      {view && onViewChange && (
-        <div className="flex items-center space-x-2">
+      {/* Active Filters Summary */}
+      {(filters.search || filters.status || filters.metricType || filters.timeframe) && (
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span>Filters:</span>
+          {filters.search && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs">
+              Search: &rdquo;{filters.search}&rdquo;
+            </span>
+          )}
+          {filters.status && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs">
+              {getTrackingStatusDisplayName(filters.status as TrackingStatus)}
+            </span>
+          )}
+          {filters.metricType && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full bg-purple-100 text-purple-800 text-xs">
+              {getMetricTypeDisplayName(filters.metricType as MetricType)}
+            </span>
+          )}
+          {filters.timeframe && (
+            <span className="inline-flex items-center px-2 py-1 rounded-full bg-orange-100 text-orange-800 text-xs">
+              {timeframeOptions.find(opt => opt.value === filters.timeframe)?.label}
+            </span>
+          )}
           <button
-            onClick={() => onViewChange('grid')}
-            className={`p-2 rounded-lg cursor-pointer transition-colors ${
-              view === 'grid' ? 'bg-blue-100 text-[#5B94E5]' : 'text-gray-500 hover:bg-gray-100'
-            }`}
+            onClick={() => onFilterChange({ search: '', status: '', metricType: '', timeframe: '' })}
+            className="text-[#5B94E5] hover:text-[#4A7BC8] text-xs font-medium"
           >
-            <Grid className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => onViewChange('list')}
-            className={`p-2 rounded-lg cursor-pointer transition-colors ${
-              view === 'list' ? 'bg-blue-100 text-[#5B94E5]' : 'text-gray-500 hover:bg-gray-100'
-            }`}
-          >
-            <List className="w-5 h-5" />
+            Clear all
           </button>
         </div>
       )}

@@ -1,121 +1,131 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Calendar, ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, ChevronDown, Loader2, Plus, X } from 'lucide-react';
 import Link from 'next/link';
-
-const sectorOptions = [
-  { value: 'health', label: 'Health' },
-  { value: 'education', label: 'Education' },
-  { value: 'agriculture', label: 'Agriculture' },
-  { value: 'energy', label: 'Energy' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'infrastructure', label: 'Infrastructure' },
-  { value: 'environment', label: 'Environment' },
-];
-
-const reportQuestions = [
-  { value: 'q1', label: 'How many households were reached this month?' },
-  { value: 'q2', label: 'Number of students enrolled in programs' },
-  { value: 'q3', label: 'Total beneficiaries served' },
-  { value: 'q4', label: 'Amount of funds disbursed' },
-];
+import { useImpactMetric, useImpactMetricActions } from '@/hooks/useImpactMetrics';
+import { 
+  UpdateImpactMetricRequest, 
+  MetricType, 
+  getMetricTypeDisplayName 
+} from '@/types/impact-metrics';
 
 export default function EditImpactMetricPage() {
   const router = useRouter();
   const params = useParams();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    label: '',
-    unit: '',
+  const metricId = params.id as string;
+  
+  const { metric, loading: fetchLoading, error } = useImpactMetric(metricId);
+  const { updateMetric, loading: updateLoading } = useImpactMetricActions();
+  
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+  const [formData, setFormData] = useState<UpdateImpactMetricRequest>({
+    name: '',
     description: '',
-    targetValue: '',
-    weight: '',
-    sector: '',
+    target: 0,
+    metricType: 'NUMBER',
     startDate: '',
     endDate: '',
-    reportQuestion: '',
-    notes: '',
-    tags: [] as string[],
+    scoringWeight: 0,
+    actualValue: 0,
   });
 
+  const metricTypes: { value: MetricType; label: string; description: string }[] = [
+    { value: 'NUMBER', label: 'Number', description: 'Count of items (e.g., households, students)' },
+    { value: 'PERCENTAGE', label: 'Percentage', description: 'Percentage value (e.g., 85%)' },
+    { value: 'CURRENCY', label: 'Currency', description: 'Monetary amount (e.g., $10,000)' },
+    { value: 'BOOLEAN', label: 'Yes/No', description: 'True/false or achieved/not achieved' },
+  ];
+
   useEffect(() => {
-    // Simulate API call to fetch metric data
-    const fetchMetric = async () => {
-      try {
-        setLoading(true);
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data based on metric ID
-        const mockData = {
-          label: 'Households Reached',
-          unit: 'households',
-          description: 'Number of households reached through our health programs',
-          targetValue: '1000',
-          weight: '20',
-          sector: 'health',
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
-          reportQuestion: 'q1',
-          notes: 'This metric tracks the primary reach of our health intervention programs.',
-          tags: ['health', 'reach', 'primary-indicator'],
-        };
-        
-        setFormData(mockData);
-      } catch (err) {
-        setError('Failed to load metric data');
-        console.error('Error fetching metric:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (metric) {
+      setFormData({
+        name: metric.name,
+        description: metric.description || '',
+        target: metric.target,
+        metricType: metric.metricType,
+        startDate: metric.startDate.split('T')[0],
+        endDate: metric.endDate.split('T')[0],
+        scoringWeight: metric.scoringWeight,
+        actualValue: metric.actualValue,
+      });
+      setTags([]);
+    }
+  }, [metric]);
 
-    fetchMetric();
-  }, [params.id]);
-
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Validation
+      if (!formData.name?.trim()) {
+        alert('Please enter a metric name');
+        return;
+      }
+
+      if (!formData.startDate || !formData.endDate) {
+        alert('Please select start and end dates');
+        return;
+      }
+
+      if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+        alert('End date must be after start date');
+        return;
+      }
+
+      if (!formData.target || formData.target <= 0) {
+        alert('Please enter a valid target value');
+        return;
+      }
+
+      if (!formData.scoringWeight || formData.scoringWeight <= 0 || formData.scoringWeight > 100) {
+        alert('Scoring weight must be between 1 and 100');
+        return;
+      }
+
+      const result = await updateMetric(metricId, formData);
       
-      // Redirect back to metric details
-      router.push(`/impact-metrics/${params.id}`);
+      if (result) {
+        router.push(`/impact-metrics/${metricId}`);
+      }
     } catch (error) {
       console.error('Error updating metric:', error);
-      setError('Failed to update metric');
-    } finally {
-      setIsSubmitting(false);
+      alert('Failed to update metric. Please try again.');
     }
   };
 
-  const addTag = (tag: string) => {
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+  const handleAddTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      const updatedTags = [...tags, newTag.trim()];
+      setTags(updatedTags);
+      setNewTag('');
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      tags: prev.tags.filter(tag => tag !== tagToRemove) 
-    }));
+  const handleRemoveTag = (tagToRemove: string) => {
+    const updatedTags = tags.filter(tag => tag !== tagToRemove);
+    setTags(updatedTags);
   };
 
-  if (loading) {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
+
+  if (fetchLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto py-8 px-6">
           <div className="animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-32 mb-4"></div>
             <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
@@ -137,16 +147,16 @@ export default function EditImpactMetricPage() {
     );
   }
 
-  if (error) {
+  if (error || !metric) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto py-8 px-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
             <h1 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Metric</h1>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-gray-600 mb-4">{error || 'Metric not found'}</p>
             <Link
               href="/impact-metrics"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Metrics
@@ -157,8 +167,8 @@ export default function EditImpactMetricPage() {
     );
   }
 
-  const isFormValid = formData.label && formData.unit && formData.targetValue && 
-    formData.weight && formData.sector && formData.startDate && formData.endDate;
+  const isFormValid = formData.name && formData.target && formData.target > 0 && 
+    formData.scoringWeight && formData.scoringWeight > 0 && formData.startDate && formData.endDate;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,8 +177,8 @@ export default function EditImpactMetricPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link 
-              href={`/impact-metrics/${params.id}`}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              href={`/impact-metrics/${metricId}`}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
@@ -180,19 +190,19 @@ export default function EditImpactMetricPage() {
 
           <div className="flex items-center gap-3">
             <Link
-              href={`/impact-metrics/${params.id}`}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              href={`/impact-metrics/${metricId}`}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancel
             </Link>
             <button 
               type="submit"
               form="edit-metric-form"
-              disabled={!isFormValid || isSubmitting}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
+              disabled={!isFormValid || updateLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors disabled:opacity-50"
             >
-              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isSubmitting ? 'Updating...' : 'Update Metric'}
+              {updateLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {updateLoading ? 'Updating...' : 'Update Metric'}
             </button>
           </div>
         </div>
@@ -206,33 +216,18 @@ export default function EditImpactMetricPage() {
             <h2 className="text-lg font-medium text-gray-900 mb-6">Basic Information</h2>
             
             <div className="grid grid-cols-1 gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Metric Label <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.label}
-                    onChange={(e) => handleInputChange('label', e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
-                    placeholder="e.g., Households Reached"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Unit <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.unit}
-                    onChange={(e) => handleInputChange('unit', e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
-                    placeholder="e.g., households, students"
-                    required
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Metric Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                  placeholder="e.g., Number of Households Reached"
+                  required
+                />
               </div>
 
               <div>
@@ -243,7 +238,7 @@ export default function EditImpactMetricPage() {
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none cursor-text"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
                   placeholder="Brief description of what this metric measures"
                 />
               </div>
@@ -251,19 +246,18 @@ export default function EditImpactMetricPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sector <span className="text-red-500">*</span>
+                    Metric Type <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <select
-                      value={formData.sector}
-                      onChange={(e) => handleInputChange('sector', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white appearance-none transition-colors cursor-pointer"
+                      value={formData.metricType}
+                      onChange={(e) => handleInputChange('metricType', e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white appearance-none transition-colors"
                       required
                     >
-                      <option value="">Select sector</option>
-                      {sectorOptions.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
+                      {metricTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label} - {type.description}
                         </option>
                       ))}
                     </select>
@@ -277,14 +271,15 @@ export default function EditImpactMetricPage() {
                   </label>
                   <input
                     type="number"
-                    value={formData.weight}
-                    onChange={(e) => handleInputChange('weight', e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
+                    value={formData.scoringWeight || ''}
+                    onChange={(e) => handleInputChange('scoringWeight', Number(e.target.value))}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                     placeholder="20"
                     min="1"
                     max="100"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">Weight for auto-scoring (1-100%)</p>
                 </div>
               </div>
             </div>
@@ -295,18 +290,36 @@ export default function EditImpactMetricPage() {
             <h2 className="text-lg font-medium text-gray-900 mb-6">Target & Timeline</h2>
             
             <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Value <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={formData.targetValue}
-                  onChange={(e) => handleInputChange('targetValue', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
-                  placeholder="1000"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Target Value <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.target || ''}
+                    onChange={(e) => handleInputChange('target', Number(e.target.value))}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                    placeholder="1000"
+                    min="1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Current Value
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.actualValue || ''}
+                    onChange={(e) => handleInputChange('actualValue', Number(e.target.value))}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                    placeholder="0"
+                    min="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Current actual value</p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -319,7 +332,7 @@ export default function EditImpactMetricPage() {
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => handleInputChange('startDate', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-pointer"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                       required
                     />
                     <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -335,7 +348,7 @@ export default function EditImpactMetricPage() {
                       type="date"
                       value={formData.endDate}
                       onChange={(e) => handleInputChange('endDate', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-pointer"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                       required
                     />
                     <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -350,28 +363,9 @@ export default function EditImpactMetricPage() {
             <h2 className="text-lg font-medium text-gray-900 mb-6">Report Integration</h2>
             <p className="text-sm text-gray-500 mb-6">Link this metric to a report question for automatic data updates</p>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Link to Report Question (Optional)
-              </label>
-              <div className="relative">
-                <select
-                  value={formData.reportQuestion}
-                  onChange={(e) => handleInputChange('reportQuestion', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white appearance-none transition-colors cursor-pointer"
-                >
-                  <option value="">Select a report question to auto-populate data</option>
-                  {reportQuestions.map(question => (
-                    <option key={question.value} value={question.value}>
-                      {question.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-              <p className="text-sm text-gray-500 mt-2">
-                Linking to a report question will automatically update the actual value based on form responses
-              </p>
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+              <p className="text-gray-500 mb-2">Report integration coming soon</p>
+              <p className="text-xs text-gray-400">You&rsquo;ll be able to link metrics to report questions for automatic updates</p>
             </div>
           </div>
 
@@ -384,7 +378,7 @@ export default function EditImpactMetricPage() {
                 Tags
               </label>
               <div className="flex flex-wrap gap-2 mb-3">
-                {formData.tags.map((tag, index) => (
+                {tags.map((tag, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
@@ -392,10 +386,10 @@ export default function EditImpactMetricPage() {
                     {tag}
                     <button
                       type="button"
-                      onClick={() => removeTag(tag)}
-                      className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
                     >
-                      ×
+                      <X className="w-3 h-3" />
                     </button>
                   </span>
                 ))}
@@ -403,29 +397,18 @@ export default function EditImpactMetricPage() {
               <div className="flex gap-2">
                 <input
                   type="text"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
                   placeholder="Add a tag"
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const target = e.target as HTMLInputElement;
-                      addTag(target.value.trim());
-                      target.value = '';
-                    }
-                  }}
                 />
                 <button
                   type="button"
-                  onClick={() => {
-                    const input = document.querySelector('input[placeholder="Add a tag"]') as HTMLInputElement;
-                    if (input?.value.trim()) {
-                      addTag(input.value.trim());
-                      input.value = '';
-                    }
-                  }}
-                  className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
+                  onClick={handleAddTag}
+                  className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#4A7BC8] transition-colors"
                 >
-                  Add
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -440,10 +423,10 @@ export default function EditImpactMetricPage() {
                 Notes & Instructions
               </label>
               <textarea
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none cursor-text"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
                 placeholder="Add any additional notes, instructions, or context for this metric"
               />
             </div>
