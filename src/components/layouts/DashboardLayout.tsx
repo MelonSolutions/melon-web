@@ -50,6 +50,13 @@ export default function DashboardLayout({
       href: '/portfolio',
       icon: <Briefcase className="h-5 w-5" />,
     },
+        {
+      name: 'KYC Dashboard',
+      href: '/kyc-dashboard',
+      icon: <Bot className="h-5 w-5" />,
+      disabled: true,
+      comingSoon: true,
+    },
     {
       name: 'Impact Metrics',
       href: '/impact-metrics',
