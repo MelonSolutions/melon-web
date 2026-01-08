@@ -18,6 +18,7 @@ import {
   Bell,
   Menu,
   Bot,
+  Shield
 } from "lucide-react";
 
 interface NavItem {
@@ -51,11 +52,9 @@ export default function DashboardLayout({
       icon: <Briefcase className="h-5 w-5" />,
     },
         {
-      name: 'KYC Dashboard',
-      href: '/kyc-dashboard',
-      icon: <Bot className="h-5 w-5" />,
-      disabled: true,
-      comingSoon: true,
+      name: 'KYC',
+      href: '/kyc',
+      icon: <Shield className="h-5 w-5" />,
     },
     {
       name: 'Impact Metrics',
@@ -278,6 +277,7 @@ export default function DashboardLayout({
                 {pathname === '/map-view' && 'Map View'}
                 {pathname === '/profile' && 'Profile'}
                 {pathname === '/settings' && 'Settings'}
+                {pathname === '/kyc' && 'KYC Management'}
               </h1>
             </div>
 
