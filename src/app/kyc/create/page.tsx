@@ -104,7 +104,7 @@ export default function AddKYCUserPage() {
           addToast({
             type: 'error',
             title: 'Permission Denied',
-            message: 'You do not have permission to add users.',
+            message: 'You do not have permission to create a new request.',
           });
         } else if (error.status >= 500) {
           addToast({
@@ -115,7 +115,7 @@ export default function AddKYCUserPage() {
         } else {
           addToast({
             type: 'error',
-            title: 'Failed to Add User',
+            title: 'Failed to create a new request',
             message: error.message,
           });
         }
@@ -235,7 +235,7 @@ export default function AddKYCUserPage() {
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Add User
+                  Create New Request
                 </>
               )}
             </button>
@@ -377,24 +377,6 @@ export default function AddKYCUserPage() {
                   />
                 </FormField>
               </div>
-
-              <button
-                onClick={handleVerifyIdentity}
-                disabled={verifyingIdentity || !formData.identityNumber}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#5B94E5] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
-              >
-                {verifyingIdentity ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Verifying with API...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-4 h-4" />
-                    Verify Identity with {formData.identityType} API
-                  </>
-                )}
-              </button>
             </div>
           </div>
 

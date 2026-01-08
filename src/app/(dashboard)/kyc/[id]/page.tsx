@@ -328,13 +328,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               <h2 className="text-lg font-semibold text-gray-900">
                 Identity Verification
               </h2>
-              <button
-                onClick={handleVerifyIdentity}
-                disabled={verifying}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#5B94E5] bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
-              >
-                {verifying ? 'Verifying...' : 'Verify with API'}
-              </button>
             </div>
             
             <div className="space-y-4">

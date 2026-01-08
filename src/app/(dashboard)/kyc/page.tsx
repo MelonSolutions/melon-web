@@ -124,7 +124,7 @@ function KYCContent() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
         >
           <UserPlus className="w-4 h-4" />
-          Add User
+          Create New Request
         </Link>
       </div>
 
@@ -134,7 +134,7 @@ function KYCContent() {
           <div className="text-2xl font-semibold text-gray-900 mb-1">
             {dashboardStats.totalUsers}
           </div>
-          <div className="text-sm text-gray-500">Total Users</div>
+          <div className="text-sm text-gray-500">Total Customers</div>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-6">
