@@ -174,7 +174,7 @@ function KYCContent() {
           {/* Section Header */}
           <div className="flex items-center justify-between p-6 pb-4">
             <h2 className="text-lg font-semibold text-gray-900">
-              All Users
+              All Customers
             </h2>
             <div className="flex items-center gap-2">
               <button
