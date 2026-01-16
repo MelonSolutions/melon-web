@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '@/components/common/Button';
+import { Button } from '@/components/ui/Button';
 
 interface FilterBarProps {
   onFilter?: () => void;
@@ -15,7 +15,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
   return (
     <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4 mb-6">
       <Button
-        variant="outline"
+        variant="primary"
         className="flex items-center"
         onClick={onFilter}
       >
@@ -26,7 +26,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
       </Button>
       
       <Button
-        variant="outline"
+        variant="primary"
         className="flex items-center"
         onClick={onExport}
       >
@@ -37,7 +37,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
       </Button>
       
       <Button
-        variant="outline"
+        variant="primary"
         className="flex items-center"
         onClick={onShare}
       >

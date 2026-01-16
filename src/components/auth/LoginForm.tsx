@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Input from '@/components/common/Input';
-import Button from '@/components/common/Button';
+import Input from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 interface LoginFormProps {
   onSubmit: (data: { email: string; password: string }) => void;
@@ -82,7 +82,7 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
       <Button 
         type="submit" 
         className="w-full mt-6" 
-        isLoading={isLoading}
+        loading={isLoading}
       >
         Sign In
       </Button>

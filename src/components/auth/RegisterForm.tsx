@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
-import Input from '@/components/common/Input';
-import Button from '@/components/common/Button';
+import Input from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 interface RegisterFormProps {
   onSubmit: (data: {
@@ -124,7 +124,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
       <Button 
         type="submit" 
         className="w-full mt-6" 
-        isLoading={isLoading}
+        loading={isLoading}
       >
         Create Account
       </Button>
