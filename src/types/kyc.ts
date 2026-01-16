@@ -6,13 +6,6 @@ export type VerificationStatus =
   | 'VERIFIED' 
   | 'REJECTED';
 
-export type IdentityType = 
-  | 'NIN' 
-  | 'BVN' 
-  | 'VOTER_CARD' 
-  | 'DRIVERS_LICENSE' 
-  | 'PASSPORT';
-
 export type DocumentType = 
   | 'ID_CARD' 
   | 'PROOF_OF_ADDRESS' 
@@ -26,13 +19,27 @@ export interface KYCUser {
   lastName: string;
   email: string;
   phone: string;
-  identityType: IdentityType;
-  identityNumber: string;
+  
+  streetNumber?: string;
+  streetName?: string;
+  landmark?: string;
+  city?: string;
+  lga?: string;
+  state?: string;
+  country?: string;
+  
   status: VerificationStatus;
   documents: KYCDocument[];
   verificationDate?: string;
   rejectionReason?: string;
-  addressVerification?: AddressVerification;
+  
+  assignedAgent?: string;
+  agentNotes?: string;
+  verifiedAt?: string;
+  latitude?: number;
+  longitude?: number;
+  photos?: string[];
+  
   submittedAt: string;
   updatedAt: string;
   createdAt: string;
@@ -41,60 +48,21 @@ export interface KYCUser {
 export interface KYCDocument {
   _id?: string;
   id?: string;
-  type: DocumentType;
+  documentType: DocumentType;
   fileName: string;
   fileUrl: string;
+  fileType: string;
   fileSize: number;
   uploadedAt: string;
-  ocrData?: OCRData;
   verified: boolean;
+  ocrData?: OCRData;
 }
 
 export interface OCRData {
   extractedText: string;
   confidence: number;
-  detectedFields: {
-    name?: string;
-    idNumber?: string;
-    dateOfBirth?: string;
-    address?: string;
-    expiryDate?: string;
-  };
+  detectedFields: Record<string, string>;
   mismatches?: string[];
-}
-
-export interface AddressVerification {
-  address: string;
-  city: string;
-  state: string;
-  assignedAgent?: string;
-  agentNotes?: string;
-  verifiedAt?: string;
-  latitude?: number;
-  longitude?: number;
-  photos?: string[];
-}
-
-export interface IdentityVerificationRequest {
-  identityType: IdentityType;
-  identityNumber: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth?: string;
-}
-
-export interface IdentityVerificationResponse {
-  success: boolean;
-  verified: boolean;
-  data?: {
-    firstName: string;
-    lastName: string;
-    dateOfBirth: string;
-    phone?: string;
-    email?: string;
-    photo?: string;
-  };
-  message?: string;
 }
 
 export interface KYCDashboardStats {
@@ -110,17 +78,30 @@ export interface CreateKYCUserRequest {
   lastName: string;
   email: string;
   phone: string;
-  identityType: IdentityType;
-  identityNumber: string;
-  address?: string;
+  streetNumber?: string;
+  streetName?: string;
+  landmark?: string;
   city?: string;
+  lga?: string;
   state?: string;
+  country?: string;
 }
 
 export interface UpdateKYCUserRequest {
   status?: VerificationStatus;
   rejectionReason?: string;
-  addressVerification?: Partial<AddressVerification>;
+  streetNumber?: string;
+  streetName?: string;
+  landmark?: string;
+  city?: string;
+  lga?: string;
+  state?: string;
+  country?: string;
+  assignedAgent?: string;
+  agentNotes?: string;
+  latitude?: number;
+  longitude?: number;
+  photos?: string[];
 }
 
 export interface AuditLog {
@@ -133,7 +114,6 @@ export interface AuditLog {
   ipAddress?: string;
 }
 
-// Display name helpers
 export const STATUS_DISPLAY_NAMES: Record<VerificationStatus, string> = {
   PENDING: 'Pending',
   IN_REVIEW: 'In Review',
@@ -141,23 +121,21 @@ export const STATUS_DISPLAY_NAMES: Record<VerificationStatus, string> = {
   REJECTED: 'Rejected',
 };
 
-export const IDENTITY_TYPE_DISPLAY_NAMES: Record<IdentityType, string> = {
-  NIN: 'National Identity Number',
-  BVN: 'Bank Verification Number',
-  VOTER_CARD: 'Voter Card',
-  DRIVERS_LICENSE: 'Driver\'s License',
-  PASSPORT: 'International Passport',
+export const DOCUMENT_TYPE_DISPLAY_NAMES: Record<DocumentType, string> = {
+  ID_CARD: 'ID Card',
+  PROOF_OF_ADDRESS: 'Proof of Address',
+  PASSPORT_PHOTO: 'Passport Photo',
+  UTILITY_BILL: 'Utility Bill',
 };
 
 export const getStatusDisplayName = (status: VerificationStatus): string => {
   return STATUS_DISPLAY_NAMES[status] || status;
 };
 
-export const getIdentityTypeDisplayName = (type: IdentityType): string => {
-  return IDENTITY_TYPE_DISPLAY_NAMES[type] || type;
+export const getDocumentTypeDisplayName = (type: DocumentType): string => {
+  return DOCUMENT_TYPE_DISPLAY_NAMES[type] || type;
 };
 
-// Status color helpers
 export const getStatusColor = (status: VerificationStatus): string => {
   const colors = {
     PENDING: 'blue',

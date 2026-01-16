@@ -1,24 +1,23 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, X, Upload, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useProjectActions } from '@/hooks/usePortfolio';
+import { useModal } from '@/components/ui/Modal';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { 
   CreateProjectRequest, 
   ProjectSector, 
   ProjectRegion, 
   FundingSource,
-  getSectorDisplayName,
-  getRegionDisplayName 
 } from '@/types/portfolio';
 
 export default function CreateProjectPage() {
   const router = useRouter();
   const { createProject, loading } = useProjectActions();
+  const { openModal } = useModal();
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [formData, setFormData] = useState<CreateProjectRequest>({
@@ -94,26 +93,40 @@ export default function CreateProjectPage() {
     }));
   };
 
+  const showAlert = (title: string, description: string) => {
+    openModal({
+      type: 'error',
+      title,
+      description,
+      actions: [
+        {
+          label: 'OK',
+          variant: 'primary',
+          onClick: () => {},
+        }
+      ]
+    }, { size: 'sm' });
+  };
+
   const handleSubmit = async (isDraft = false) => {
     try {
-      // Validation
       if (!formData.title.trim()) {
-        alert('Please enter a project title');
+        showAlert('Required Field', 'Please enter a project title');
         return;
       }
 
       if (!formData.startDate || !formData.endDate) {
-        alert('Please select start and end dates');
+        showAlert('Required Fields', 'Please select start and end dates');
         return;
       }
 
       if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-        alert('End date must be after start date');
+        showAlert('Invalid Dates', 'End date must be after start date');
         return;
       }
 
       if (formData.totalBudget <= 0) {
-        alert('Please enter a valid budget amount');
+        showAlert('Invalid Budget', 'Please enter a valid budget amount');
         return;
       }
 
@@ -129,11 +142,11 @@ export default function CreateProjectPage() {
       const result = await createProject(projectData);
       
       if (result) {
-        router.push(`/portfolio/${result._id}?created=true`);
+        router.push(`/portfolio/${result._id}`);
       }
     } catch (error) {
       console.error('Error creating project:', error);
-      alert('Failed to create project. Please try again.');
+      showAlert('Error', 'Failed to create project. Please try again.');
     }
   };
 
@@ -148,14 +161,14 @@ export default function CreateProjectPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
             <Link href="/portfolio" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
               <h1 className="text-lg font-semibold text-gray-900">Create New Project</h1>
-              <p className="text-sm text-gray-500">Set up a new project for your portfolio</p>
+              <p className="text-sm text-gray-600">Set up a new project for your portfolio</p>
             </div>
           </div>
 
@@ -187,12 +200,12 @@ export default function CreateProjectPage() {
       </div>
 
       {/* Form Content */}
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
         {/* Basic Information */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Basic Information</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-6">Basic Information</h2>
           
-          <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project Title *
@@ -215,50 +228,36 @@ export default function CreateProjectPage() {
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
                 placeholder="Describe your project objectives and scope"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Sector *
                 </label>
-                <select
+                <CustomSelect
                   value={formData.sector}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sector: e.target.value as ProjectSector }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
-                  required
-                >
-                  {sectors.map(sector => (
-                    <option key={sector.value} value={sector.value}>
-                      {sector.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormData(prev => ({ ...prev, sector: value as ProjectSector }))}
+                  options={sectors}
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Region *
                 </label>
-                <select
+                <CustomSelect
                   value={formData.region}
-                  onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value as ProjectRegion }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
-                  required
-                >
-                  {regions.map(region => (
-                    <option key={region.value} value={region.value}>
-                      {region.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setFormData(prev => ({ ...prev, region: value as ProjectRegion }))}
+                  options={regions}
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Start Date *
@@ -290,9 +289,9 @@ export default function CreateProjectPage() {
 
         {/* Budget & Resources */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Budget & Resources</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-6">Budget & Resources</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Total Budget *
@@ -303,8 +302,8 @@ export default function CreateProjectPage() {
                   type="number"
                   value={formData.totalBudget || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, totalBudget: Number(e.target.value) }))}
-                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
-                  placeholder="Enter total budget"
+                  className="w-full pl-7 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                  placeholder="0"
                   required
                 />
               </div>
@@ -319,7 +318,7 @@ export default function CreateProjectPage() {
                 value={formData.targetHouseholds || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, targetHouseholds: Number(e.target.value) }))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
-                placeholder="Number of households"
+                placeholder="0"
               />
             </div>
 
@@ -332,7 +331,7 @@ export default function CreateProjectPage() {
                 value={formData.coverageArea || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, coverageArea: Number(e.target.value) }))}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
-                placeholder="Coverage area in km²"
+                placeholder="0"
               />
             </div>
 
@@ -340,18 +339,14 @@ export default function CreateProjectPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Funding Source
               </label>
-              <select
+              <CustomSelect
                 value={formData.fundingSource || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, fundingSource: e.target.value as FundingSource }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors"
-              >
-                <option value="">Select funding source</option>
-                {fundingSources.map(source => (
-                  <option key={source.value} value={source.value}>
-                    {source.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setFormData(prev => ({ ...prev, fundingSource: value as FundingSource || undefined }))}
+                options={[
+                  { value: '', label: 'Select funding source' },
+                  ...fundingSources
+                ]}
+              />
             </div>
 
             <div className="md:col-span-2">
@@ -371,9 +366,9 @@ export default function CreateProjectPage() {
 
         {/* Project Goals */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Project Goals</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-6">Project Goals</h2>
           
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Objectives
@@ -385,10 +380,9 @@ export default function CreateProjectPage() {
                   objectives: e.target.value.split('\n').filter(line => line.trim()) 
                 }))}
                 rows={4}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
-                placeholder="Enter project objectives (one per line)"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
+                placeholder="Enter each objective on a new line"
               />
-              <p className="text-xs text-gray-500 mt-1">Enter each objective on a new line</p>
             </div>
 
             <div>
@@ -402,10 +396,9 @@ export default function CreateProjectPage() {
                   expectedOutcomes: e.target.value.split('\n').filter(line => line.trim()) 
                 }))}
                 rows={4}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
-                placeholder="Enter expected outcomes (one per line)"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
+                placeholder="Enter each outcome on a new line"
               />
-              <p className="text-xs text-gray-500 mt-1">Enter each expected outcome on a new line</p>
             </div>
 
             <div>
@@ -419,10 +412,9 @@ export default function CreateProjectPage() {
                   risks: e.target.value.split('\n').filter(line => line.trim()) 
                 }))}
                 rows={3}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
-                placeholder="Enter potential risks (one per line)"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
+                placeholder="Enter each risk on a new line"
               />
-              <p className="text-xs text-gray-500 mt-1">Enter each risk on a new line</p>
             </div>
 
             <div>
@@ -433,19 +425,19 @@ export default function CreateProjectPage() {
                 value={formData.notes || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 rows={3}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors resize-none"
                 placeholder="Any additional notes or comments"
               />
             </div>
           </div>
         </div>
 
-        {/* Tags & Classification */}
+        {/* Tags */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Tags & Classification</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-6">Tags</h2>
           
           <div>
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-3">
               <input
                 type="text"
                 value={newTag}
@@ -457,7 +449,7 @@ export default function CreateProjectPage() {
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#4A7BC8] transition-colors"
+                className="px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -468,13 +460,13 @@ export default function CreateProjectPage() {
                 {tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-sm bg-gray-100 text-gray-700"
                   >
                     {tag}
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(tag)}
-                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                      className="text-gray-500 hover:text-gray-700 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -482,35 +474,6 @@ export default function CreateProjectPage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Team Members */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Team Members</h2>
-          
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500">
-              Add team members who will be working on this project. You can add their contact information and role details.
-            </p>
-            
-            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-              <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-              <p className="text-gray-500 mb-2">Team member management coming soon</p>
-              <p className="text-xs text-gray-400">You&rsquo;ll be able to add team members after creating the project</p>
-            </div>
-          </div>
-        </div>
-
-        {/* File Attachments */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">File Attachments</h2>
-          <p className="text-sm text-gray-500 mb-6">Upload project documents, images, and other files</p>
-          
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
-            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-600 mb-2">File attachments coming soon</p>
-            <p className="text-xs text-gray-500">You&rsquo;ll be able to upload files after creating the project</p>
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { Project, getStatusColor, getStatusDisplayName, getSectorDisplayName } from '@/types/portfolio';
-import { MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProjectListItemProps {
@@ -27,6 +26,10 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
     return `$${amount.toLocaleString()}`;
   };
 
+  const budgetUtilization = project.totalBudget > 0 
+    ? Math.round((project.spentBudget / project.totalBudget) * 100) 
+    : 0;
+
   return (
     <tr className="hover:bg-gray-50 transition-colors">
       <td className="px-6 py-4">
@@ -38,22 +41,24 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
             >
               {project.title}
             </Link>
-            <p className="text-sm text-gray-500 truncate max-w-md mt-1">
+            <p className="text-sm text-gray-600 truncate max-w-md mt-0.5">
               {project.description}
             </p>
             <div className="flex items-center gap-2 mt-2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                 {getSectorDisplayName(project.sector)}
               </span>
               {project.tags.length > 0 && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-700">
-                  {project.tags[0].name}
-                </span>
-              )}
-              {project.tags.length > 1 && (
-                <span className="text-xs text-gray-500">
-                  +{project.tags.length - 1} more
-                </span>
+                <>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
+                    {project.tags[0].name}
+                  </span>
+                  {project.tags.length > 1 && (
+                    <span className="text-xs text-gray-500">
+                      +{project.tags.length - 1}
+                    </span>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -61,20 +66,20 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(project.status)}`}>
           {getStatusDisplayName(project.status)}
         </span>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center">
-          <div className="w-16 bg-gray-200 rounded-full h-2 mr-3">
+        <div className="flex items-center gap-3">
+          <div className="w-20 bg-gray-200 rounded-full h-1.5">
             <div
-              className="bg-[#5B94E5] h-2 rounded-full transition-all duration-300"
+              className="bg-[#5B94E5] h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${project.progressPercentage}%` }}
             />
           </div>
-          <span className="text-sm text-gray-900 font-medium">{project.progressPercentage}%</span>
+          <span className="text-sm text-gray-900 font-medium w-8">{project.progressPercentage}%</span>
         </div>
       </td>
 
@@ -87,8 +92,8 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
           {project.actualHouseholds?.toLocaleString() || '0'}
         </div>
         {project.targetHouseholds && (
-          <div className="text-xs text-gray-500">
-            of {project.targetHouseholds.toLocaleString()} target
+          <div className="text-xs text-gray-500 mt-0.5">
+            of {project.targetHouseholds.toLocaleString()}
           </div>
         )}
       </td>
@@ -97,22 +102,25 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
         <div className="text-sm font-medium text-gray-900">
           {formatBudget(project.totalBudget)}
         </div>
-        <div className="text-xs text-gray-500">
-          {Math.round((project.spentBudget / project.totalBudget) * 100)}% used
+        <div className="text-xs text-gray-500 mt-0.5">
+          {budgetUtilization}% used
         </div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm text-gray-900">{formatDate(project.updatedAt)}</div>
-        <div className="text-xs text-gray-500">
-          by {project.createdBy?.firstName} {project.createdBy?.lastName}
+        <div className="text-xs text-gray-500 mt-0.5">
+          {project.createdBy?.firstName} {project.createdBy?.lastName}
         </div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap text-right">
-        <button className="text-gray-400 hover:text-gray-600 transition-colors p-1">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
+        <Link
+          href={`/portfolio/${project._id}`}
+          className="text-sm font-medium text-[#5B94E5] hover:text-[#4A7BC8] transition-colors"
+        >
+          View
+        </Link>
       </td>
     </tr>
   );

@@ -3,8 +3,6 @@ import {
   CreateKYCUserRequest, 
   UpdateKYCUserRequest,
   KYCDashboardStats,
-  IdentityVerificationRequest,
-  IdentityVerificationResponse,
   AuditLog,
 } from '@/types/kyc';
 
@@ -100,15 +98,6 @@ export async function updateKYCUser(
 export async function deleteKYCUser(id: string): Promise<void> {
   return fetchWithAuth(`${API_BASE_URL}/kyc/delete/${id}`, {
     method: 'DELETE',
-  });
-}
-
-export async function verifyIdentity(
-  data: IdentityVerificationRequest
-): Promise<IdentityVerificationResponse> {
-  return fetchWithAuth(`${API_BASE_URL}/kyc/verify-identity`, {
-    method: 'POST',
-    body: JSON.stringify(data),
   });
 }
 

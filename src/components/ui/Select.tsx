@@ -1,181 +1,102 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-import React, { useState, useRef, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
+import React from 'react';
+import { cn } from '@/lib/utils';
 
-interface SelectProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "value" | "onChange"> {
-  value?: string;
-  defaultValue?: string;
-  onValueChange?: (value: string) => void;
-  placeholder?: string;
+export interface SelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  options: Array<{ value: string; label: string }>;
 }
 
-interface SelectContextValue {
-  value?: string;
-  onValueChange?: (value: string) => void;
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-const SelectContext = React.createContext<SelectContextValue>({
-  open: false,
-  setOpen: () => {},
-});
-
-export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
-  ({ children, value, defaultValue, onValueChange, ...props }, ref) => {
-    const [open, setOpen] = useState(false);
-    const [internalValue, setInternalValue] = useState(value || defaultValue || "");
-
-    useEffect(() => {
-      if (value !== undefined) {
-        setInternalValue(value);
-      }
-    }, [value]);
-
-    const handleValueChange = (newValue: string) => {
-      if (value === undefined) {
-        setInternalValue(newValue);
-      }
-      onValueChange?.(newValue);
-      setOpen(false);
-    };
+const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+  (
+    {
+      className,
+      label,
+      error,
+      helperText,
+      options,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    const id = props.id || props.name || `select-${Math.random().toString(36).slice(2, 9)}`;
 
     return (
-      <SelectContext.Provider
-        value={{
-          value: value !== undefined ? value : internalValue,
-          onValueChange: handleValueChange,
-          open,
-          setOpen,
-        }}
-      >
-        <div ref={ref} {...props}>
-          {children}
-        </div>
-      </SelectContext.Provider>
-    );
-  }
-);
-Select.displayName = "Select";
-
-interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
-
-export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
-  ({ className, children, ...props }, ref) => {
-    const { open, setOpen, value } = React.useContext(SelectContext);
-
-    return (
-      <button
-        ref={ref}
-        className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
+      <div className="w-full">
+        {label && (
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-gray-900 mb-1.5"
+          >
+            {label}
+            {props.required && <span className="text-error ml-1">*</span>}
+          </label>
         )}
-        onClick={() => setOpen(!open)}
-        type="button"
-        {...props}
-      >
-        {children}
-        <ChevronDown className="h-4 w-4 opacity-50" />
-      </button>
-    );
-  }
-);
-SelectTrigger.displayName = "SelectTrigger";
 
-interface SelectValueProps {
-  placeholder?: string;
-}
+        <div className="relative">
+          <select
+            id={id}
+            disabled={disabled}
+            className={cn(
+              'w-full h-10 px-3 pr-10 text-sm text-gray-900 bg-white border rounded-lg transition-all duration-200 appearance-none',
+              'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+              'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
+              error
+                ? 'border-error focus:ring-error'
+                : 'border-gray-200 hover:border-gray-300',
+              className
+            )}
+            ref={ref}
+            {...props}
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
 
-export const SelectValue = ({ placeholder }: SelectValueProps) => {
-  const { value } = React.useContext(SelectContext);
-  
-  return (
-    <span className="text-sm">
-      {value || placeholder}
-    </span>
-  );
-};
-SelectValue.displayName = "SelectValue";
-
-interface SelectContentProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-export const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
-  ({ className, children, ...props }, ref) => {
-    const { open } = React.useContext(SelectContext);
-    const contentRef = useRef<HTMLDivElement>(null);
-
-    if (!open) return null;
-
-    return (
-      <div className="relative z-50">
-        <div
-          className="fixed inset-0 bg-black/10"
-          onClick={() => {
-            const { setOpen } = React.useContext(SelectContext);
-            setOpen(false);
-          }}
-        />
-        <div
-          ref={ref}
-          className={cn(
-            "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border border-gray-200 bg-white text-gray-950 shadow-md animate-in fade-in-80",
-            className
-          )}
-          {...props}
-        >
-          <div className="w-full p-1" ref={contentRef}>
-            {children}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </div>
         </div>
+
+        {error && (
+          <p className="mt-1.5 text-sm text-error flex items-center gap-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            {error}
+          </p>
+        )}
+
+        {!error && helperText && (
+          <p className="mt-1.5 text-sm text-gray-500">{helperText}</p>
+        )}
       </div>
     );
   }
 );
-SelectContent.displayName = "SelectContent";
 
-interface SelectItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  value: string;
-}
+Select.displayName = 'Select';
 
-export const SelectItem = React.forwardRef<HTMLButtonElement, SelectItemProps>(
-  ({ className, children, value, ...props }, ref) => {
-    const { value: selectedValue, onValueChange } = React.useContext(SelectContext);
-    const isSelected = selectedValue === value;
-
-    return (
-      <button
-        ref={ref}
-        className={cn(
-          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-          isSelected && "bg-gray-100",
-          className
-        )}
-        onClick={() => onValueChange?.(value)}
-        {...props}
-      >
-        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          {isSelected && (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-            >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          )}
-        </span>
-        <span className="text-sm">{children}</span>
-      </button>
-    );
-  }
-);
-SelectItem.displayName = "SelectItem";
+export default Select;

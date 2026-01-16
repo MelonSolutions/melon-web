@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -20,7 +19,6 @@ function LoginContent() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  // Handle URL parameters for messages
   useEffect(() => {
     const urlMessage = searchParams.get('message');
     const verified = searchParams.get('verified');
@@ -49,11 +47,9 @@ function LoginContent() {
     
     try {
       await signin(formData.email, formData.password);
-      // Navigation handled by useAuth hook
     } catch (err: any) {
       console.error('Login error:', err);
       
-      // Handle specific error cases
       if (err.message?.includes('verify your email')) {
         setError('Please verify your email before signing in. Check your inbox for the verification link.');
       } else if (err.message?.includes('not active')) {
@@ -69,47 +65,35 @@ function LoginContent() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Logo */}
+    <div className="space-y-6">
       <div className="text-center">
-        <Image
-          src="/images/melon-logo.svg"
-          alt="Melon"
-          width={120}
-          height={32}
-          className="mx-auto mb-8"
-          priority
-        />
-      </div>
-
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-[#1c2331] mb-3">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-2">
           Welcome Back
         </h1>
-        <p className="text-gray-600 font-normal">
-          Sign in to access your impact measurement dashboard
+        <p className="text-sm text-gray-600">
+          Sign in to access your dashboard
         </p>
       </div>
 
-      <form onSubmit={handleLogin} className="space-y-6">
+      <form onSubmit={handleLogin} className="space-y-4">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
         {message && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-blue-600 text-sm">{message}</p>
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-[#1c2331] mb-2">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
             Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="email"
               id="email"
@@ -117,7 +101,7 @@ function LoginContent() {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="Enter your email"
-              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-transparent transition-all ${
+              className={`w-full pl-9 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                 error ? 'border-red-300' : 'border-gray-300'
               }`}
               required
@@ -126,11 +110,11 @@ function LoginContent() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-[#1c2331] mb-2">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
             Password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type={showPassword ? 'text' : 'password'}
               id="password"
@@ -138,7 +122,7 @@ function LoginContent() {
               value={formData.password}
               onChange={handleInputChange}
               placeholder="Enter your password"
-              className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-transparent transition-all ${
+              className={`w-full pl-9 pr-10 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                 error ? 'border-red-300' : 'border-gray-300'
               }`}
               required
@@ -146,9 +130,9 @@ function LoginContent() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -156,11 +140,11 @@ function LoginContent() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-[#5B94E5] hover:bg-[#4A7ABF] text-white py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full bg-primary hover:bg-primary-hover text-white py-2.5 px-4 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
               Signing In...
             </div>
           ) : (
@@ -169,13 +153,12 @@ function LoginContent() {
         </button>
       </form>
 
-      {/* Sign up link */}
-      <div className="text-center">
-        <p className="text-gray-600 text-sm">
-          Don&rsquo;t have an account?{' '}
+      <div className="text-center pt-2">
+        <p className="text-sm text-gray-600">
+          Don&apos;t have an account?{' '}
           <button 
             onClick={() => router.push('/signup')}
-            className="text-[#5B94E5] hover:underline font-medium"
+            className="text-primary hover:underline font-medium"
           >
             Sign up
           </button>
@@ -187,39 +170,26 @@ function LoginContent() {
 
 function LoginFallback() {
   return (
-    <div className="space-y-8">
-      {/* Logo */}
+    <div className="space-y-6">
       <div className="text-center">
-        <Image
-          src="/images/melon-logo.svg"
-          alt="Melon"
-          width={120}
-          height={32}
-          className="mx-auto mb-8"
-          priority
-        />
-      </div>
-
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-[#1c2331] mb-3">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-2">
           Welcome Back
         </h1>
-        <p className="text-gray-600 font-normal">
-          Sign in to access your impact measurement dashboard
+        <p className="text-sm text-gray-600">
+          Sign in to access your dashboard
         </p>
       </div>
 
-      {/* Loading skeleton */}
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="h-3 w-10 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
         </div>
-        <div className="space-y-2">
-          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="space-y-1.5">
+          <div className="h-3 w-14 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
         </div>
-        <div className="h-12 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
       </div>
     </div>
   );

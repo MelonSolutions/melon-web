@@ -1,15 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { Search, Grid3X3, List } from 'lucide-react';
-import { 
-  ProjectStatus, 
-  ProjectSector, 
-  ProjectRegion,
-  getStatusDisplayName,
-  getSectorDisplayName,
-  getRegionDisplayName
-} from '@/types/portfolio';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 interface PortfolioFiltersProps {
   filters: {
@@ -18,12 +10,17 @@ interface PortfolioFiltersProps {
     sector: string;
     region: string;
   };
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: {
+    search: string;
+    status: string;
+    sector: string;
+    region: string;
+  }) => void;
   view: 'grid' | 'list';
   onViewChange: (view: 'grid' | 'list') => void;
 }
 
-const statusOptions: { value: ProjectStatus | ''; label: string }[] = [
+const statusOptions: { value: string; label: string }[] = [
   { value: '', label: 'All Status' },
   { value: 'ACTIVE', label: 'Active' },
   { value: 'COMPLETED', label: 'Completed' },
@@ -32,7 +29,7 @@ const statusOptions: { value: ProjectStatus | ''; label: string }[] = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
-const sectorOptions: { value: ProjectSector | ''; label: string }[] = [
+const sectorOptions: { value: string; label: string }[] = [
   { value: '', label: 'All Sectors' },
   { value: 'HEALTH', label: 'Health' },
   { value: 'EDUCATION', label: 'Education' },
@@ -46,7 +43,7 @@ const sectorOptions: { value: ProjectSector | ''; label: string }[] = [
   { value: 'ECONOMIC_DEVELOPMENT', label: 'Economic Development' },
 ];
 
-const regionOptions: { value: ProjectRegion | ''; label: string }[] = [
+const regionOptions: { value: string; label: string }[] = [
   { value: '', label: 'All Regions' },
   { value: 'NORTHERN_REGION', label: 'Northern Region' },
   { value: 'SOUTHERN_REGION', label: 'Southern Region' },
@@ -81,80 +78,44 @@ export function PortfolioFilters({
     onFilterChange({ ...filters, region });
   };
 
+  const hasActiveFilters = filters.search || filters.status || filters.sector || filters.region;
+
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <input
-          type="text"
-          placeholder="Search projects..."
-          value={filters.search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors bg-white"
-        />
-      </div>
-
-      {/* Filters and View Toggle */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        {/* Filter Dropdowns */}
-        <div className="flex flex-wrap gap-3">
-          <select
-            value={filters.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors min-w-[120px]"
-          >
-            {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filters.sector}
-            onChange={(e) => handleSectorChange(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors min-w-[120px]"
-          >
-            {sectorOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={filters.region}
-            onChange={(e) => handleRegionChange(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] bg-white transition-colors min-w-[120px]"
-          >
-            {regionOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+      {/* Search and View Toggle */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search Bar */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search projects..."
+            value={filters.search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors bg-white"
+          />
         </div>
 
         {/* View Toggle */}
-        <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+        <div className="flex border border-gray-300 rounded-lg overflow-hidden bg-white">
           <button
             onClick={() => onViewChange('grid')}
-            className={`p-2.5 transition-colors ${
+            className={`px-3 py-2 transition-colors ${
               view === 'grid'
-                ? 'bg-[#5B94E5] text-white'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50'
             }`}
             title="Grid view"
           >
             <Grid3X3 className="w-4 h-4" />
           </button>
+          <div className="w-px bg-gray-300"></div>
           <button
             onClick={() => onViewChange('list')}
-            className={`p-2.5 transition-colors ${
+            className={`px-3 py-2 transition-colors ${
               view === 'list'
-                ? 'bg-[#5B94E5] text-white'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:bg-gray-50'
             }`}
             title="List view"
           >
@@ -163,38 +124,38 @@ export function PortfolioFilters({
         </div>
       </div>
 
-      {/* Active Filters Summary */}
-      {(filters.search || filters.status || filters.sector || filters.region) && (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span>Filters:</span>
-          {filters.search && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs">
-              Search: &rdquo;{filters.search}&rdquo;
-            </span>
-          )}
-          {filters.status && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs">
-              {getStatusDisplayName(filters.status as ProjectStatus)}
-            </span>
-          )}
-          {filters.sector && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full bg-purple-100 text-purple-800 text-xs">
-              {getSectorDisplayName(filters.sector as ProjectSector)}
-            </span>
-          )}
-          {filters.region && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full bg-orange-100 text-orange-800 text-xs">
-              {getRegionDisplayName(filters.region as ProjectRegion)}
-            </span>
-          )}
+      {/* Filter Dropdowns */}
+      <div className="flex flex-wrap gap-3">
+        <CustomSelect
+          value={filters.status}
+          onChange={handleStatusChange}
+          options={statusOptions}
+          className="min-w-[140px]"
+        />
+
+        <CustomSelect
+          value={filters.sector}
+          onChange={handleSectorChange}
+          options={sectorOptions}
+          className="min-w-[140px]"
+        />
+
+        <CustomSelect
+          value={filters.region}
+          onChange={handleRegionChange}
+          options={regionOptions}
+          className="min-w-[140px]"
+        />
+
+        {hasActiveFilters && (
           <button
             onClick={() => onFilterChange({ search: '', status: '', sector: '', region: '' })}
-            className="text-[#5B94E5] hover:text-[#4A7BC8] text-xs font-medium"
+            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
           >
-            Clear all
+            Clear filters
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

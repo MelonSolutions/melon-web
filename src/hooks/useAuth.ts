@@ -96,15 +96,22 @@ export function useAuth(): AuthState & AuthActions {
       localStorage.setItem('authToken', response.token);
       localStorage.setItem('userData', JSON.stringify(response.user));
       
-      // Get full organization data
-      const orgData = await apiClient.getOrganization();
-      
       setState({
         user: response.user as User,
-        organization: orgData,
+        organization: null, 
         isAuthenticated: true,
         isLoading: false,
       });
+
+      try {
+        const orgData = await apiClient.getOrganization();
+        setState(prev => ({
+          ...prev,
+          organization: orgData,
+        }));
+      } catch (orgError) {
+        console.error('Failed to fetch organization data:', orgError);
+      }
 
       router.push('/overview');
     } catch (error) {

@@ -1,5 +1,5 @@
 import localFont from 'next/font/local';
-import { Karla } from 'next/font/google';
+import { DM_Sans } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ModalProvider } from '@/components/ui/Modal';
@@ -37,7 +37,11 @@ const mabryPro = localFont({
   ],
 });
 
-const karla = Karla({ subsets: ['latin'], variable: '--font-karla' });
+// Match FigoRisk's approach - simpler, direct application
+const dmSans = DM_Sans({
+  subsets: ['latin-ext'],
+  weight: ['400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   title: 'Melon Impact Platform',
@@ -56,7 +60,7 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico?v=3" />
         <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
       </head>
-      <body className={`${karla.variable} ${mabryPro.variable} antialiased`}>
+      <body className={`${dmSans.className} ${mabryPro.variable} antialiased`}>
         <AuthProvider>
           <ToastProvider>
             <ModalProvider>
