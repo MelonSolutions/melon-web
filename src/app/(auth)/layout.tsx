@@ -65,6 +65,16 @@ export default function AuthLayout({
             <div className="flex items-center space-x-6 opacity-70">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
                 <Image
+                  src="/images/unilever.png"
+                  alt="Remote Gravity"
+                  width={60}
+                  height={24}
+                  className="object-contain filter brightness-0 invert"
+                  style={{ maxHeight: '20px', width: 'auto' }}
+                />
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
+                <Image
                   src="/images/iwello.png"
                   alt="iWello"
                   width={60}
