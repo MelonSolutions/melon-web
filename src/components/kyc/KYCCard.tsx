@@ -6,7 +6,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { MoreHorizontal, Eye, FileText, Trash2, Loader2 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { KYCUser } from '@/types/kyc';
-import { deleteKYCUser } from '@/lib/api/kyc';
+import { deleteKYCUser, ApiError } from '@/lib/api/kyc';
+import { useToast } from '@/components/ui/Toast';
 
 interface KYCCardProps {
   user: KYCUser;
@@ -17,14 +18,25 @@ interface KYCCardProps {
 export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { addToast } = useToast();
 
   const userId = user.id || user._id;
+  const canDelete = user.status === 'PENDING';
 
   if (!userId) {
     return null;
   }
 
   const handleDelete = async () => {
+    if (!canDelete) {
+      addToast({
+        type: 'error',
+        title: 'Cannot Delete',
+        message: 'Only pending verification requests can be deleted. This restriction helps track completed verifications for billing purposes.',
+      });
+      return;
+    }
+
     const confirmed = confirm(
       `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`
     );
@@ -34,9 +46,28 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
     try {
       setLoading(true);
       await deleteKYCUser(userId);
+      
+      addToast({
+        type: 'success',
+        title: 'Request Deleted',
+        message: 'The verification request has been deleted successfully.',
+      });
+      
       onRefetch();
     } catch (error) {
-      console.error('Error deleting user:', error);
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Delete Failed',
+          message: error.message,
+        });
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Delete Failed',
+          message: 'Failed to delete the request. Please try again.',
+        });
+      }
     } finally {
       setLoading(false);
       setShowDropdown(false);
@@ -113,11 +144,13 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         e.stopPropagation();
                         handleDelete();
                       }}
-                      disabled={loading}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-error hover:bg-error-light disabled:opacity-50 text-left"
+                      disabled={loading || !canDelete}
+                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${
+                        canDelete ? 'text-error' : 'text-gray-400'
+                      }`}
                     >
                       <Trash2 className="w-4 h-4" />
-                      Delete
+                      Delete {!canDelete && '(Pending Only)'}
                     </button>
                   </div>
                 </div>
@@ -205,11 +238,13 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleDelete}
-                      disabled={loading}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-error hover:bg-error-light disabled:opacity-50 text-left"
+                      disabled={loading || !canDelete}
+                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${
+                        canDelete ? 'text-error' : 'text-gray-400'
+                      }`}
                     >
                       <Trash2 className="w-4 h-4" />
-                      Delete
+                      Delete {!canDelete && '(Pending Only)'}
                     </button>
                   </div>
                 </div>

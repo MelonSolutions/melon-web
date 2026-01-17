@@ -2,7 +2,9 @@
 
 export type VerificationStatus = 
   | 'PENDING' 
-  | 'IN_REVIEW' 
+  | 'ASSIGNED'
+  | 'IN_REVIEW'
+  | 'VERIFICATION_SUBMITTED'
   | 'VERIFIED' 
   | 'REJECTED';
 
@@ -11,6 +13,14 @@ export type DocumentType =
   | 'PROOF_OF_ADDRESS' 
   | 'PASSPORT_PHOTO' 
   | 'UTILITY_BILL';
+
+export interface VerificationData {
+  verifiedLatitude?: number;
+  verifiedLongitude?: number;
+  verificationPhotos?: string[];
+  agentNotes?: string;
+  verifiedAt?: string;
+}
 
 export interface KYCUser {
   _id?: string;
@@ -28,17 +38,24 @@ export interface KYCUser {
   state?: string;
   country?: string;
   
+  latitude?: number;
+  longitude?: number;
+  
   status: VerificationStatus;
   documents: KYCDocument[];
   verificationDate?: string;
   rejectionReason?: string;
   
-  assignedAgent?: string;
+  assignedAgent?: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | string;
   agentNotes?: string;
   verifiedAt?: string;
-  latitude?: number;
-  longitude?: number;
-  photos?: string[];
+  verificationData?: VerificationData;
+  mobileJobId?: string;
   
   submittedAt: string;
   updatedAt: string;
@@ -67,9 +84,11 @@ export interface OCRData {
 
 export interface KYCDashboardStats {
   totalUsers: number;
-  verified: number;
-  inReview: number;
   pending: number;
+  assigned: number;
+  inReview: number;
+  verificationSubmitted: number;
+  verified: number;
   rejected: number;
 }
 
@@ -85,6 +104,8 @@ export interface CreateKYCUserRequest {
   lga?: string;
   state?: string;
   country?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateKYCUserRequest {
@@ -101,7 +122,6 @@ export interface UpdateKYCUserRequest {
   agentNotes?: string;
   latitude?: number;
   longitude?: number;
-  photos?: string[];
 }
 
 export interface AuditLog {
@@ -116,7 +136,9 @@ export interface AuditLog {
 
 export const STATUS_DISPLAY_NAMES: Record<VerificationStatus, string> = {
   PENDING: 'Pending',
+  ASSIGNED: 'Agent Assigned',
   IN_REVIEW: 'In Review',
+  VERIFICATION_SUBMITTED: 'Pending Approval',
   VERIFIED: 'Verified',
   REJECTED: 'Rejected',
 };
@@ -139,7 +161,9 @@ export const getDocumentTypeDisplayName = (type: DocumentType): string => {
 export const getStatusColor = (status: VerificationStatus): string => {
   const colors = {
     PENDING: 'blue',
+    ASSIGNED: 'purple',
     IN_REVIEW: 'yellow',
+    VERIFICATION_SUBMITTED: 'orange',
     VERIFIED: 'green',
     REJECTED: 'red',
   };

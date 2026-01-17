@@ -25,9 +25,11 @@ export function useKYCUsers(filters?: {
   const [users, setUsers] = useState<KYCUser[]>([]);
   const [dashboardStats, setDashboardStats] = useState<KYCDashboardStats>({
     totalUsers: 0,
-    verified: 0,
-    inReview: 0,
     pending: 0,
+    assigned: 0,
+    inReview: 0,
+    verificationSubmitted: 0,
+    verified: 0,
     rejected: 0,
   });
   const [loading, setLoading] = useState(true);

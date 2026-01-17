@@ -95,6 +95,20 @@ export async function updateKYCUser(
   });
 }
 
+export async function makeVerificationDecision(
+  id: string,
+  approved: boolean,
+  rejectionReason?: string
+): Promise<{ message: string }> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/${id}/verify-decision`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      approved: approved.toString(),
+      rejectionReason,
+    }),
+  });
+}
+
 export async function deleteKYCUser(id: string): Promise<void> {
   return fetchWithAuth(`${API_BASE_URL}/kyc/delete/${id}`, {
     method: 'DELETE',

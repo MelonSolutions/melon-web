@@ -9,10 +9,12 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   const displayName = getStatusDisplayName(status);
 
-  const variantMap: Record<VerificationStatus, 'success' | 'warning' | 'info' | 'error'> = {
-    VERIFIED: 'success',
-    IN_REVIEW: 'warning',
+  const variantMap: Record<VerificationStatus, 'success' | 'warning' | 'info' | 'error' | 'neutral'> = {
     PENDING: 'info',
+    ASSIGNED: 'neutral',
+    IN_REVIEW: 'warning',
+    VERIFICATION_SUBMITTED: 'warning',
+    VERIFIED: 'success',
     REJECTED: 'error',
   };
 

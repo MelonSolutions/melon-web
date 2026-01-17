@@ -11,9 +11,6 @@ import {
   MapPin, 
   Calendar,
   FileText,
-  CheckCircle,
-  XCircle,
-  Clock,
   AlertTriangle,
   Upload,
   Trash2,
@@ -21,15 +18,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
+import { VerificationApproval } from '@/components/kyc/VerificationApproval';
 import { 
-  VerificationStatus,
   KYCDocument,
   getDocumentTypeDisplayName
 } from '@/types/kyc';
 import { 
-  updateKYCUser, 
   uploadDocument, 
   deleteDocument,
+  makeVerificationDecision,
   ApiError 
 } from '@/lib/api/kyc';
 import { format } from 'date-fns';
@@ -55,36 +52,46 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const handleStatusChange = async (newStatus: VerificationStatus) => {
-    if (!user) return;
-
-    let rejectionReason: string | undefined;
-    
-    if (newStatus === 'REJECTED') {
-      const reason = window.prompt('Please provide a reason for rejection:');
-      if (!reason) return;
-      rejectionReason = reason;
-    }
-
+  const handleVerificationApproval = async () => {
     try {
       setUpdating(true);
-      await updateKYCUser(userId, { 
-        status: newStatus,
-        ...(rejectionReason && { rejectionReason })
-      });
-      
+      await makeVerificationDecision(userId, true);
       await refetch();
       
       addToast({
         type: 'success',
-        title: 'Status Updated',
-        message: `Status changed to ${newStatus.replace('_', ' ').toLowerCase()}.`,
+        title: 'Verification Approved',
+        message: 'The verification has been approved successfully.',
       });
     } catch (error) {
       if (error instanceof ApiError) {
         addToast({
           type: 'error',
-          title: 'Update Failed',
+          title: 'Approval Failed',
+          message: error.message,
+        });
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleVerificationRejection = async (reason: string) => {
+    try {
+      setUpdating(true);
+      await makeVerificationDecision(userId, false, reason);
+      await refetch();
+      
+      addToast({
+        type: 'success',
+        title: 'Verification Rejected',
+        message: 'The verification has been rejected and sent back to the agent.',
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Rejection Failed',
           message: error.message,
         });
       }
@@ -96,6 +103,17 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Only allow upload for PENDING requests
+    if (user?.status !== 'PENDING') {
+      addToast({
+        type: 'error',
+        title: 'Upload Not Allowed',
+        message: 'Documents can only be uploaded for pending verification requests.',
+      });
+      event.target.value = '';
+      return;
+    }
 
     try {
       setUploading(true);
@@ -122,6 +140,16 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   };
 
   const handleDeleteDocument = async (documentId: string) => {
+    // Only allow delete for PENDING requests
+    if (user?.status !== 'PENDING') {
+      addToast({
+        type: 'error',
+        title: 'Delete Not Allowed',
+        message: 'Documents can only be deleted for pending verification requests.',
+      });
+      return;
+    }
+
     openModal(
       <ConfirmDialog
         title="Delete Document"
@@ -229,6 +257,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   }
 
   const addressDisplay = formatAddress();
+  const showVerificationApproval = user.status === 'VERIFICATION_SUBMITTED' && user.verificationData;
+  const canUploadDocuments = user.status === 'PENDING';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -253,6 +283,17 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            {showVerificationApproval && (
+              <VerificationApproval
+                verificationData={user.verificationData!}
+                originalLatitude={user.latitude}
+                originalLongitude={user.longitude}
+                onApprove={handleVerificationApproval}
+                onReject={handleVerificationRejection}
+                loading={updating}
+              />
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
@@ -284,6 +325,18 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       </div>
                     </div>
                   )}
+
+                  {user.latitude && user.longitude && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <div className="text-sm text-gray-500">GPS Coordinates</div>
+                        <div className="text-gray-900 font-mono text-sm">
+                          {user.latitude.toFixed(6)}, {user.longitude.toFixed(6)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
@@ -302,24 +355,26 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Documents ({user.documents?.length || 0})</CardTitle>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      accept="image/*,.pdf"
-                      disabled={uploading}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={<Upload className="w-4 h-4" />}
-                      loading={uploading}
-                      disabled={uploading}
-                    >
-                      Upload
-                    </Button>
-                  </label>
+                  {canUploadDocuments && (
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        accept="image/*,.pdf"
+                        disabled={uploading}
+                      />
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Upload className="w-4 h-4" />}
+                        loading={uploading}
+                        disabled={uploading}
+                      >
+                        Upload
+                      </Button>
+                    </label>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -348,7 +403,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                         </div>
                         
                         <div className="flex items-center gap-2 ml-2">
-                          
                           <a
                             href={doc.fileUrl}
                             target="_blank"
@@ -357,12 +411,14 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>
-                          <button
-                            onClick={() => handleDeleteDocument(doc._id || doc.id || '')}
-                            className="p-2 text-gray-400 hover:text-error hover:bg-error-light rounded transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {canUploadDocuments && (
+                            <button
+                              onClick={() => handleDeleteDocument(doc._id || doc.id || '')}
+                              className="p-2 text-gray-400 hover:text-error hover:bg-error-light rounded transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -392,54 +448,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
           </div>
 
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {user.status !== 'VERIFIED' && (
-                    <Button
-                      variant="success"
-                      size="md"
-                      fullWidth
-                      onClick={() => handleStatusChange('VERIFIED')}
-                      disabled={updating}
-                      icon={<CheckCircle className="w-4 h-4" />}
-                    >
-                      Approve
-                    </Button>
-                  )}
-                  
-                  {user.status !== 'IN_REVIEW' && (
-                    <Button
-                      variant="secondary"
-                      size="md"
-                      fullWidth
-                      onClick={() => handleStatusChange('IN_REVIEW')}
-                      disabled={updating}
-                      icon={<Clock className="w-4 h-4" />}
-                    >
-                      Mark In Review
-                    </Button>
-                  )}
-                  
-                  {user.status !== 'REJECTED' && (
-                    <Button
-                      variant="danger"
-                      size="md"
-                      fullWidth
-                      onClick={() => handleStatusChange('REJECTED')}
-                      disabled={updating}
-                      icon={<XCircle className="w-4 h-4" />}
-                    >
-                      Reject
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle>Timeline</CardTitle>
@@ -480,6 +488,41 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {user.assignedAgent && typeof user.assignedAgent !== 'string' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Assigned Agent</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-sm text-gray-500">Name</div>
+                      <div className="text-gray-900">
+                        {user.assignedAgent.firstName} {user.assignedAgent.lastName}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Email</div>
+                      <div className="text-gray-900">{user.assignedAgent.email}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {user.agentNotes && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Agent Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {user.agentNotes}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

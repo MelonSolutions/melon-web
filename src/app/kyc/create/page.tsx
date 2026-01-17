@@ -40,7 +40,7 @@ export default function AddKYCUserPage() {
     city: '',
     lga: '',
     state: '',
-    country: '',
+    country: 'Nigeria',
   });
 
   const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
@@ -92,7 +92,7 @@ export default function AddKYCUserPage() {
       addToast({
         type: 'success',
         title: 'Request Created',
-        message: 'The verification request has been created successfully.',
+        message: 'The verification request has been created and will be sent to nearby agents.',
       });
       
       router.push(`/kyc/${result._id}`);
@@ -229,6 +229,12 @@ export default function AddKYCUserPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-700">
+                  Enter the address details below. GPS coordinates will be automatically generated from the address and sent to nearby agents for verification.
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                   label="Street Number"

@@ -22,7 +22,7 @@ interface KYCUser {
   lastName: string;
   email: string;
   phone: string;
-  status: 'PENDING' | 'AGENT_ASSIGNED' | 'IN_PROGRESS' | 'VERIFIED' | 'REJECTED';
+  status: 'PENDING' | 'ASSIGNED' | 'IN_REVIEW' | 'VERIFICATION_SUBMITTED' | 'VERIFIED' | 'REJECTED';
   agentName?: string;
   documents: Array<{ _id: string }>;
   submittedAt: string;
@@ -144,7 +144,7 @@ function KYCContent() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <StatCard
           label="Total Requests"
           value={dashboardStats.totalUsers}
@@ -154,6 +154,16 @@ function KYCContent() {
           label="Pending"
           value={dashboardStats.pending}
           description="Awaiting assignment"
+        />
+        <StatCard
+          label="Assigned"
+          value={dashboardStats.assigned}
+          description="Agent claimed"
+        />
+        <StatCard
+          label="In Review"
+          value={dashboardStats.inReview}
+          description="Being verified"
         />
         <StatCard
           label="Verified"
@@ -249,9 +259,9 @@ function KYCContent() {
                   Pending
                 </button>
                 <button
-                  onClick={() => setStatusFilter('AGENT_ASSIGNED')}
+                  onClick={() => setStatusFilter('ASSIGNED')}
                   className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    statusFilter === 'AGENT_ASSIGNED' 
+                    statusFilter === 'ASSIGNED' 
                       ? 'bg-gray-900 text-white' 
                       : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
                   }`}
@@ -267,6 +277,16 @@ function KYCContent() {
                   }`}
                 >
                   In Review
+                </button>
+                <button
+                  onClick={() => setStatusFilter('VERIFICATION_SUBMITTED')}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    statusFilter === 'VERIFICATION_SUBMITTED' 
+                      ? 'bg-gray-900 text-white' 
+                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  Pending Approval
                 </button>
                 <button
                   onClick={() => setStatusFilter('VERIFIED')}
