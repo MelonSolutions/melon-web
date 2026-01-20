@@ -8,6 +8,7 @@ import { StatusBadge } from './StatusBadge';
 import { KYCUser } from '@/types/kyc';
 import { deleteKYCUser, ApiError } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
+import { useModal } from '@/components/ui/Modal';
 
 interface KYCCardProps {
   user: KYCUser;
@@ -19,6 +20,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
+ const { openConfirmModal } = useModal();
 
   const userId = user.id || user._id;
   const canDelete = user.status === 'PENDING';
@@ -27,52 +29,58 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
     return null;
   }
 
-  const handleDelete = async () => {
-    if (!canDelete) {
-      addToast({
-        type: 'error',
-        title: 'Cannot Delete',
-        message: 'Only pending verification requests can be deleted. This restriction helps track completed verifications for billing purposes.',
-      });
-      return;
-    }
+const handleDelete = () => {
+  if (!canDelete) {
+    addToast({
+      type: 'error',
+      title: 'Cannot Delete',
+      message: 'Only pending verification requests can be deleted. This restriction helps track completed verifications for billing purposes.',
+    });
+    return;
+  }
 
-    const confirmed = confirm(
-      `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setLoading(true);
-      await deleteKYCUser(userId);
-      
-      addToast({
-        type: 'success',
-        title: 'Request Deleted',
-        message: 'The verification request has been deleted successfully.',
-      });
-      
-      onRefetch();
-    } catch (error) {
-      if (error instanceof ApiError) {
+  openConfirmModal({
+    title: 'Delete Verification Request',
+    description: `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    variant: 'danger',
+    onConfirm: async () => {
+      try {
+        setLoading(true);
+        await deleteKYCUser(userId);
+        
         addToast({
-          type: 'error',
-          title: 'Delete Failed',
-          message: error.message,
+          type: 'success',
+          title: 'Request Deleted',
+          message: 'The verification request has been deleted successfully.',
         });
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Delete Failed',
-          message: 'Failed to delete the request. Please try again.',
-        });
+        
+        onRefetch();
+      } catch (error) {
+        if (error instanceof ApiError) {
+          addToast({
+            type: 'error',
+            title: 'Delete Failed',
+            message: error.message,
+          });
+        } else {
+          addToast({
+            type: 'error',
+            title: 'Delete Failed',
+            message: 'Failed to delete the request. Please try again.',
+          });
+        }
+      } finally {
+        setLoading(false);
+        setShowDropdown(false);
       }
-    } finally {
-      setLoading(false);
+    },
+    onCancel: () => {
       setShowDropdown(false);
     }
-  };
+  });
+};
 
   if (view === 'grid') {
     return (

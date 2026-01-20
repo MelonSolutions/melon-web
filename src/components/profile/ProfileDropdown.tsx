@@ -10,8 +10,6 @@ import {
   LogOut, 
   HelpCircle, 
   Shield,
-  CreditCard,
-  Download,
   ChevronRight
 } from 'lucide-react';
 
@@ -59,18 +57,6 @@ export function ProfileDropdown() {
       section: 'Billing & Support',
       items: [
         {
-          icon: CreditCard,
-          label: 'Billing',
-          href: '/billing',
-          description: 'Manage subscription and billing'
-        },
-        {
-          icon: Download,
-          label: 'Export Data',
-          href: '/export',
-          description: 'Download your data'
-        },
-        {
           icon: HelpCircle,
           label: 'Help & Support',
           href: '/help',
@@ -99,9 +85,9 @@ export function ProfileDropdown() {
       </button>
 
       {isOpen && (
-        <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-          {/* User Info Header */}
-          <div className="px-4 py-4 border-b border-gray-100">
+        <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 flex flex-col max-h-[calc(100vh-100px)]">
+          {/* User Info Header - Fixed at top */}
+          <div className="flex-shrink-0 px-4 py-4 border-b border-gray-100">
             <div className="flex items-center space-x-3">
               <div className="bg-[#5B94E5] text-white flex-shrink-0 rounded-full h-12 w-12 flex items-center justify-center">
                 <span className="text-lg font-medium">{getInitials()}</span>
@@ -117,8 +103,8 @@ export function ProfileDropdown() {
             </div>
           </div>
 
-          {/* Menu Items */}
-          <div className="py-2">
+          {/* Menu Items - ONLY THIS SECTION SCROLLS */}
+          <div className="flex-1 overflow-y-auto py-2">
             {menuItems.map((section, sectionIndex) => (
               <div key={section.section}>
                 {sectionIndex > 0 && <div className="border-t border-gray-100 my-2"></div>}
@@ -146,8 +132,8 @@ export function ProfileDropdown() {
             ))}
           </div>
 
-          {/* Logout */}
-          <div className="border-t border-gray-100">
+          {/* Logout - Fixed at bottom, ALWAYS VISIBLE */}
+          <div className="flex-shrink-0 border-t border-gray-100">
             <button 
               onClick={() => {
                 logout();

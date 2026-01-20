@@ -139,50 +139,65 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     }
   };
 
-  const handleDeleteDocument = async (documentId: string) => {
-    // Only allow delete for PENDING requests
-    if (user?.status !== 'PENDING') {
-      addToast({
-        type: 'error',
-        title: 'Delete Not Allowed',
-        message: 'Documents can only be deleted for pending verification requests.',
-      });
-      return;
-    }
+const handleDeleteDocument = async (documentId: string) => {
+  if (user?.status !== 'PENDING') {
+    addToast({
+      type: 'error',
+      title: 'Delete Not Allowed',
+      message: 'Documents can only be deleted for pending verification requests.',
+    });
+    return;
+  }
 
-    openModal(
-      <ConfirmDialog
-        title="Delete Document"
-        message="Are you sure you want to delete this document? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="danger"
-        onConfirm={async () => {
-          try {
-            await deleteDocument(userId, documentId);
-            await refetch();
-            closeModal();
-            
-            addToast({
-              type: 'success',
-              title: 'Document Deleted',
-              message: 'The document has been removed.',
-            });
-          } catch (error) {
-            if (error instanceof ApiError) {
+  openModal(
+    <div className="p-6">
+      <div className="flex items-start gap-4 mb-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-error-light flex items-center justify-center">
+          <AlertTriangle className="w-5 h-5 text-error" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Document</h3>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete this document? This action cannot be undone.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 justify-end mt-6">
+        <Button variant="secondary" onClick={closeModal}>
+          Cancel
+        </Button>
+        <Button 
+          variant="danger" 
+          onClick={async () => {
+            try {
+              await deleteDocument(userId, documentId);
+              await refetch();
+              closeModal();
+              
               addToast({
-                type: 'error',
-                title: 'Delete Failed',
-                message: error.message,
+                type: 'success',
+                title: 'Document Deleted',
+                message: 'The document has been removed.',
               });
+            } catch (error) {
+              if (error instanceof ApiError) {
+                addToast({
+                  type: 'error',
+                  title: 'Delete Failed',
+                  message: error.message,
+                });
+              }
             }
-          }
-        }}
-        onCancel={closeModal}
-      />,
-      { size: 'sm' }
-    );
-  };
+          }}
+        >
+          Delete
+        </Button>
+      </div>
+    </div>,
+    { size: 'sm' }
+  );
+};
 
   const formatAddress = () => {
     if (!user) return null;
