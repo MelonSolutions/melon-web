@@ -17,6 +17,7 @@ export type DocumentType =
 export interface VerificationData {
   verifiedLatitude?: number;
   verifiedLongitude?: number;
+  verifiedAddress?: string;
   verificationPhotos?: string[];
   agentNotes?: string;
   verifiedAt?: string;

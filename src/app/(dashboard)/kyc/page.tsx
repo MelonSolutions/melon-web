@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/ui/StatCard';
 import Input from '@/components/ui/Input';
+import { exportKYCToCSV } from '@/lib/exportKYCToCSV';
 
 interface KYCUser {
   _id?: string;
@@ -70,38 +71,41 @@ function KYCContent() {
     refetch 
   } = useKYCUsers(filters);
 
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      const blob = await exportKYCData({
-        status: statusFilter || undefined,
-      });
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `verification-export-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      
-      addToast({
-        type: 'success',
-        title: 'Export Successful',
-        message: 'Verification data has been exported successfully.',
-      });
-    } catch (error) {
-      console.error('Export error:', error);
+const handleExport = async () => {
+  try {
+    setExporting(true);
+    
+    if (!users || users.length === 0) {
       addToast({
         type: 'error',
-        title: 'Export Failed',
-        message: 'Failed to export verification data. Please try again.',
+        title: 'No Data',
+        message: 'No verification data to export.',
       });
-    } finally {
-      setExporting(false);
+      return;
     }
-  };
+
+    const usersToExport = statusFilter 
+      ? users.filter(user => user.status === statusFilter)
+      : users;
+
+    exportKYCToCSV(usersToExport);
+    
+    addToast({
+      type: 'success',
+      title: 'Export Successful',
+      message: `Exported ${usersToExport.length} verification record(s).`,
+    });
+  } catch (error) {
+    console.error('Export error:', error);
+    addToast({
+      type: 'error',
+      title: 'Export Failed',
+      message: 'Failed to export verification data. Please try again.',
+    });
+  } finally {
+    setExporting(false);
+  }
+};
 
   const filteredUsers = users?.filter(user => {
     if (!statusFilter) return true;

@@ -3,6 +3,7 @@
 
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useKYCUser } from '@/hooks/useKYC';
 import { 
   ArrowLeft, 
@@ -14,7 +15,8 @@ import {
   AlertTriangle,
   Upload,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
@@ -32,7 +34,6 @@ import {
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -104,7 +105,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Only allow upload for PENDING requests
     if (user?.status !== 'PENDING') {
       addToast({
         type: 'error',
@@ -139,65 +139,65 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     }
   };
 
-const handleDeleteDocument = async (documentId: string) => {
-  if (user?.status !== 'PENDING') {
-    addToast({
-      type: 'error',
-      title: 'Delete Not Allowed',
-      message: 'Documents can only be deleted for pending verification requests.',
-    });
-    return;
-  }
+  const handleDeleteDocument = async (documentId: string) => {
+    if (user?.status !== 'PENDING') {
+      addToast({
+        type: 'error',
+        title: 'Delete Not Allowed',
+        message: 'Documents can only be deleted for pending verification requests.',
+      });
+      return;
+    }
 
-  openModal(
-    <div className="p-6">
-      <div className="flex items-start gap-4 mb-4">
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-error-light flex items-center justify-center">
-          <AlertTriangle className="w-5 h-5 text-error" />
+    openModal(
+      <div className="p-6">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Document</h3>
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete this document? This action cannot be undone.
+            </p>
+          </div>
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Document</h3>
-          <p className="text-sm text-gray-600">
-            Are you sure you want to delete this document? This action cannot be undone.
-          </p>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-3 justify-end mt-6">
-        <Button variant="secondary" onClick={closeModal}>
-          Cancel
-        </Button>
-        <Button 
-          variant="danger" 
-          onClick={async () => {
-            try {
-              await deleteDocument(userId, documentId);
-              await refetch();
-              closeModal();
-              
-              addToast({
-                type: 'success',
-                title: 'Document Deleted',
-                message: 'The document has been removed.',
-              });
-            } catch (error) {
-              if (error instanceof ApiError) {
+        <div className="flex items-center gap-3 justify-end mt-6">
+          <Button variant="secondary" onClick={closeModal}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={async () => {
+              try {
+                await deleteDocument(userId, documentId);
+                await refetch();
+                closeModal();
+                
                 addToast({
-                  type: 'error',
-                  title: 'Delete Failed',
-                  message: error.message,
+                  type: 'success',
+                  title: 'Document Deleted',
+                  message: 'The document has been removed.',
                 });
+              } catch (error) {
+                if (error instanceof ApiError) {
+                  addToast({
+                    type: 'error',
+                    title: 'Delete Failed',
+                    message: error.message,
+                  });
+                }
               }
-            }
-          }}
-        >
-          Delete
-        </Button>
-      </div>
-    </div>,
-    { size: 'sm' }
-  );
-};
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      </div>,
+      { size: 'sm' }
+    );
+  };
 
   const formatAddress = () => {
     if (!user) return null;
@@ -213,6 +213,18 @@ const handleDeleteDocument = async (documentId: string) => {
     ].filter(Boolean);
     
     return parts.length > 0 ? parts.join(', ') : null;
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   };
 
   if (loading) {
@@ -272,8 +284,30 @@ const handleDeleteDocument = async (documentId: string) => {
   }
 
   const addressDisplay = formatAddress();
-  const showVerificationApproval = user.status === 'VERIFICATION_SUBMITTED' && user.verificationData;
+  const hasVerificationData = user.verificationData && (
+    user.verificationData.verifiedLatitude || 
+    user.verificationData.verifiedLongitude || 
+    user.verificationData.verifiedAddress ||
+    (user.verificationData.verificationPhotos && user.verificationData.verificationPhotos.length > 0)
+  );
+  const showApprovalButtons = user.status === 'VERIFICATION_SUBMITTED';
   const canUploadDocuments = user.status === 'PENDING';
+
+  let distanceInMeters: number | null = null;
+  if (
+    user.latitude && 
+    user.longitude && 
+    user.verificationData?.verifiedLatitude && 
+    user.verificationData?.verifiedLongitude
+  ) {
+    const distanceInKm = calculateDistance(
+      user.latitude,
+      user.longitude,
+      user.verificationData.verifiedLatitude,
+      user.verificationData.verifiedLongitude
+    );
+    distanceInMeters = distanceInKm * 1000;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -298,7 +332,7 @@ const handleDeleteDocument = async (documentId: string) => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {showVerificationApproval && (
+            {showApprovalButtons && hasVerificationData && (
               <VerificationApproval
                 verificationData={user.verificationData!}
                 originalLatitude={user.latitude}
@@ -307,6 +341,109 @@ const handleDeleteDocument = async (documentId: string) => {
                 onReject={handleVerificationRejection}
                 loading={updating}
               />
+            )}
+
+            {!showApprovalButtons && hasVerificationData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Agent Verification Details</CardTitle>
+                    {user.status === 'VERIFIED' && (
+                      <Badge variant="success" size="sm">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {user.verificationData?.verifiedLatitude && user.verificationData?.verifiedLongitude && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Verified Location</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-3">
+                            <MapPin className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-500">GPS Coordinates</div>
+                              <div className="text-gray-900 font-mono text-sm">
+                                {user.verificationData.verifiedLatitude.toFixed(6)}, {user.verificationData.verifiedLongitude.toFixed(6)}
+                              </div>
+                            </div>
+                          </div>
+
+                          {user.verificationData.verifiedAddress && (
+                            <div className="flex items-start gap-3">
+                              <MapPin className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
+                              <div className="flex-1">
+                                <div className="text-sm text-gray-500">Verified Address</div>
+                                <div className="text-gray-900">{user.verificationData.verifiedAddress}</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {distanceInMeters !== null && (
+                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div className="text-sm text-blue-900">
+                                <strong>Distance from original:</strong> {distanceInMeters.toFixed(0)} meters
+                                {distanceInMeters < 100 && (
+                                  <span className="ml-2 text-green-600">✓ Within acceptable range</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {user.verificationData?.verificationPhotos && user.verificationData.verificationPhotos.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Verification Photos ({user.verificationData.verificationPhotos.length})</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {user.verificationData.verificationPhotos.map((photo, index) => (
+                            <a
+                              key={index}
+                              href={photo}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group"
+                            >
+                              <Image
+                                src={photo}
+                                alt={`Verification photo ${index + 1}`}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                <ExternalLink className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {user.verificationData?.agentNotes && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Agent Notes</h4>
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                            {user.verificationData.agentNotes}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {user.verificationData?.verifiedAt && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Calendar className="w-4 h-4" />
+                        <span>Verified on {format(new Date(user.verificationData.verifiedAt), 'PPp')}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             <Card>
@@ -335,7 +472,7 @@ const handleDeleteDocument = async (documentId: string) => {
                     <div className="flex items-start gap-3">
                       <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                       <div>
-                        <div className="text-sm text-gray-500">Address</div>
+                        <div className="text-sm text-gray-500">Original Address</div>
                         <div className="text-gray-900">{addressDisplay}</div>
                       </div>
                     </div>
@@ -345,7 +482,7 @@ const handleDeleteDocument = async (documentId: string) => {
                     <div className="flex items-start gap-3">
                       <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                       <div>
-                        <div className="text-sm text-gray-500">GPS Coordinates</div>
+                        <div className="text-sm text-gray-500">Original GPS Coordinates</div>
                         <div className="text-gray-900 font-mono text-sm">
                           {user.latitude.toFixed(6)}, {user.longitude.toFixed(6)}
                         </div>
