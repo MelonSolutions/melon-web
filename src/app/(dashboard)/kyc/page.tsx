@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/ui/StatCard';
 import Input from '@/components/ui/Input';
 import { exportKYCToCSV } from '@/lib/exportKYCToCSV';
+import { Pagination } from '@/components/ui/Pagination';
 
 interface KYCUser {
   _id?: string;
@@ -65,10 +66,12 @@ function KYCContent() {
 
   const { 
     users, 
-    dashboardStats, 
+    dashboardStats,
+    pagination,
     loading, 
     error,
-    refetch 
+    refetch,
+    setPage
   } = useKYCUsers(filters);
 
 const handleExport = async () => {
@@ -107,12 +110,13 @@ const handleExport = async () => {
   }
 };
 
-  const filteredUsers = users?.filter(user => {
+ const filteredUsers = users?.filter(user => {
     if (!statusFilter) return true;
     return user.status === statusFilter;
   }) || [];
 
-  if (loading && !users) {
+  // Initial load - show full skeleton
+  if (loading && (!users || users.length === 0) && !dashboardStats.totalUsers) {
     return <KYCLoading />;
   }
 
@@ -306,46 +310,65 @@ const handleExport = async () => {
             </div>
           </div>
 
-          {filteredUsers.length > 0 ? (
-            view === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                {filteredUsers.map((user) => {
-                  const userId = user.id || user._id;
-                  return userId ? (
-                    <KYCCard
-                      key={userId}
-                      user={user}
-                      view="grid"
-                      onRefetch={refetch}
-                    />
-                  ) : null;
-                })}
+          {loading ? (
+            <div className="p-6">
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+                ))}
               </div>
-            ) : (
-              <div>
-                <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-                  <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="col-span-4">Customer</div>
-                    <div className="col-span-3">Contact</div>
-                    <div className="col-span-2">Status</div>
-                    <div className="col-span-2">Documents</div>
-                    <div className="col-span-1">Actions</div>
-                  </div>
+            </div>
+          ) : filteredUsers.length > 0 ? (
+            <>
+              {view === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                  {filteredUsers.map((user) => {
+                    const userId = user.id || user._id;
+                    return userId ? (
+                      <KYCCard
+                        key={userId}
+                        user={user}
+                        view="grid"
+                        onRefetch={refetch}
+                      />
+                    ) : null;
+                  })}
                 </div>
+              ) : (
+                <div>
+                  <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+                    <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <div className="col-span-4">Customer</div>
+                      <div className="col-span-3">Contact</div>
+                      <div className="col-span-2">Status</div>
+                      <div className="col-span-2">Documents</div>
+                      <div className="col-span-1">Actions</div>
+                    </div>
+                  </div>
 
-                {filteredUsers.map((user) => {
-                  const userId = user.id || user._id;
-                  return userId ? (
-                    <KYCCard
-                      key={userId}
-                      user={user}
-                      view="list"
-                      onRefetch={refetch}
-                    />
-                  ) : null;
-                })}
-              </div>
-            )
+                  {filteredUsers.map((user) => {
+                    const userId = user.id || user._id;
+                    return userId ? (
+                      <KYCCard
+                        key={userId}
+                        user={user}
+                        view="list"
+                        onRefetch={refetch}
+                      />
+                    ) : null;
+                  })}
+                </div>
+              )}
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                hasNextPage={pagination.hasNextPage}
+                hasPreviousPage={pagination.hasPreviousPage}
+                totalItems={pagination.total}
+                pageSize={pagination.pageSize}
+                onPageChange={setPage}
+              />
+            </>
           ) : (
             <div className="text-center py-12 px-6">
               <p className="text-sm text-gray-500 mb-3">No requests found matching your criteria</p>
