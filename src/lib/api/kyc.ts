@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { 
   KYCUser, 
   CreateKYCUserRequest, 
@@ -58,16 +59,22 @@ export async function getKYCUsers(filters?: {
   search?: string;
   status?: string;
   identityType?: string;
-}): Promise<KYCUser[]> {
+  page?: number;
+  pageSize?: number;
+}): Promise<any> {
   const params = new URLSearchParams();
   
   if (filters?.search) params.append('search', filters.search);
   if (filters?.status) params.append('status', filters.status);
   if (filters?.identityType) params.append('identityType', filters.identityType);
+  
+  params.append('currentPage', String(filters?.page || 1));
+  params.append('pageSize', String(filters?.pageSize || 10));
 
   const url = `${API_BASE_URL}/kyc/all${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetchWithAuth(url);
-  return response.data || response;
+  
+  return response;
 }
 
 export async function getKYCUser(id: string): Promise<KYCUser> {
