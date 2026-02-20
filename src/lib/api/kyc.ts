@@ -199,3 +199,38 @@ export async function exportKYCData(filters?: {
 
   return response.blob();
 }
+
+export async function downloadKYCReport(userId: string): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+
+  const response = await fetch(`${API_BASE_URL}/kyc/${userId}/report`, {
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError('Failed to download report', response.status);
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = `KYC-Report-${userId}.pdf`;
+  
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    if (filenameMatch) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  // Download the PDF
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
