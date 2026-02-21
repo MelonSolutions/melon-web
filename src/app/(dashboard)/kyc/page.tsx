@@ -341,7 +341,7 @@ const handleExport = async () => {
                       <div className="col-span-4">Customer</div>
                       <div className="col-span-3">Contact</div>
                       <div className="col-span-2">Status</div>
-                      <div className="col-span-2">Documents</div>
+                      <div className="col-span-2">Addresses</div> 
                       <div className="col-span-1">Actions</div>
                     </div>
                   </div>
