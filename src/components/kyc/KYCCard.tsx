@@ -216,8 +216,8 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
 
           <div className="space-y-2 pt-4 border-t border-gray-100">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Documents:</span>
-              <span className="text-gray-900 font-medium">{user.documents?.length || 0}</span>
+              <span className="text-gray-500">Addresses:</span>
+              <span className="text-gray-900 font-medium">{user.addresses?.length || 1}</span>
             </div>
             <div className="text-xs text-gray-400 pt-2">
               {formatDistanceToNow(new Date(user.updatedAt), { addSuffix: true })}
@@ -251,7 +251,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
 
           <div className="col-span-2">
             <span className="text-sm text-gray-900 font-medium">
-              {user.documents?.length || 0}
+              {user.addresses?.length || 1}
             </span>
           </div>
 
@@ -287,7 +287,6 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                       <FileText className="w-4 h-4" />
                       Documents
                     </button>
-                    {/* ← ADD THIS BUTTON */}
                     <button
                       onClick={handleDownloadReport}
                       disabled={downloading}
