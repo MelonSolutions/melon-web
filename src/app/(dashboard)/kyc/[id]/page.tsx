@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { use, useState } from 'react';
@@ -302,14 +302,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     verificationData: user.verificationData,
   }];
 
-  const hasVerificationData = user.verificationData && (
-    user.verificationData.verifiedLatitude || 
-    user.verificationData.verifiedLongitude || 
-    user.verificationData.verifiedAddress ||
-    (user.verificationData.verificationPhotos && user.verificationData.verificationPhotos.length > 0)
-  );
-  const showApprovalButtons = user.status === 'VERIFICATION_SUBMITTED';
   const canUploadDocuments = user.status === 'PENDING';
+  const allAddressesVerified = addresses.every(addr => addr.status === 'VERIFICATION_SUBMITTED');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -334,17 +328,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {showApprovalButtons && hasVerificationData && (
-              <VerificationApproval
-                verificationData={user.verificationData!}
-                originalLatitude={user.latitude}
-                originalLongitude={user.longitude}
-                onApprove={handleVerificationApproval}
-                onReject={handleVerificationRejection}
-                loading={updating}
-              />
-            )}
-
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
@@ -396,114 +379,128 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
             </Card>
 
             {addresses.map((address, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{address.label || `Address ${index + 1}`}</CardTitle>
-                    {address.status && (
-                      <StatusBadge status={address.status} size="sm" />
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4">
-                      {formatAddress(address) && (
-                        <div>
-                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Full Address</div>
-                          <div className="text-sm text-gray-900">{formatAddress(address)}</div>
-                        </div>
-                      )}
+              <div key={index} className="space-y-6">
+                {address.status === 'VERIFICATION_SUBMITTED' && address.verificationData && (
+                  <VerificationApproval
+                    verificationData={address.verificationData}
+                    originalLatitude={address.latitude}
+                    originalLongitude={address.longitude}
+                    onApprove={handleVerificationApproval}
+                    onReject={handleVerificationRejection}
+                    loading={updating}
+                    addressLabel={address.label}
+                  />
+                )}
 
-                      {address.latitude && address.longitude && (
-                        <div>
-                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">GPS Coordinates</div>
-                          <div className="text-sm text-gray-900 font-mono">
-                            {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{address.label || `Address ${index + 1}`}</CardTitle>
+                      {address.status && (
+                        <StatusBadge status={address.status} size="sm" />
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4">
+                        {formatAddress(address) && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Full Address</div>
+                            <div className="text-sm text-gray-900">{formatAddress(address)}</div>
+                          </div>
+                        )}
+
+                        {address.latitude && address.longitude && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">GPS Coordinates</div>
+                            <div className="text-sm text-gray-900 font-mono">
+                              {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {address.verificationData && (
+                        <div className="pt-6 border-t border-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-4">Agent Verification</h4>
+                          
+                          <div className="space-y-4">
+                            {address.verificationData.verifiedLatitude && address.verificationData.verifiedLongitude && (
+                              <>
+                                <div>
+                                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified GPS Coordinates</div>
+                                  <div className="text-sm text-gray-900 font-mono">
+                                    {address.verificationData.verifiedLatitude.toFixed(6)}, {address.verificationData.verifiedLongitude.toFixed(6)}
+                                  </div>
+                                </div>
+
+                                {address.latitude && address.longitude && (
+                                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="text-xs font-medium text-blue-700 uppercase tracking-wider mb-1">Distance from Original</div>
+                                    <div className="text-sm font-semibold text-blue-900">
+                                      {(calculateDistance(
+                                        address.latitude,
+                                        address.longitude,
+                                        address.verificationData.verifiedLatitude,
+                                        address.verificationData.verifiedLongitude
+                                      ) * 1000).toFixed(0)} meters
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+
+                            {address.verificationData.verifiedAddress && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified Address</div>
+                                <div className="text-sm text-gray-900">{address.verificationData.verifiedAddress}</div>
+                              </div>
+                            )}
+
+                            {address.verificationData.verificationPhotos && address.verificationData.verificationPhotos.length > 0 && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                                  Verification Photos ({address.verificationData.verificationPhotos.length})
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {address.verificationData.verificationPhotos.map((photo, i) => (
+                                    <a
+                                      key={i}
+                                      href={photo}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group"
+                                    >
+                                      <Image
+                                        src={photo}
+                                        alt={`Photo ${i + 1}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                      />
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                        <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </div>
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {address.verificationData.agentNotes && (
+                              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Agent Notes</div>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">{address.verificationData.agentNotes}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
-
-                    {address.verificationData && (
-                      <div className="pt-6 border-t border-gray-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-4">Agent Verification</h4>
-                        
-                        <div className="space-y-4">
-                          {address.verificationData.verifiedLatitude && address.verificationData.verifiedLongitude && (
-                            <>
-                              <div>
-                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified GPS Coordinates</div>
-                                <div className="text-sm text-gray-900 font-mono">
-                                  {address.verificationData.verifiedLatitude.toFixed(6)}, {address.verificationData.verifiedLongitude.toFixed(6)}
-                                </div>
-                              </div>
-
-                              {address.latitude && address.longitude && (
-                                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                  <div className="text-xs font-medium text-blue-700 uppercase tracking-wider mb-1">Distance from Original</div>
-                                  <div className="text-sm font-semibold text-blue-900">
-                                    {(calculateDistance(
-                                      address.latitude,
-                                      address.longitude,
-                                      address.verificationData.verifiedLatitude,
-                                      address.verificationData.verifiedLongitude
-                                    ) * 1000).toFixed(0)} meters
-                                  </div>
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                          {address.verificationData.verifiedAddress && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified Address</div>
-                              <div className="text-sm text-gray-900">{address.verificationData.verifiedAddress}</div>
-                            </div>
-                          )}
-
-                          {address.verificationData.verificationPhotos && address.verificationData.verificationPhotos.length > 0 && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-                                Verification Photos ({address.verificationData.verificationPhotos.length})
-                              </div>
-                              <div className="grid grid-cols-2 gap-3">
-                                {address.verificationData.verificationPhotos.map((photo, i) => (
-                                  <a
-                                    key={i}
-                                    href={photo}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group"
-                                  >
-                                    <Image
-                                      src={photo}
-                                      alt={`Photo ${i + 1}`}
-                                      fill
-                                      className="object-cover"
-                                      sizes="(max-width: 768px) 100vw, 33vw"
-                                    />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                      <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {address.verificationData.agentNotes && (
-                            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Agent Notes</div>
-                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{address.verificationData.agentNotes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
 
             <Card>
@@ -609,7 +606,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 </div>
               </div>
             )}
-            </div>
+          </div>
 
           <div className="space-y-6">
             <Card>

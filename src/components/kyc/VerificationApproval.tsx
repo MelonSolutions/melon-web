@@ -15,6 +15,7 @@ interface VerificationApprovalProps {
   onApprove: () => void;
   onReject: (reason: string) => void;
   loading?: boolean;
+  addressLabel?: string; 
 }
 
 export function VerificationApproval({
@@ -24,6 +25,7 @@ export function VerificationApproval({
   onApprove,
   onReject,
   loading = false,
+  addressLabel,
 }: VerificationApprovalProps) {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -73,7 +75,9 @@ export function VerificationApproval({
                 <AlertTriangle className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <CardTitle className="text-blue-900 mb-1">Review Required</CardTitle>
+                <CardTitle className="text-blue-900 mb-1">
+                  Review Required {addressLabel && `- ${addressLabel}`}
+                </CardTitle>
                 <p className="text-sm text-blue-700">
                   An agent has submitted verification results. Please review the information and photos below before making a decision.
                 </p>
