@@ -29,6 +29,7 @@ export function VerificationApproval({
 }: VerificationApprovalProps) {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const calculateDistance = (lat1?: number, lon1?: number, lat2?: number, lon2?: number) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
@@ -56,14 +57,32 @@ export function VerificationApproval({
   );
 
   const handleReject = () => {
-    if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
+    const trimmedReason = rejectionReason.trim();
+    
+    if (!trimmedReason) {
+      setValidationError('Please provide a reason for rejection');
       return;
     }
-    onReject(rejectionReason);
+
+    if (trimmedReason.length < 10) {
+      setValidationError('Rejection reason must be at least 10 characters');
+      return;
+    }
+
+    onReject(trimmedReason);
     setShowRejectModal(false);
     setRejectionReason('');
+    setValidationError('');
   };
+
+  const handleReasonChange = (value: string) => {
+    setRejectionReason(value);
+    if (validationError) {
+      setValidationError('');
+    }
+  };
+
+  const isRejectDisabled = !rejectionReason.trim() || rejectionReason.trim().length < 10;
 
   return (
     <>
@@ -238,15 +257,23 @@ export function VerificationApproval({
             
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rejection Reason
+                Rejection Reason <span className="text-error">*</span>
               </label>
               <textarea
                 value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
+                onChange={(e) => handleReasonChange(e.target.value)}
                 placeholder="e.g., Photos are unclear, location doesn't match, documents need verification..."
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm ${
+                  validationError ? 'border-error' : 'border-gray-300'
+                }`}
               />
+              {validationError && (
+                <p className="text-xs text-error mt-1">{validationError}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum 10 characters ({rejectionReason.trim().length}/10)
+              </p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -256,6 +283,7 @@ export function VerificationApproval({
                 onClick={() => {
                   setShowRejectModal(false);
                   setRejectionReason('');
+                  setValidationError('');
                 }}
                 fullWidth
               >
@@ -266,6 +294,7 @@ export function VerificationApproval({
                 size="md"
                 onClick={handleReject}
                 loading={loading}
+                disabled={isRejectDisabled || loading}
                 fullWidth
               >
                 Confirm Rejection
