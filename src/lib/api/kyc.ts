@@ -105,14 +105,24 @@ export async function updateKYCUser(
 export async function makeVerificationDecision(
   id: string,
   approved: boolean,
-  rejectionReason?: string
+  rejectionReason?: string,
+  addressIndex?: number
 ): Promise<{ message: string }> {
+  const payload: any = { 
+    approved: approved.toString() 
+  };
+  
+  if (!approved && rejectionReason) {
+    payload.rejectionReason = rejectionReason;
+  }
+  
+  if (addressIndex !== undefined) {
+    payload.addressIndex = addressIndex;
+  }
+  
   return fetchWithAuth(`${API_BASE_URL}/kyc/${id}/verify-decision`, {
     method: 'PATCH',
-    body: JSON.stringify({
-      approved: approved.toString(),
-      rejectionReason,
-    }),
+    body: JSON.stringify(payload),
   });
 }
 

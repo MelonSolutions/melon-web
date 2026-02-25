@@ -56,53 +56,59 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const handleVerificationApproval = async () => {
-    try {
-      setUpdating(true);
-      await makeVerificationDecision(userId, true);
-      await refetch();
-      
+const handleVerificationApproval = async (addressIndex: number) => {
+  try {
+    setUpdating(true);
+    
+    const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
+    
+    await makeVerificationDecision(userId, true, undefined, addressIndex);
+    await refetch();
+    
+    addToast({
+      type: 'success',
+      title: 'Verification Approved',
+      message: `${addressLabel} has been approved successfully.`,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
       addToast({
-        type: 'success',
-        title: 'Verification Approved',
-        message: 'The verification has been approved successfully.',
+        type: 'error',
+        title: 'Approval Failed',
+        message: error.message,
       });
-    } catch (error) {
-      if (error instanceof ApiError) {
-        addToast({
-          type: 'error',
-          title: 'Approval Failed',
-          message: error.message,
-        });
-      }
-    } finally {
-      setUpdating(false);
     }
-  };
+  } finally {
+    setUpdating(false);
+  }
+};
 
-  const handleVerificationRejection = async (reason: string) => {
-    try {
-      setUpdating(true);
-      await makeVerificationDecision(userId, false, reason);
-      await refetch();
-      
+const handleVerificationRejection = async (reason: string, addressIndex: number) => {
+  try {
+    setUpdating(true);
+    
+    const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
+    
+    await makeVerificationDecision(userId, false, reason, addressIndex);
+    await refetch();
+    
+    addToast({
+      type: 'success',
+      title: 'Verification Rejected',
+      message: `${addressLabel} has been rejected.`,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
       addToast({
-        type: 'success',
-        title: 'Verification Rejected',
-        message: 'The verification has been rejected and sent back to the agent.',
+        type: 'error',
+        title: 'Rejection Failed',
+        message: error.message,
       });
-    } catch (error) {
-      if (error instanceof ApiError) {
-        addToast({
-          type: 'error',
-          title: 'Rejection Failed',
-          message: error.message,
-        });
-      }
-    } finally {
-      setUpdating(false);
     }
-  };
+  } finally {
+    setUpdating(false);
+  }
+};
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -377,7 +383,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 </div>
               </CardContent>
             </Card>
-
             {addresses.map((address, index) => (
               <div key={index} className="space-y-6">
                 {address.status === 'VERIFICATION_SUBMITTED' && address.verificationData && (
@@ -385,13 +390,12 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     verificationData={address.verificationData}
                     originalLatitude={address.latitude}
                     originalLongitude={address.longitude}
-                    onApprove={handleVerificationApproval}
-                    onReject={handleVerificationRejection}
+                    onApprove={() => handleVerificationApproval(index)}
+                    onReject={(reason) => handleVerificationRejection(reason, index)}
                     loading={updating}
                     addressLabel={address.label}
                   />
                 )}
-
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
