@@ -9,12 +9,24 @@ import {
 } from '@/lib/api/kyc';
 import { KYCUser, KYCDashboardStats } from '@/types/kyc';
 
+interface PaginationData {
+  total: number;
+  pageSize: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  nextPage?: number;
+  hasPreviousPage: boolean;
+}
+
 interface UseKYCUsersResult {
   users: KYCUser[];
   dashboardStats: KYCDashboardStats;
+  pagination: PaginationData;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  setPage: (page: number) => void;
 }
 
 export function useKYCUsers(filters?: {
@@ -32,20 +44,40 @@ export function useKYCUsers(filters?: {
     verified: 0,
     rejected: 0,
   });
+  const [pagination, setPagination] = useState<PaginationData>({
+    total: 0,
+    pageSize: 10,
+    currentPage: 1,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // ← ADD THIS: Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters?.search, filters?.status, filters?.identityType]);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const [usersData, statsData] = await Promise.all([
-        getKYCUsers(filters),
+      const [response, statsData] = await Promise.all([
+        getKYCUsers({ ...filters, page: currentPage }),
         getKYCDashboardStats(),
       ]);
       
-      setUsers(usersData);
+      if (response.data && response.pagination) {
+        setUsers(response.data);
+        setPagination(response.pagination);
+      } else {
+        setUsers(Array.isArray(response) ? response : []);
+      }
+      
       setDashboardStats(statsData);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -57,18 +89,25 @@ export function useKYCUsers(filters?: {
     } finally {
       setLoading(false);
     }
-  }, [filters?.search, filters?.status, filters?.identityType]);
+  }, [filters?.search, filters?.status, filters?.identityType, currentPage]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  const setPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return {
     users,
     dashboardStats,
+    pagination,
     loading,
     error,
     refetch: fetchData,
+    setPage,
   };
 }
 

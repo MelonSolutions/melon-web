@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { 
   KYCUser, 
   CreateKYCUserRequest, 
@@ -58,16 +59,22 @@ export async function getKYCUsers(filters?: {
   search?: string;
   status?: string;
   identityType?: string;
-}): Promise<KYCUser[]> {
+  page?: number;
+  pageSize?: number;
+}): Promise<any> {
   const params = new URLSearchParams();
   
   if (filters?.search) params.append('search', filters.search);
   if (filters?.status) params.append('status', filters.status);
   if (filters?.identityType) params.append('identityType', filters.identityType);
+  
+  params.append('currentPage', String(filters?.page || 1));
+  params.append('pageSize', String(filters?.pageSize || 10));
 
   const url = `${API_BASE_URL}/kyc/all${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await fetchWithAuth(url);
-  return response.data || response;
+  
+  return response;
 }
 
 export async function getKYCUser(id: string): Promise<KYCUser> {
@@ -98,14 +105,24 @@ export async function updateKYCUser(
 export async function makeVerificationDecision(
   id: string,
   approved: boolean,
-  rejectionReason?: string
+  rejectionReason?: string,
+  addressIndex?: number
 ): Promise<{ message: string }> {
+  const payload: any = { 
+    approved: approved.toString() 
+  };
+  
+  if (!approved && rejectionReason) {
+    payload.rejectionReason = rejectionReason;
+  }
+  
+  if (addressIndex !== undefined) {
+    payload.addressIndex = addressIndex;
+  }
+  
   return fetchWithAuth(`${API_BASE_URL}/kyc/${id}/verify-decision`, {
     method: 'PATCH',
-    body: JSON.stringify({
-      approved: approved.toString(),
-      rejectionReason,
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -198,4 +215,39 @@ export async function exportKYCData(filters?: {
   }
 
   return response.blob();
+}
+
+export async function downloadKYCReport(userId: string): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+
+  const response = await fetch(`${API_BASE_URL}/kyc/${userId}/report`, {
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError('Failed to download report', response.status);
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = `KYC-Report-${userId}.pdf`;
+  
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    if (filenameMatch) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  // Download the PDF
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }

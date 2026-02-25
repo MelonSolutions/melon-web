@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { MoreHorizontal, Eye, FileText, Trash2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { KYCUser } from '@/types/kyc';
-import { deleteKYCUser, ApiError } from '@/lib/api/kyc';
+import { deleteKYCUser, downloadKYCReport, ApiError } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
 
@@ -19,8 +19,9 @@ interface KYCCardProps {
 export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const { addToast } = useToast();
- const { openConfirmModal } = useModal();
+  const { openConfirmModal } = useModal();
 
   const userId = user.id || user._id;
   const canDelete = user.status === 'PENDING';
@@ -29,58 +30,89 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
     return null;
   }
 
-const handleDelete = () => {
-  if (!canDelete) {
-    addToast({
-      type: 'error',
-      title: 'Cannot Delete',
-      message: 'Only pending verification requests can be deleted. This restriction helps track completed verifications for billing purposes.',
-    });
-    return;
-  }
-
-  openConfirmModal({
-    title: 'Delete Verification Request',
-    description: `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`,
-    confirmText: 'Delete',
-    cancelText: 'Cancel',
-    variant: 'danger',
-    onConfirm: async () => {
-      try {
-        setLoading(true);
-        await deleteKYCUser(userId);
-        
+  const handleDownloadReport = async () => {
+    try {
+      setDownloading(true);
+      await downloadKYCReport(userId);
+      
+      addToast({
+        type: 'success',
+        title: 'Report Downloaded',
+        message: 'The verification report has been downloaded successfully.',
+      });
+      
+      setShowDropdown(false);
+    } catch (error) {
+      if (error instanceof ApiError) {
         addToast({
-          type: 'success',
-          title: 'Request Deleted',
-          message: 'The verification request has been deleted successfully.',
+          type: 'error',
+          title: 'Download Failed',
+          message: error.message,
         });
-        
-        onRefetch();
-      } catch (error) {
-        if (error instanceof ApiError) {
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Download Failed',
+          message: 'Failed to download the report. Please try again.',
+        });
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!canDelete) {
+      addToast({
+        type: 'error',
+        title: 'Cannot Delete',
+        message: 'Only pending verification requests can be deleted. This restriction helps track completed verifications for billing purposes.',
+      });
+      return;
+    }
+
+    openConfirmModal({
+      title: 'Delete Verification Request',
+      description: `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await deleteKYCUser(userId);
+          
           addToast({
-            type: 'error',
-            title: 'Delete Failed',
-            message: error.message,
+            type: 'success',
+            title: 'Request Deleted',
+            message: 'The verification request has been deleted successfully.',
           });
-        } else {
-          addToast({
-            type: 'error',
-            title: 'Delete Failed',
-            message: 'Failed to delete the request. Please try again.',
-          });
+          
+          onRefetch();
+        } catch (error) {
+          if (error instanceof ApiError) {
+            addToast({
+              type: 'error',
+              title: 'Delete Failed',
+              message: error.message,
+            });
+          } else {
+            addToast({
+              type: 'error',
+              title: 'Delete Failed',
+              message: 'Failed to delete the request. Please try again.',
+            });
+          }
+        } finally {
+          setLoading(false);
+          setShowDropdown(false);
         }
-      } finally {
-        setLoading(false);
+      },
+      onCancel: () => {
         setShowDropdown(false);
       }
-    },
-    onCancel: () => {
-      setShowDropdown(false);
-    }
-  });
-};
+    });
+  };
 
   if (view === 'grid') {
     return (
@@ -102,9 +134,9 @@ const handleDelete = () => {
                 setShowDropdown(!showDropdown);
               }}
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
-              disabled={loading}
+              disabled={loading || downloading}
             >
-              {loading ? (
+              {loading || downloading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
               ) : (
                 <MoreHorizontal className="w-4 h-4 text-gray-400" />
@@ -145,6 +177,18 @@ const handleDelete = () => {
                       <FileText className="w-4 h-4" />
                       Documents
                     </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDownloadReport();
+                      }}
+                      disabled={downloading}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left disabled:opacity-50"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Report
+                    </button>
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={(e) => {
@@ -172,8 +216,8 @@ const handleDelete = () => {
 
           <div className="space-y-2 pt-4 border-t border-gray-100">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Documents:</span>
-              <span className="text-gray-900 font-medium">{user.documents?.length || 0}</span>
+              <span className="text-gray-500">Addresses:</span>
+              <span className="text-gray-900 font-medium">{user.addresses?.length || 1}</span>
             </div>
             <div className="text-xs text-gray-400 pt-2">
               {formatDistanceToNow(new Date(user.updatedAt), { addSuffix: true })}
@@ -207,7 +251,7 @@ const handleDelete = () => {
 
           <div className="col-span-2">
             <span className="text-sm text-gray-900 font-medium">
-              {user.documents?.length || 0}
+              {user.addresses?.length || 1}
             </span>
           </div>
 
@@ -215,9 +259,9 @@ const handleDelete = () => {
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
-              disabled={loading}
+              disabled={loading || downloading}
             >
-              {loading ? (
+              {loading || downloading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
               ) : (
                 <MoreHorizontal className="w-4 h-4 text-gray-400" />
@@ -242,6 +286,14 @@ const handleDelete = () => {
                     >
                       <FileText className="w-4 h-4" />
                       Documents
+                    </button>
+                    <button
+                      onClick={handleDownloadReport}
+                      disabled={downloading}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left disabled:opacity-50"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Report
                     </button>
                     <div className="border-t border-gray-100 my-1"></div>
                     <button

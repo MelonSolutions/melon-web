@@ -23,14 +23,8 @@ export interface VerificationData {
   verifiedAt?: string;
 }
 
-export interface KYCUser {
-  _id?: string;
-  id?: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  
+export interface AddressData {
+  label: string;
   streetNumber?: string;
   streetName?: string;
   landmark?: string;
@@ -38,15 +32,37 @@ export interface KYCUser {
   lga?: string;
   state?: string;
   country?: string;
-  
   latitude?: number;
   longitude?: number;
-  
+  status?: VerificationStatus;
+  verificationData?: VerificationData;
+  mobileJobId?: string;
+}
+
+export interface KYCUser {
+  _id?: string;
+  id?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  bvn?: string;
+  nin?: string;
+  passportNumber?: string;
+  addresses?: AddressData[];
+  streetNumber?: string;
+  streetName?: string;
+  landmark?: string;
+  city?: string;
+  lga?: string;
+  state?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
   status: VerificationStatus;
   documents: KYCDocument[];
   verificationDate?: string;
   rejectionReason?: string;
-  
   assignedAgent?: {
     _id: string;
     firstName: string;
@@ -57,7 +73,6 @@ export interface KYCUser {
   verifiedAt?: string;
   verificationData?: VerificationData;
   mobileJobId?: string;
-  
   submittedAt: string;
   updatedAt: string;
   createdAt: string;
@@ -98,6 +113,10 @@ export interface CreateKYCUserRequest {
   lastName: string;
   email: string;
   phone: string;
+  bvn?: string;
+  nin?: string;
+  passportNumber?: string;
+  addresses?: AddressData[];
   streetNumber?: string;
   streetName?: string;
   landmark?: string;

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { use, useState } from 'react';
@@ -16,7 +17,9 @@ import {
   Upload,
   Trash2,
   ExternalLink,
-  CheckCircle
+  CheckCircle,
+  CreditCard,
+  User
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
@@ -53,53 +56,59 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const handleVerificationApproval = async () => {
-    try {
-      setUpdating(true);
-      await makeVerificationDecision(userId, true);
-      await refetch();
-      
+const handleVerificationApproval = async (addressIndex: number) => {
+  try {
+    setUpdating(true);
+    
+    const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
+    
+    await makeVerificationDecision(userId, true, undefined, addressIndex);
+    await refetch();
+    
+    addToast({
+      type: 'success',
+      title: 'Verification Approved',
+      message: `${addressLabel} has been approved successfully.`,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
       addToast({
-        type: 'success',
-        title: 'Verification Approved',
-        message: 'The verification has been approved successfully.',
+        type: 'error',
+        title: 'Approval Failed',
+        message: error.message,
       });
-    } catch (error) {
-      if (error instanceof ApiError) {
-        addToast({
-          type: 'error',
-          title: 'Approval Failed',
-          message: error.message,
-        });
-      }
-    } finally {
-      setUpdating(false);
     }
-  };
+  } finally {
+    setUpdating(false);
+  }
+};
 
-  const handleVerificationRejection = async (reason: string) => {
-    try {
-      setUpdating(true);
-      await makeVerificationDecision(userId, false, reason);
-      await refetch();
-      
+const handleVerificationRejection = async (reason: string, addressIndex: number) => {
+  try {
+    setUpdating(true);
+    
+    const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
+    
+    await makeVerificationDecision(userId, false, reason, addressIndex);
+    await refetch();
+    
+    addToast({
+      type: 'success',
+      title: 'Verification Rejected',
+      message: `${addressLabel} has been rejected.`,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
       addToast({
-        type: 'success',
-        title: 'Verification Rejected',
-        message: 'The verification has been rejected and sent back to the agent.',
+        type: 'error',
+        title: 'Rejection Failed',
+        message: error.message,
       });
-    } catch (error) {
-      if (error instanceof ApiError) {
-        addToast({
-          type: 'error',
-          title: 'Rejection Failed',
-          message: error.message,
-        });
-      }
-    } finally {
-      setUpdating(false);
     }
-  };
+  } finally {
+    setUpdating(false);
+  }
+};
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -199,17 +208,17 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     );
   };
 
-  const formatAddress = () => {
-    if (!user) return null;
+  const formatAddress = (address: any) => {
+    if (!address) return null;
     
     const parts = [
-      user.streetNumber,
-      user.streetName,
-      user.landmark,
-      user.city,
-      user.lga,
-      user.state,
-      user.country,
+      address.streetNumber,
+      address.streetName,
+      address.landmark,
+      address.city,
+      address.lga,
+      address.state,
+      address.country,
     ].filter(Boolean);
     
     return parts.length > 0 ? parts.join(', ') : null;
@@ -283,31 +292,24 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     );
   }
 
-  const addressDisplay = formatAddress();
-  const hasVerificationData = user.verificationData && (
-    user.verificationData.verifiedLatitude || 
-    user.verificationData.verifiedLongitude || 
-    user.verificationData.verifiedAddress ||
-    (user.verificationData.verificationPhotos && user.verificationData.verificationPhotos.length > 0)
-  );
-  const showApprovalButtons = user.status === 'VERIFICATION_SUBMITTED';
-  const canUploadDocuments = user.status === 'PENDING';
+  const hasMultipleAddresses = user.addresses && user.addresses.length > 0;
+  const addresses = hasMultipleAddresses ? user.addresses! : [{
+    label: 'Address',
+    streetNumber: user.streetNumber,
+    streetName: user.streetName,
+    landmark: user.landmark,
+    city: user.city,
+    lga: user.lga,
+    state: user.state,
+    country: user.country,
+    latitude: user.latitude,
+    longitude: user.longitude,
+    status: user.status,
+    verificationData: user.verificationData,
+  }];
 
-  let distanceInMeters: number | null = null;
-  if (
-    user.latitude && 
-    user.longitude && 
-    user.verificationData?.verifiedLatitude && 
-    user.verificationData?.verifiedLongitude
-  ) {
-    const distanceInKm = calculateDistance(
-      user.latitude,
-      user.longitude,
-      user.verificationData.verifiedLatitude,
-      user.verificationData.verifiedLongitude
-    );
-    distanceInMeters = distanceInKm * 1000;
-  }
+  const canUploadDocuments = user.status === 'PENDING';
+  const allAddressesVerified = addresses.every(addr => addr.status === 'VERIFICATION_SUBMITTED');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -332,181 +334,183 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {showApprovalButtons && hasVerificationData && (
-              <VerificationApproval
-                verificationData={user.verificationData!}
-                originalLatitude={user.latitude}
-                originalLongitude={user.longitude}
-                onApprove={handleVerificationApproval}
-                onReject={handleVerificationRejection}
-                loading={updating}
-              />
-            )}
-
-            {!showApprovalButtons && hasVerificationData && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Agent Verification Details</CardTitle>
-                    {user.status === 'VERIFIED' && (
-                      <Badge variant="success" size="sm">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Verified
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {user.verificationData?.verifiedLatitude && user.verificationData?.verifiedLongitude && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Verified Location</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-start gap-3">
-                            <MapPin className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
-                            <div className="flex-1">
-                              <div className="text-sm text-gray-500">GPS Coordinates</div>
-                              <div className="text-gray-900 font-mono text-sm">
-                                {user.verificationData.verifiedLatitude.toFixed(6)}, {user.verificationData.verifiedLongitude.toFixed(6)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {user.verificationData.verifiedAddress && (
-                            <div className="flex items-start gap-3">
-                              <MapPin className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-500">Verified Address</div>
-                                <div className="text-gray-900">{user.verificationData.verifiedAddress}</div>
-                              </div>
-                            </div>
-                          )}
-
-                          {distanceInMeters !== null && (
-                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                              <div className="text-sm text-blue-900">
-                                <strong>Distance from original:</strong> {distanceInMeters.toFixed(0)} meters
-                                {distanceInMeters < 100 && (
-                                  <span className="ml-2 text-green-600">✓ Within acceptable range</span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {user.verificationData?.verificationPhotos && user.verificationData.verificationPhotos.length > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">Verification Photos ({user.verificationData.verificationPhotos.length})</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {user.verificationData.verificationPhotos.map((photo, index) => (
-                            <a
-                              key={index}
-                              href={photo}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group"
-                            >
-                              <Image
-                                src={photo}
-                                alt={`Verification photo ${index + 1}`}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                <ExternalLink className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {user.verificationData?.agentNotes && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Agent Notes</h4>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                            {user.verificationData.agentNotes}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {user.verificationData?.verifiedAt && (
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Calendar className="w-4 h-4" />
-                        <span>Verified on {format(new Date(user.verificationData.verifiedAt), 'PPp')}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-gray-500">Email</div>
-                      <div className="text-gray-900">{user.email}</div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Full Name</div>
+                    <div className="text-sm text-gray-900">{user.firstName} {user.lastName}</div>
                   </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <div className="text-sm text-gray-500">Phone</div>
-                      <div className="text-gray-900">{user.phone}</div>
-                    </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Email Address</div>
+                    <div className="text-sm text-gray-900">{user.email}</div>
                   </div>
-                  
-                  {addressDisplay && (
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <div className="text-sm text-gray-500">Original Address</div>
-                        <div className="text-gray-900">{addressDisplay}</div>
-                      </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Phone Number</div>
+                    <div className="text-sm text-gray-900">{user.phone}</div>
+                  </div>
+
+                  {user.bvn && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">BVN</div>
+                      <div className="text-sm text-gray-900 font-mono">{user.bvn}</div>
                     </div>
                   )}
 
-                  {user.latitude && user.longitude && (
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
-                      <div>
-                        <div className="text-sm text-gray-500">Original GPS Coordinates</div>
-                        <div className="text-gray-900 font-mono text-sm">
-                          {user.latitude.toFixed(6)}, {user.longitude.toFixed(6)}
-                        </div>
-                      </div>
+                  {user.nin && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">NIN</div>
+                      <div className="text-sm text-gray-900 font-mono">{user.nin}</div>
                     </div>
                   )}
-                  
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
+
+                  {user.passportNumber && (
                     <div>
-                      <div className="text-sm text-gray-500">Submitted</div>
-                      <div className="text-gray-900">
-                        {format(new Date(user.submittedAt), 'PPP')}
-                      </div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Passport Number</div>
+                      <div className="text-sm text-gray-900 font-mono">{user.passportNumber}</div>
                     </div>
+                  )}
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Date Submitted</div>
+                    <div className="text-sm text-gray-900">{format(new Date(user.submittedAt), 'PPP')}</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+            {addresses.map((address, index) => (
+              <div key={index} className="space-y-6">
+                {address.status === 'VERIFICATION_SUBMITTED' && address.verificationData && (
+                  <VerificationApproval
+                    verificationData={address.verificationData}
+                    originalLatitude={address.latitude}
+                    originalLongitude={address.longitude}
+                    onApprove={() => handleVerificationApproval(index)}
+                    onReject={(reason) => handleVerificationRejection(reason, index)}
+                    loading={updating}
+                    addressLabel={address.label}
+                  />
+                )}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{address.label || `Address ${index + 1}`}</CardTitle>
+                      {address.status && (
+                        <StatusBadge status={address.status} size="sm" />
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4">
+                        {formatAddress(address) && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Full Address</div>
+                            <div className="text-sm text-gray-900">{formatAddress(address)}</div>
+                          </div>
+                        )}
+
+                        {address.latitude && address.longitude && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">GPS Coordinates</div>
+                            <div className="text-sm text-gray-900 font-mono">
+                              {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {address.verificationData && (
+                        <div className="pt-6 border-t border-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-4">Agent Verification</h4>
+                          
+                          <div className="space-y-4">
+                            {address.verificationData.verifiedLatitude && address.verificationData.verifiedLongitude && (
+                              <>
+                                <div>
+                                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified GPS Coordinates</div>
+                                  <div className="text-sm text-gray-900 font-mono">
+                                    {address.verificationData.verifiedLatitude.toFixed(6)}, {address.verificationData.verifiedLongitude.toFixed(6)}
+                                  </div>
+                                </div>
+
+                                {address.latitude && address.longitude && (
+                                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="text-xs font-medium text-blue-700 uppercase tracking-wider mb-1">Distance from Original</div>
+                                    <div className="text-sm font-semibold text-blue-900">
+                                      {(calculateDistance(
+                                        address.latitude,
+                                        address.longitude,
+                                        address.verificationData.verifiedLatitude,
+                                        address.verificationData.verifiedLongitude
+                                      ) * 1000).toFixed(0)} meters
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+
+                            {address.verificationData.verifiedAddress && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified Address</div>
+                                <div className="text-sm text-gray-900">{address.verificationData.verifiedAddress}</div>
+                              </div>
+                            )}
+
+                            {address.verificationData.verificationPhotos && address.verificationData.verificationPhotos.length > 0 && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                                  Verification Photos ({address.verificationData.verificationPhotos.length})
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {address.verificationData.verificationPhotos.map((photo, i) => (
+                                    <a
+                                      key={i}
+                                      href={photo}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group"
+                                    >
+                                      <Image
+                                        src={photo}
+                                        alt={`Photo ${i + 1}`}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                      />
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                        <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </div>
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {address.verificationData.agentNotes && (
+                              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Agent Notes</div>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">{address.verificationData.agentNotes}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
 
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Documents ({user.documents?.length || 0})</CardTitle>
+                  <CardTitle>Documents</CardTitle>
                   {canUploadDocuments && (
                     <label className="cursor-pointer">
                       <input
@@ -535,38 +539,42 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     {user.documents.map((doc: KYCDocument) => (
                       <div
                         key={doc._id || doc.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <FileText className="w-5 h-5 text-gray-400 shrink-0" />
+                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5 text-gray-400" />
+                          </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-gray-900 truncate">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="font-medium text-gray-900 text-sm truncate">
                                 {doc.fileName}
                               </div>
                               <Badge variant="neutral" size="sm">
                                 {getDocumentTypeDisplayName(doc.documentType)}
                               </Badge>
                             </div>
-                            <div className="text-sm text-gray-500 mt-0.5">
-                              {(doc.fileSize / 1024).toFixed(1)} KB • {format(new Date(doc.uploadedAt), 'PPp')}
+                            <div className="text-xs text-gray-500">
+                              {(doc.fileSize / 1024).toFixed(1)} KB • {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 ml-2">
+                        <div className="flex items-center gap-1 ml-3">
                           <a
                             href={doc.fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 text-gray-400 hover:text-primary hover:bg-primary-light rounded transition-colors"
+                            className="p-2 text-gray-400 hover:text-primary hover:bg-white rounded-lg transition-colors"
+                            title="View document"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>
                           {canUploadDocuments && (
                             <button
                               onClick={() => handleDeleteDocument(doc._id || doc.id || '')}
-                              className="p-2 text-gray-400 hover:text-error hover:bg-error-light rounded transition-colors"
+                              className="p-2 text-gray-400 hover:text-error hover:bg-white rounded-lg transition-colors"
+                              title="Delete document"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -576,23 +584,28 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No documents uploaded yet</p>
+                  <div className="text-center py-12 text-gray-500">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FileText className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">No documents yet</p>
+                    <p className="text-xs text-gray-500">Upload documents to get started</p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
             {user.status === 'REJECTED' && user.rejectionReason && (
-              <div className="bg-error-light border border-error rounded-lg p-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-error shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-error mb-2">
-                      Rejection Reason
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-red-900 mb-1">
+                      Verification Rejected
                     </h3>
-                    <p className="text-sm text-gray-700">{user.rejectionReason}</p>
+                    <p className="text-sm text-red-700">{user.rejectionReason}</p>
                   </div>
                 </div>
               </div>
@@ -600,6 +613,28 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
           </div>
 
           <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total Addresses</span>
+                    <span className="font-medium text-gray-900">{addresses.length}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Documents</span>
+                    <span className="font-medium text-gray-900">{user.documents?.length || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Overall Status</span>
+                    <StatusBadge status={user.status} size="sm" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Timeline</CardTitle>
@@ -659,19 +694,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       <div className="text-gray-900">{user.assignedAgent.email}</div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {user.agentNotes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Agent Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                    {user.agentNotes}
-                  </p>
                 </CardContent>
               </Card>
             )}
