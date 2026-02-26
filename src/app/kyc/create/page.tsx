@@ -58,10 +58,35 @@ const createEmptyAddress = (index: number): AddressData => ({
   country: 'Nigeria',
 });
 
+const validatePhoneNumber = (phone: string): string | null => {
+  const trimmed = phone.trim();
+  
+  if (!trimmed) {
+    return 'Phone number is required';
+  }
+  
+  if (!trimmed.startsWith('+234')) {
+    return 'Phone number must start with +234';
+  }
+  
+  const digitsAfterCode = trimmed.slice(4);
+  
+  if (!/^\d+$/.test(digitsAfterCode)) {
+    return 'Phone number can only contain digits after +234';
+  }
+  
+  if (digitsAfterCode.length !== 10) {
+    return 'Phone number must be exactly 10 digits after +234';
+  }
+  
+  return null;
+};
+
 export default function AddKYCUserPage() {
   const router = useRouter();
   const { addToast } = useToast();
   const [creating, setCreating] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CreateKYCFormData>({
     firstName: '',
@@ -90,13 +115,8 @@ export default function AddKYCUserPage() {
         required: true,
         pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       },
-      phone: { 
-        required: true,
-        pattern: /^\+?[1-9]\d{1,14}$/
-      },
     },
     onSubmit: async () => {
-      // Handled in handleSave
     }
   });
 
@@ -141,8 +161,37 @@ export default function AddKYCUserPage() {
     }));
   };
 
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({ ...prev, phone: value }));
+    
+    if (value.trim()) {
+      const error = validatePhoneNumber(value);
+      setPhoneError(error);
+    } else {
+      setPhoneError(null);
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    if (formData.phone.trim()) {
+      const error = validatePhoneNumber(formData.phone);
+      setPhoneError(error);
+    }
+  };
+
   const handleSave = async () => {
     if (creating) return;
+    
+    const phoneValidationError = validatePhoneNumber(formData.phone);
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
+      addToast({
+        type: 'error',
+        title: 'Invalid Phone Number',
+        message: phoneValidationError,
+      });
+      return;
+    }
     
     try {
       setCreating(true);
@@ -235,6 +284,21 @@ export default function AddKYCUserPage() {
     handleFieldChange(field, value);
   };
 
+  const formatPhoneNumber = (value: string) => {
+    let cleaned = value.replace(/\D/g, '');
+    
+    if (!value.startsWith('+234')) {
+      if (cleaned.startsWith('234')) {
+        cleaned = cleaned.slice(3);
+      } else if (cleaned.startsWith('0')) {
+        cleaned = cleaned.slice(1);
+      }
+      return '+234' + cleaned.slice(0, 10);
+    }
+    
+    return value.slice(0, 14);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-6 py-4">
@@ -260,7 +324,7 @@ export default function AddKYCUserPage() {
               size="md"
               onClick={handleSave}
               loading={creating}
-              disabled={creating}
+              disabled={creating || !!phoneError}
               icon={<Save className="w-4 h-4" />}
             >
               Create Request
@@ -307,38 +371,52 @@ export default function AddKYCUserPage() {
                 placeholder="user@example.com"
               />
 
-              <Input
-                label="Phone"
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => handleFieldUpdate('phone', e.target.value)}
-                onBlur={(e) => handleFieldBlur('phone', e.target.value)}
-                error={getFieldError('phone')}
-                placeholder="+234xxxxxxxxxx"
-              />
+              <div>
+                <Input
+                  label="Phone Number"
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => handlePhoneChange(formatPhoneNumber(e.target.value))}
+                  onBlur={handlePhoneBlur}
+                  error={phoneError || undefined}
+                  placeholder="+234XXXXXXXXXX"
+                  maxLength={14}
+                />
+                {!phoneError && formData.phone && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: +234 followed by 10 digits (e.g., +2348012345678)
+                  </p>
+                )}
+              </div>
 
               <Input
                 label="BVN (Optional)"
                 value={formData.bvn}
-                onChange={(e) => handleFieldUpdate('bvn', e.target.value)}
-                placeholder="Enter Bank Verification Number"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  handleFieldUpdate('bvn', value);
+                }}
+                placeholder="Enter 11-digit BVN"
                 maxLength={11}
               />
 
               <Input
                 label="NIN (Optional)"
                 value={formData.nin}
-                onChange={(e) => handleFieldUpdate('nin', e.target.value)}
-                placeholder="Enter National ID Number"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  handleFieldUpdate('nin', value);
+                }}
+                placeholder="Enter 11-digit NIN"
                 maxLength={11}
               />
 
               <Input
                 label="Passport Number (Optional)"
                 value={formData.passportNumber}
-                onChange={(e) => handleFieldUpdate('passportNumber', e.target.value)}
-                placeholder="Enter Passport Number"
+                onChange={(e) => handleFieldUpdate('passportNumber', e.target.value.toUpperCase())}
+                placeholder="A12345678"
               />
             </div>
           </CardContent>
