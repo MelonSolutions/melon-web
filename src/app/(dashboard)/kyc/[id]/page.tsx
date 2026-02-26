@@ -7,23 +7,17 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useKYCUser } from '@/hooks/useKYC';
 import { 
-  ArrowLeft, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar,
+  ArrowLeft,
   FileText,
   AlertTriangle,
   Upload,
   Trash2,
   ExternalLink,
   CheckCircle,
-  CreditCard,
-  User
+  XCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
-import { VerificationApproval } from '@/components/kyc/VerificationApproval';
 import { 
   KYCDocument,
   getDocumentTypeDisplayName
@@ -55,60 +49,69 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const { user, loading, refetch } = useKYCUser(userId);
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [rejectingIndex, setRejectingIndex] = useState<number | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
-const handleVerificationApproval = async (addressIndex: number) => {
-  try {
-    setUpdating(true);
-    
-    const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
-    
-    await makeVerificationDecision(userId, true, undefined, addressIndex);
-    await refetch();
-    
-    addToast({
-      type: 'success',
-      title: 'Verification Approved',
-      message: `${addressLabel} has been approved successfully.`,
-    });
-  } catch (error) {
-    if (error instanceof ApiError) {
+  const handleVerificationApproval = async (addressIndex: number) => {
+    try {
+      setUpdating(true);
+      
+      const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
+      
+      await makeVerificationDecision(userId, true, undefined, addressIndex);
+      await refetch();
+      
       addToast({
-        type: 'error',
-        title: 'Approval Failed',
-        message: error.message,
+        type: 'success',
+        title: 'Address Approved',
+        message: `${addressLabel} has been approved successfully.`,
       });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Approval Failed',
+          message: error.message,
+        });
+      }
+    } finally {
+      setUpdating(false);
     }
-  } finally {
-    setUpdating(false);
-  }
-};
+  };
 
-const handleVerificationRejection = async (reason: string, addressIndex: number) => {
-  try {
-    setUpdating(true);
-    
-    const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
-    
-    await makeVerificationDecision(userId, false, reason, addressIndex);
-    await refetch();
-    
-    addToast({
-      type: 'success',
-      title: 'Verification Rejected',
-      message: `${addressLabel} has been rejected.`,
-    });
-  } catch (error) {
-    if (error instanceof ApiError) {
-      addToast({
-        type: 'error',
-        title: 'Rejection Failed',
-        message: error.message,
-      });
+  const handleVerificationRejection = async (addressIndex: number) => {
+    if (rejectionReason.trim().length < 10) {
+      return;
     }
-  } finally {
-    setUpdating(false);
-  }
-};
+
+    try {
+      setUpdating(true);
+      
+      const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
+      
+      await makeVerificationDecision(userId, false, rejectionReason, addressIndex);
+      await refetch();
+      
+      addToast({
+        type: 'success',
+        title: 'Address Rejected',
+        message: `${addressLabel} has been rejected.`,
+      });
+      
+      setRejectingIndex(null);
+      setRejectionReason('');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Rejection Failed',
+          message: error.message,
+        });
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -309,7 +312,6 @@ const handleVerificationRejection = async (reason: string, addressIndex: number)
   }];
 
   const canUploadDocuments = user.status === 'PENDING';
-  const allAddressesVerified = addresses.every(addr => addr.status === 'VERIFICATION_SUBMITTED');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -383,19 +385,51 @@ const handleVerificationRejection = async (reason: string, addressIndex: number)
                 </div>
               </CardContent>
             </Card>
+
             {addresses.map((address, index) => (
               <div key={index} className="space-y-6">
                 {address.status === 'VERIFICATION_SUBMITTED' && address.verificationData && (
-                  <VerificationApproval
-                    verificationData={address.verificationData}
-                    originalLatitude={address.latitude}
-                    originalLongitude={address.longitude}
-                    onApprove={() => handleVerificationApproval(index)}
-                    onReject={(reason) => handleVerificationRejection(reason, index)}
-                    loading={updating}
-                    addressLabel={address.label}
-                  />
+                  <Card className="border-2 border-blue-200 bg-blue-50">
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-blue-900 mb-1">
+                              Review Required - {address.label}
+                            </CardTitle>
+                            <p className="text-sm text-blue-700">
+                              Agent has submitted verification results. Review the information below.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => handleVerificationApproval(index)}
+                            disabled={updating}
+                            icon={<CheckCircle className="w-4 h-4" />}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => setRejectingIndex(index)}
+                            disabled={updating}
+                            icon={<XCircle className="w-4 h-4" />}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
                 )}
+
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -700,6 +734,66 @@ const handleVerificationRejection = async (reason: string, addressIndex: number)
           </div>
         </div>
       </div>
+
+      {rejectingIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-error-light rounded-lg">
+                <XCircle className="w-5 h-5 text-error" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Reject {addresses[rejectingIndex]?.label}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Provide a reason for rejecting this address verification.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Reason <span className="text-error">*</span>
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Explain why this address verification is being rejected..."
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum 10 characters ({rejectionReason.trim().length}/10)
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => {
+                  setRejectingIndex(null);
+                  setRejectionReason('');
+                }}
+                fullWidth
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="md"
+                onClick={() => handleVerificationRejection(rejectingIndex)}
+                loading={updating}
+                disabled={rejectionReason.trim().length < 10 || updating}
+                fullWidth
+              >
+                Confirm Rejection
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
