@@ -230,6 +230,13 @@ private async request<T>(
   async register(data: SignupRequest): Promise<SignupResponse> {
     return this.signup(data);
   }
+
+  async requestDemo(data: { email: string; organizationName: string; message?: string }): Promise<{ message: string }> {
+    return this.request('/auth/request-demo', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

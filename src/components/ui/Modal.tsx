@@ -3,7 +3,7 @@
 
 'use client';
 
-import { ReactNode, useEffect, createContext, useContext, useState } from 'react';
+import { ReactNode, useEffect, createContext, useContext, useState, isValidElement } from 'react';
 import { X, AlertTriangle, CheckCircle, Info, Upload, Trash2 } from 'lucide-react';
 
 interface ModalContextType {
@@ -61,13 +61,13 @@ interface UploadModalConfig {
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
-export function ModalProvider({ children }: { children: ReactNode }) {
+export function ModalProvider({ children }: { children: ReactNode; }) {
   const [isOpen, setIsOpen] = useState(false);
   const [content, setContent] = useState<ReactNode>(null);
   const [options, setOptions] = useState<ModalOptions>({});
 
   const openModal = (content: ReactNode | ModalConfig, modalOptions: ModalOptions = {}) => {
-    if (typeof content === 'object' && content !== null && 'type' in content) {
+    if (!isValidElement(content) && typeof content === 'object' && content !== null && 'type' in content) {
       // Handle ModalConfig
       const config = content as ModalConfig;
       setContent(<StandardModalContent config={config} onClose={closeModal} />);
@@ -144,7 +144,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
 
   const sizeClasses = {
     xs: 'max-w-sm',
-    sm: 'max-w-md', 
+    sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
@@ -160,18 +160,17 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   return (
     <ModalContext.Provider value={{ openModal, closeModal, openConfirmModal, openUploadModal }}>
       {children}
-      
+
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
-            <div 
+            <div
               className={`fixed inset-0 transition-opacity ${backdropClasses[options.backdrop || 'blur']}`}
               onClick={options.closable !== false ? closeModal : undefined}
             />
-            
-            <div className={`relative transform transition-all duration-200 ease-out w-full ${
-              isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-            } ${sizeClasses[options.size || 'md']} ${options.className || ''}`}>
+
+            <div className={`relative transform transition-all duration-200 ease-out w-full ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+              } ${sizeClasses[options.size || 'md']} ${options.className || ''}`}>
               <div className="bg-white rounded-lg shadow-xl max-h-[90vh] overflow-hidden">
                 {options.closable !== false && (
                   <button
@@ -194,12 +193,12 @@ export function ModalProvider({ children }: { children: ReactNode }) {
 }
 
 // Standard Modal Content Component
-function StandardModalContent({ config, onClose }: { config: ModalConfig; onClose: () => void }) {
+function StandardModalContent({ config, onClose }: { config: ModalConfig; onClose: () => void; }) {
   const [loadingStates, setLoadingStates] = useState<Record<number, boolean>>({});
 
   const getIcon = () => {
     if (config.icon) return config.icon;
-    
+
     const iconClass = "w-6 h-6";
     switch (config.type) {
       case 'success':
@@ -287,7 +286,7 @@ function StandardModalContent({ config, onClose }: { config: ModalConfig; onClos
 }
 
 // Upload Modal Content Component
-function UploadModalContent({ config, onClose }: { config: UploadModalConfig; onClose: () => void }) {
+function UploadModalContent({ config, onClose }: { config: UploadModalConfig; onClose: () => void; }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -355,11 +354,10 @@ function UploadModalContent({ config, onClose }: { config: UploadModalConfig; on
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-            isDragOver 
-              ? 'border-blue-400 bg-blue-50' 
+          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDragOver
+              ? 'border-blue-400 bg-blue-50'
               : 'border-gray-300 hover:border-gray-400'
-          }`}
+            }`}
           onClick={() => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -381,7 +379,7 @@ function UploadModalContent({ config, onClose }: { config: UploadModalConfig; on
           <p className="text-gray-500 mb-4">
             Drag and drop files here, or click to browse
           </p>
-          <button 
+          <button
             disabled={isUploading}
             className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
