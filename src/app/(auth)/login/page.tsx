@@ -5,11 +5,14 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useModal } from '@/components/ui/Modal';
+import DemoRequestModal from '@/components/auth/DemoRequestModal';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signin } = useAuth();
+  const { openModal } = useModal();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -22,7 +25,7 @@ function LoginContent() {
   useEffect(() => {
     const urlMessage = searchParams.get('message');
     const verified = searchParams.get('verified');
-    
+
     if (verified === 'true') {
       setMessage('Email verified successfully! You can now sign in.');
     } else if (urlMessage === 'check-email') {
@@ -44,12 +47,12 @@ function LoginContent() {
     setIsLoading(true);
     setError('');
     setMessage('');
-    
+
     try {
       await signin(formData.email, formData.password);
     } catch (err: any) {
       console.error('Login error:', err);
-      
+
       if (err.message?.includes('verify your email')) {
         setError('Please verify your email before signing in. Check your inbox for the verification link.');
       } else if (err.message?.includes('not active')) {
@@ -101,9 +104,8 @@ function LoginContent() {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="Enter your email"
-              className={`w-full pl-9 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                error ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={`w-full pl-9 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${error ? 'border-red-300' : 'border-gray-300'
+                }`}
               required
             />
           </div>
@@ -122,9 +124,8 @@ function LoginContent() {
               value={formData.password}
               onChange={handleInputChange}
               placeholder="Enter your password"
-              className={`w-full pl-9 pr-10 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                error ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={`w-full pl-9 pr-10 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${error ? 'border-red-300' : 'border-gray-300'
+                }`}
               required
             />
             <button
@@ -156,11 +157,12 @@ function LoginContent() {
       <div className="text-center pt-2">
         <p className="text-sm text-gray-600">
           Don&apos;t have an account?{' '}
-          <button 
-            onClick={() => router.push('/signup')}
+          <button
+            type="button"
+            onClick={() => openModal(<DemoRequestModal />, { size: 'sm' })}
             className="text-primary hover:underline font-medium"
           >
-            Sign up
+            Request a Demo
           </button>
         </p>
       </div>
