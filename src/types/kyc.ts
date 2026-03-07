@@ -120,6 +120,7 @@ export interface KYCDashboardStats {
 
 export interface CreateKYCUserRequest {
   loanId?: string;
+  organizationId?: string;
   loanType?: LoanType;
   firstName: string;
   lastName: string;

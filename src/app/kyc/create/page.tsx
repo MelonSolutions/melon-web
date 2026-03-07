@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { createKYCUser, ApiError } from '@/lib/api/kyc';
+import { apiClient } from '@/lib/api/auth';
 import { useToast } from '@/components/ui/Toast';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { Button } from '@/components/ui/Button';
@@ -37,6 +38,7 @@ interface CreateKYCFormData {
   nin: string;
   passportNumber: string;
   addresses: AddressData[];
+  organizationId: string;
 }
 
 const ADDRESS_LABELS = [
@@ -96,6 +98,23 @@ export default function AddKYCUserPage() {
   const { addToast } = useToast();
   const [creating, setCreating] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        setLoadingOrgs(true);
+        const orgs = await apiClient.getOrganizations();
+        setOrganizations(orgs);
+      } catch (error) {
+        console.error('Failed to fetch organizations:', error);
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+    fetchOrgs();
+  }, []);
 
   const [formData, setFormData] = useState<CreateKYCFormData>({
     loanId: '',
@@ -108,6 +127,7 @@ export default function AddKYCUserPage() {
     nin: '',
     passportNumber: '',
     addresses: [createEmptyAddress(0)],
+    organizationId: '',
   });
 
   const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
@@ -232,6 +252,7 @@ export default function AddKYCUserPage() {
         bvn: formData.bvn || undefined,
         nin: formData.nin || undefined,
         passportNumber: formData.passportNumber || undefined,
+        organizationId: formData.organizationId || undefined,
         addresses: formData.addresses.map(addr => ({
           label: addr.label,
           streetNumber: addr.streetNumber || undefined,
@@ -353,7 +374,7 @@ export default function AddKYCUserPage() {
             <CardTitle>Personal Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6 border-b border-gray-100">
+            <div className={`grid grid-cols-1 md:grid-cols-${organizations.length > 0 ? '3' : '2'} gap-6 mb-6 pb-6 border-b border-gray-100`}>
               <Input
                 label="Loan ID"
                 required
@@ -373,6 +394,20 @@ export default function AddKYCUserPage() {
                   placeholder="Select category"
                 />
               </div>
+
+              {organizations.length > 0 && (
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Source Organization <span className="text-red-500">*</span>
+                  </label>
+                  <CustomSelect
+                    value={formData.organizationId}
+                    onChange={(value) => handleFieldUpdate('organizationId', value)}
+                    options={organizations.map(org => ({ value: org._id || org.id, label: org.name }))}
+                    placeholder="Select source"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

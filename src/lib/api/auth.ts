@@ -217,6 +217,10 @@ private async request<T>(
     });
   }
 
+  async getOrganizations(): Promise<any[]> {
+    return this.request<any[]>('/auth/organizations');
+  }
+
   // Legacy method for backwards compatibility
   async login(data: SigninRequest): Promise<SigninResponse> {
     return this.signin(data);

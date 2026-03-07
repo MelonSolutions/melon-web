@@ -3,7 +3,8 @@
 
 import { DataSource, ChartConfig, VisualizationStats } from '@/types/visualization';
 
-const API_BASE_URL = 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   try {
