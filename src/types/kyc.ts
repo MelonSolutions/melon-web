@@ -14,6 +14,8 @@ export type DocumentType =
   | 'PASSPORT_PHOTO' 
   | 'UTILITY_BILL';
 
+export type LoanType = 'PERSONAL' | 'BUSINESS';
+
 export interface VerificationData {
   verifiedLatitude?: number;
   verifiedLongitude?: number;
@@ -37,11 +39,14 @@ export interface AddressData {
   status?: VerificationStatus;
   verificationData?: VerificationData;
   mobileJobId?: string;
+  notes?: string;
 }
 
 export interface KYCUser {
   _id?: string;
   id?: string;
+  loanId?: string;
+  loanType?: LoanType;
   firstName: string;
   lastName: string;
   email: string;
@@ -57,6 +62,7 @@ export interface KYCUser {
   lga?: string;
   state?: string;
   country?: string;
+  notes?: string;
   latitude?: number;
   longitude?: number;
   status: VerificationStatus;
@@ -73,6 +79,10 @@ export interface KYCUser {
   verifiedAt?: string;
   verificationData?: VerificationData;
   mobileJobId?: string;
+  organization?: {
+    _id: string;
+    name: string;
+  };
   submittedAt: string;
   updatedAt: string;
   createdAt: string;
@@ -109,6 +119,9 @@ export interface KYCDashboardStats {
 }
 
 export interface CreateKYCUserRequest {
+  loanId?: string;
+  organizationId?: string;
+  loanType?: LoanType;
   firstName: string;
   lastName: string;
   email: string;
@@ -124,6 +137,7 @@ export interface CreateKYCUserRequest {
   lga?: string;
   state?: string;
   country?: string;
+  notes?: string;
   latitude?: number;
   longitude?: number;
 }

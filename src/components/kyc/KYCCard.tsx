@@ -34,13 +34,13 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
     try {
       setDownloading(true);
       await downloadKYCReport(userId);
-      
+
       addToast({
         type: 'success',
         title: 'Report Downloaded',
         message: 'The verification report has been downloaded successfully.',
       });
-      
+
       setShowDropdown(false);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -81,13 +81,13 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
         try {
           setLoading(true);
           await deleteKYCUser(userId);
-          
+
           addToast({
             type: 'success',
             title: 'Request Deleted',
             message: 'The verification request has been deleted successfully.',
           });
-          
+
           onRefetch();
         } catch (error) {
           if (error instanceof ApiError) {
@@ -123,8 +123,20 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
               <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-primary transition-colors">
                 {user.firstName} {user.lastName}
               </h3>
+              {user.loanId && (
+                <p className="text-xs font-medium text-primary mt-0.5 uppercase">
+                  {user.loanId} • <span className="text-gray-400">{user.loanType?.toLowerCase()}</span>
+                </p>
+              )}
               <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
               <p className="text-sm text-gray-500 mt-0.5">{user.phone}</p>
+              {user.organization?.name && (
+                <div className="mt-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                    Source: {user.organization.name}
+                  </span>
+                </div>
+              )}
             </div>
 
             <button
@@ -197,9 +209,8 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         handleDelete();
                       }}
                       disabled={loading || !canDelete}
-                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${
-                        canDelete ? 'text-error' : 'text-gray-400'
-                      }`}
+                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'
+                        }`}
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete {!canDelete && '(Pending Only)'}
@@ -237,7 +248,19 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
               <div className="font-medium text-gray-900 group-hover:text-primary transition-colors">
                 {user.firstName} {user.lastName}
               </div>
-              <div className="text-sm text-gray-500 truncate mt-0.5">{user.email}</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                {user.loanId && (
+                  <span className="text-xs font-semibold text-primary uppercase">
+                    {user.loanId}
+                  </span>
+                )}
+                <div className="text-sm text-gray-500 truncate">{user.email}</div>
+              </div>
+              {user.organization?.name && (
+                <div className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-tight">
+                  Source: {user.organization.name}
+                </div>
+              )}
             </Link>
           </div>
 
@@ -299,9 +322,8 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                     <button
                       onClick={handleDelete}
                       disabled={loading || !canDelete}
-                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${
-                        canDelete ? 'text-error' : 'text-gray-400'
-                      }`}
+                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'
+                        }`}
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete {!canDelete && '(Pending Only)'}

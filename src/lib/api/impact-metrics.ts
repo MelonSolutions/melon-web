@@ -7,7 +7,8 @@ import {
   PaginatedMetricsResponse 
 } from '@/types/impact-metrics';
 
-const API_BASE_URL = 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Get authorization header
 const getAuthHeaders = () => {

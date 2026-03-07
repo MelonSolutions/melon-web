@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -214,6 +215,10 @@ private async request<T>(
     return this.request(`/auth/organization/users/${userId}`, {
       method: 'DELETE',
     });
+  }
+
+  async getOrganizations(): Promise<any[]> {
+    return this.request<any[]>('/auth/organizations');
   }
 
   // Legacy method for backwards compatibility
