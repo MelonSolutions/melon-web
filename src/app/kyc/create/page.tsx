@@ -23,9 +23,12 @@ interface AddressData {
   lga: string;
   state: string;
   country: string;
+  notes: string;
 }
 
 interface CreateKYCFormData {
+  loanId: string;
+  loanType: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -46,6 +49,11 @@ const ADDRESS_LABELS = [
   'Other',
 ];
 
+const LOAN_TYPES = [
+  { value: 'PERSONAL', label: 'Personal Loan' },
+  { value: 'BUSINESS', label: 'Business Loan' },
+];
+
 const createEmptyAddress = (index: number): AddressData => ({
   id: `address-${Date.now()}-${index}`,
   label: index === 0 ? 'Home Address' : ADDRESS_LABELS[index] || 'Other',
@@ -56,29 +64,30 @@ const createEmptyAddress = (index: number): AddressData => ({
   lga: '',
   state: '',
   country: 'Nigeria',
+  notes: '',
 });
 
 const validatePhoneNumber = (phone: string): string | null => {
   const trimmed = phone.trim();
-  
+
   if (!trimmed) {
     return 'Phone number is required';
   }
-  
+
   if (!trimmed.startsWith('+234')) {
     return 'Phone number must start with +234';
   }
-  
+
   const digitsAfterCode = trimmed.slice(4);
-  
+
   if (!/^\d+$/.test(digitsAfterCode)) {
     return 'Phone number can only contain digits after +234';
   }
-  
+
   if (digitsAfterCode.length !== 10) {
     return 'Phone number must be exactly 10 digits after +234';
   }
-  
+
   return null;
 };
 
@@ -89,6 +98,8 @@ export default function AddKYCUserPage() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CreateKYCFormData>({
+    loanId: '',
+    loanType: 'PERSONAL',
     firstName: '',
     lastName: '',
     email: '',
@@ -101,17 +112,17 @@ export default function AddKYCUserPage() {
 
   const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
     schema: {
-      firstName: { 
-        required: true, 
-        minLength: 2, 
-        maxLength: 50 
+      firstName: {
+        required: true,
+        minLength: 2,
+        maxLength: 50
       },
-      lastName: { 
-        required: true, 
-        minLength: 2, 
-        maxLength: 50 
+      lastName: {
+        required: true,
+        minLength: 2,
+        maxLength: 50
       },
-      email: { 
+      email: {
         required: true,
         pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       },
@@ -155,7 +166,7 @@ export default function AddKYCUserPage() {
   const handleAddressFieldUpdate = (addressId: string, field: keyof AddressData, value: string) => {
     setFormData(prev => ({
       ...prev,
-      addresses: prev.addresses.map(addr => 
+      addresses: prev.addresses.map(addr =>
         addr.id === addressId ? { ...addr, [field]: value } : addr
       ),
     }));
@@ -163,7 +174,7 @@ export default function AddKYCUserPage() {
 
   const handlePhoneChange = (value: string) => {
     setFormData(prev => ({ ...prev, phone: value }));
-    
+
     if (value.trim()) {
       const error = validatePhoneNumber(value);
       setPhoneError(error);
@@ -181,7 +192,7 @@ export default function AddKYCUserPage() {
 
   const handleSave = async () => {
     if (creating) return;
-    
+
     const phoneValidationError = validatePhoneNumber(formData.phone);
     if (phoneValidationError) {
       setPhoneError(phoneValidationError);
@@ -192,12 +203,12 @@ export default function AddKYCUserPage() {
       });
       return;
     }
-    
+
     try {
       setCreating(true);
       await handleSubmit(formData);
 
-      const hasValidAddress = formData.addresses.some(addr => 
+      const hasValidAddress = formData.addresses.some(addr =>
         addr.city || addr.state || addr.streetName
       );
 
@@ -210,8 +221,10 @@ export default function AddKYCUserPage() {
         setCreating(false);
         return;
       }
-      
+
       const requestData = {
+        loanId: formData.loanId || undefined,
+        loanType: formData.loanType as any,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -228,21 +241,22 @@ export default function AddKYCUserPage() {
           lga: addr.lga || undefined,
           state: addr.state || undefined,
           country: addr.country || undefined,
+          notes: addr.notes || undefined,
         })),
       };
-      
+
       const result = await createKYCUser(requestData);
-      
+
       addToast({
         type: 'success',
         title: 'Request Created',
         message: `Verification request created with ${formData.addresses.length} address${formData.addresses.length > 1 ? 'es' : ''}.`,
       });
-      
+
       router.push(`/kyc/${result._id}`);
     } catch (error) {
       setCreating(false);
-      
+
       if (error instanceof ApiError) {
         if (error.code === 'DUPLICATE_USER' || error.message.includes('already exists')) {
           addToast({
@@ -286,7 +300,7 @@ export default function AddKYCUserPage() {
 
   const formatPhoneNumber = (value: string) => {
     let cleaned = value.replace(/\D/g, '');
-    
+
     if (!value.startsWith('+234')) {
       if (cleaned.startsWith('234')) {
         cleaned = cleaned.slice(3);
@@ -295,7 +309,7 @@ export default function AddKYCUserPage() {
       }
       return '+234' + cleaned.slice(0, 10);
     }
-    
+
     return value.slice(0, 14);
   };
 
@@ -319,7 +333,7 @@ export default function AddKYCUserPage() {
                 Cancel
               </Button>
             </Link>
-            <Button 
+            <Button
               variant="primary"
               size="md"
               onClick={handleSave}
@@ -339,6 +353,28 @@ export default function AddKYCUserPage() {
             <CardTitle>Personal Information</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6 border-b border-gray-100">
+              <Input
+                label="Loan ID"
+                required
+                value={formData.loanId}
+                onChange={(e) => handleFieldUpdate('loanId', e.target.value)}
+                placeholder="e.g. LN-12345"
+              />
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Request Category <span className="text-red-500">*</span>
+                </label>
+                <CustomSelect
+                  value={formData.loanType}
+                  onChange={(value) => handleFieldUpdate('loanType', value)}
+                  options={LOAN_TYPES}
+                  placeholder="Select category"
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
                 label="First Name"
@@ -520,6 +556,19 @@ export default function AddKYCUserPage() {
                     onChange={(e) => handleAddressFieldUpdate(address.id, 'country', e.target.value)}
                     placeholder="e.g., Nigeria"
                   />
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Instructions for Agent (Optional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm resize-none"
+                      placeholder="e.g. Call before coming, The building has a blue gate..."
+                      value={address.notes}
+                      onChange={(e) => handleAddressFieldUpdate(address.id, 'notes', e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>

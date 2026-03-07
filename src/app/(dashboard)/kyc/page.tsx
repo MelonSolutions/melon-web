@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
 import { KYCCard } from '@/components/kyc/KYCCard';
-import { exportKYCData } from '@/lib/api/kyc';
+import { exportKYCData, getKYCUsers } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/ui/StatCard';
@@ -26,7 +26,7 @@ interface KYCUser {
   phone: string;
   status: 'PENDING' | 'ASSIGNED' | 'IN_REVIEW' | 'VERIFICATION_SUBMITTED' | 'VERIFIED' | 'REJECTED';
   agentName?: string;
-  documents: Array<{ _id: string }>;
+  documents: Array<{ _id: string; }>;
   submittedAt: string;
   updatedAt: string;
 }
@@ -50,7 +50,7 @@ function useDebounce<T>(value: T, delay: number): T {
 function KYCContent() {
   const searchParams = useSearchParams();
   const { addToast } = useToast();
-  
+
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [exporting, setExporting] = useState(false);
@@ -64,53 +64,57 @@ function KYCContent() {
     identityType: '',
   };
 
-  const { 
-    users, 
+  const {
+    users,
     dashboardStats,
     pagination,
-    loading, 
+    loading,
     error,
     refetch,
     setPage
   } = useKYCUsers(filters);
 
-const handleExport = async () => {
-  try {
-    setExporting(true);
-    
-    if (!users || users.length === 0) {
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+
+      // Fetch all users matching filters instead of just the current page
+      const response = await getKYCUsers({
+        ...filters,
+        pageSize: -1
+      });
+
+      const allUsers = response.data || [];
+
+      if (allUsers.length === 0) {
+        addToast({
+          type: 'error',
+          title: 'No Data',
+          message: 'No verification data to export matching your filters.',
+        });
+        return;
+      }
+
+      exportKYCToCSV(allUsers);
+
+      addToast({
+        type: 'success',
+        title: 'Export Successful',
+        message: `Exported ${allUsers.length} total verification record(s) across all pages.`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
       addToast({
         type: 'error',
-        title: 'No Data',
-        message: 'No verification data to export.',
+        title: 'Export Failed',
+        message: 'Failed to export verification data. Please try again.',
       });
-      return;
+    } finally {
+      setExporting(false);
     }
+  };
 
-    const usersToExport = statusFilter 
-      ? users.filter(user => user.status === statusFilter)
-      : users;
-
-    exportKYCToCSV(usersToExport);
-    
-    addToast({
-      type: 'success',
-      title: 'Export Successful',
-      message: `Exported ${usersToExport.length} verification record(s).`,
-    });
-  } catch (error) {
-    console.error('Export error:', error);
-    addToast({
-      type: 'error',
-      title: 'Export Failed',
-      message: 'Failed to export verification data. Please try again.',
-    });
-  } finally {
-    setExporting(false);
-  }
-};
-
- const filteredUsers = users?.filter(user => {
+  const filteredUsers = users?.filter(user => {
     if (!statusFilter) return true;
     return user.status === statusFilter;
   }) || [];
@@ -207,22 +211,20 @@ const handleExport = async () => {
               <div className="flex items-center border border-gray-200 rounded-lg">
                 <button
                   onClick={() => setView('grid')}
-                  className={`p-2 transition-colors ${
-                    view === 'grid'
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`p-2 transition-colors ${view === 'grid'
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                   title="Grid view"
                 >
                   <Grid3x3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setView('list')}
-                  className={`p-2 transition-colors ${
-                    view === 'list'
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`p-2 transition-colors ${view === 'list'
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-500 hover:text-gray-700'
+                    }`}
                   title="List view"
                 >
                   <List className="w-4 h-4" />
@@ -244,65 +246,59 @@ const handleExport = async () => {
                   <p className="text-xs text-gray-400 mt-1">Searching...</p>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => setStatusFilter('')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    statusFilter === '' 
-                      ? 'bg-gray-900 text-white' 
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === ''
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   All
                 </button>
                 <button
                   onClick={() => setStatusFilter('PENDING')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    statusFilter === 'PENDING' 
-                      ? 'bg-gray-900 text-white' 
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'PENDING'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   Pending
                 </button>
                 <button
                   onClick={() => setStatusFilter('ASSIGNED')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    statusFilter === 'ASSIGNED' 
-                      ? 'bg-gray-900 text-white' 
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'ASSIGNED'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   Assigned
                 </button>
                 <button
                   onClick={() => setStatusFilter('IN_REVIEW')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    statusFilter === 'IN_REVIEW' 
-                      ? 'bg-gray-900 text-white' 
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'IN_REVIEW'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   In Review
                 </button>
                 <button
                   onClick={() => setStatusFilter('VERIFICATION_SUBMITTED')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    statusFilter === 'VERIFICATION_SUBMITTED' 
-                      ? 'bg-gray-900 text-white' 
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'VERIFICATION_SUBMITTED'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   Pending Approval
                 </button>
                 <button
                   onClick={() => setStatusFilter('VERIFIED')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    statusFilter === 'VERIFIED' 
-                      ? 'bg-gray-900 text-white' 
-                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'VERIFIED'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   Verified
                 </button>
@@ -341,7 +337,7 @@ const handleExport = async () => {
                       <div className="col-span-4">Customer</div>
                       <div className="col-span-3">Contact</div>
                       <div className="col-span-2">Status</div>
-                      <div className="col-span-2">Addresses</div> 
+                      <div className="col-span-2">Addresses</div>
                       <div className="col-span-1">Actions</div>
                     </div>
                   </div>
