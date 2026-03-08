@@ -6,7 +6,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useKYCUser } from '@/hooks/useKYC';
-import { 
+import {
   ArrowLeft,
   FileText,
   AlertTriangle,
@@ -18,15 +18,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
-import { 
+import {
   KYCDocument,
   getDocumentTypeDisplayName
 } from '@/types/kyc';
-import { 
-  uploadDocument, 
+import {
+  uploadDocument,
   deleteDocument,
   makeVerificationDecision,
-  ApiError 
+  ApiError
 } from '@/lib/api/kyc';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/Toast';
@@ -36,7 +36,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; }>;
 }
 
 export default function KYCUserDetailsPage({ params }: PageProps) {
@@ -45,7 +45,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const router = useRouter();
   const { addToast } = useToast();
   const { openModal, closeModal } = useModal();
-  
+
   const { user, loading, refetch } = useKYCUser(userId);
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -55,12 +55,12 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const handleVerificationApproval = async (addressIndex: number) => {
     try {
       setUpdating(true);
-      
+
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
-      
+
       await makeVerificationDecision(userId, true, undefined, addressIndex);
       await refetch();
-      
+
       addToast({
         type: 'success',
         title: 'Address Approved',
@@ -86,18 +86,18 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
     try {
       setUpdating(true);
-      
+
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
-      
+
       await makeVerificationDecision(userId, false, rejectionReason, addressIndex);
       await refetch();
-      
+
       addToast({
         type: 'success',
         title: 'Address Rejected',
         message: `${addressLabel} has been rejected.`,
       });
-      
+
       setRejectingIndex(null);
       setRejectionReason('');
     } catch (error) {
@@ -131,7 +131,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       setUploading(true);
       await uploadDocument(userId, file, 'PROOF_OF_ADDRESS');
       await refetch();
-      
+
       addToast({
         type: 'success',
         title: 'Document Uploaded',
@@ -179,14 +179,14 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
           <Button variant="secondary" onClick={closeModal}>
             Cancel
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={async () => {
               try {
                 await deleteDocument(userId, documentId);
                 await refetch();
                 closeModal();
-                
+
                 addToast({
                   type: 'success',
                   title: 'Document Deleted',
@@ -213,7 +213,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
   const formatAddress = (address: any) => {
     if (!address) return null;
-    
+
     const parts = [
       address.streetNumber,
       address.streetName,
@@ -223,7 +223,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       address.state,
       address.country,
     ].filter(Boolean);
-    
+
     return parts.length > 0 ? parts.join(', ') : null;
   };
 
@@ -231,11 +231,11 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -248,7 +248,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
             <div className="h-6 w-64 bg-gray-200 rounded animate-pulse"></div>
           </div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -263,7 +263,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 </div>
               ))}
             </div>
-            
+
             <div className="space-y-6">
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
@@ -328,7 +328,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               <p className="text-sm text-gray-500">Verification Details</p>
             </div>
           </div>
-          
+
           <StatusBadge status={user.status} size="md" />
         </div>
       </div>
@@ -350,6 +350,24 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Email Address</div>
                     <div className="text-sm text-gray-900">{user.email}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Loan ID</div>
+                    <div className="text-sm text-gray-900">{user.loanId || <span className="text-gray-400 italic">Not provided</span>}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Request Category</div>
+                    <div className="text-sm text-gray-900">
+                      {user.loanType ? (
+                        <Badge variant="neutral" size="sm" className="bg-gray-100 text-gray-800 border-gray-200">
+                          {user.loanType.toLowerCase()}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 italic">Not specified</span>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -462,7 +480,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       {address.verificationData && (
                         <div className="pt-6 border-t border-gray-200">
                           <h4 className="text-sm font-semibold text-gray-900 mb-4">Agent Verification</h4>
-                          
+
                           <div className="space-y-4">
                             {address.verificationData.verifiedLatitude && address.verificationData.verifiedLongitude && (
                               <>
@@ -593,7 +611,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-1 ml-3">
                           <a
                             href={doc.fileUrl}
@@ -684,7 +702,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       </div>
                     </div>
                   </div>
-                  
+
                   {user.verificationDate && (
                     <div className="flex gap-3">
                       <div className="w-2 h-2 mt-2 rounded-full bg-success shrink-0"></div>
@@ -696,7 +714,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex gap-3">
                     <div className="w-2 h-2 mt-2 rounded-full bg-gray-300 shrink-0"></div>
                     <div>
@@ -751,7 +769,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 </p>
               </div>
             </div>
-            
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Rejection Reason <span className="text-error">*</span>
