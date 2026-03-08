@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -216,6 +217,10 @@ private async request<T>(
     });
   }
 
+  async getOrganizations(): Promise<any[]> {
+    return this.request<any[]>('/auth/organizations');
+  }
+
   // Legacy method for backwards compatibility
   async login(data: SigninRequest): Promise<SigninResponse> {
     return this.signin(data);
@@ -224,6 +229,13 @@ private async request<T>(
   // Legacy method for backwards compatibility  
   async register(data: SignupRequest): Promise<SignupResponse> {
     return this.signup(data);
+  }
+
+  async requestDemo(data: { email: string; organizationName: string; message?: string }): Promise<{ message: string }> {
+    return this.request('/auth/request-demo', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 }
 
