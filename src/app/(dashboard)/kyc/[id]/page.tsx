@@ -360,9 +360,13 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Request Category</div>
                     <div className="text-sm text-gray-900">
-                      <Badge variant="neutral" size="sm" className="bg-gray-100 text-gray-800 border-gray-200">
-                        {user.loanType?.toLowerCase()}
-                      </Badge>
+                      {user.loanType ? (
+                        <Badge variant="neutral" size="sm" className="bg-gray-100 text-gray-800 border-gray-200">
+                          {user.loanType.toLowerCase()}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 italic">Not specified</span>
+                      )}
                     </div>
                   </div>
 

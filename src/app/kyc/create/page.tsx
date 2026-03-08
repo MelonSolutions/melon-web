@@ -146,9 +146,6 @@ export default function AddKYCUserPage() {
         required: true,
         pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       },
-      loanType: {
-        required: true,
-      },
     },
     onSubmit: async () => {
     }
@@ -387,7 +384,7 @@ export default function AddKYCUserPage() {
 
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
-                  Request Category <span className="text-red-500">*</span>
+                  Request Category (Optional)
                 </label>
                 <CustomSelect
                   value={formData.loanType}
