@@ -123,11 +123,10 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
               <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-primary transition-colors">
                 {user.firstName} {user.lastName}
               </h3>
-              {user.loanId && (
-                <p className="text-xs font-medium text-primary mt-0.5 uppercase">
-                  {user.loanId} • <span className="text-gray-400">{user.loanType?.toLowerCase()}</span>
-                </p>
-              )}
+              <p className="text-xs font-medium text-primary mt-0.5 uppercase">
+                {user.loanId ? `${user.loanId} • ` : ''}
+                <span className="text-gray-400">{user.loanType?.toLowerCase()}</span>
+              </p>
               <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
               <p className="text-sm text-gray-500 mt-0.5">{user.phone}</p>
               {user.organization?.name && (
@@ -249,11 +248,10 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                 {user.firstName} {user.lastName}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                {user.loanId && (
-                  <span className="text-xs font-semibold text-primary uppercase">
-                    {user.loanId}
-                  </span>
-                )}
+                <span className="text-xs font-semibold text-primary uppercase">
+                  {user.loanId ? `${user.loanId} • ` : ''}
+                  <span className="text-gray-400 font-normal">{user.loanType?.toLowerCase()}</span>
+                </span>
                 <div className="text-sm text-gray-500 truncate">{user.email}</div>
               </div>
               {user.organization?.name && (

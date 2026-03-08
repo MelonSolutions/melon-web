@@ -146,6 +146,9 @@ export default function AddKYCUserPage() {
         required: true,
         pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       },
+      loanType: {
+        required: true,
+      },
     },
     onSubmit: async () => {
     }
@@ -376,8 +379,7 @@ export default function AddKYCUserPage() {
           <CardContent>
             <div className={`grid grid-cols-1 md:grid-cols-${organizations.length > 0 ? '3' : '2'} gap-6 mb-6 pb-6 border-b border-gray-100`}>
               <Input
-                label="Loan ID"
-                required
+                label="Loan ID (Optional)"
                 value={formData.loanId}
                 onChange={(e) => handleFieldUpdate('loanId', e.target.value)}
                 placeholder="e.g. LN-12345"

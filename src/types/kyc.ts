@@ -46,7 +46,7 @@ export interface KYCUser {
   _id?: string;
   id?: string;
   loanId?: string;
-  loanType?: LoanType;
+  loanType: LoanType;
   firstName: string;
   lastName: string;
   email: string;
@@ -121,7 +121,7 @@ export interface KYCDashboardStats {
 export interface CreateKYCUserRequest {
   loanId?: string;
   organizationId?: string;
-  loanType?: LoanType;
+  loanType: LoanType;
   firstName: string;
   lastName: string;
   email: string;
