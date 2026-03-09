@@ -16,20 +16,10 @@ import { StatCard } from '@/components/ui/StatCard';
 import Input from '@/components/ui/Input';
 import { exportKYCToCSV } from '@/lib/exportKYCToCSV';
 import { Pagination } from '@/components/ui/Pagination';
+import { KYCUser } from '@/types/kyc';
+import { getUserId } from '@/lib/utils';
 
-interface KYCUser {
-  _id?: string;
-  id?: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  status: 'PENDING' | 'ASSIGNED' | 'IN_REVIEW' | 'VERIFICATION_SUBMITTED' | 'VERIFIED' | 'REJECTED';
-  agentName?: string;
-  documents: Array<{ _id: string; }>;
-  submittedAt: string;
-  updatedAt: string;
-}
+
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -319,7 +309,7 @@ function KYCContent() {
               {view === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                   {filteredUsers.map((user) => {
-                    const userId = user.id || user._id;
+                    const userId = getUserId(user);
                     return userId ? (
                       <KYCCard
                         key={userId}
@@ -343,7 +333,7 @@ function KYCContent() {
                   </div>
 
                   {filteredUsers.map((user) => {
-                    const userId = user.id || user._id;
+                    const userId = getUserId(user);
                     return userId ? (
                       <KYCCard
                         key={userId}

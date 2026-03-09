@@ -33,3 +33,19 @@ export function isDuplicateError(error: unknown): boolean {
   }
   return false;
 }
+
+export function getUserId(user: any): string {
+  if (!user) return '';
+  // Try id first, then _id
+  const idValue = user.id || user._id;
+  if (!idValue) return '';
+  
+  if (typeof idValue === 'string') return idValue;
+  
+  // Handle cases where it might be a Mongoose-like object with its own _id or id
+  if (typeof idValue === 'object') {
+    return idValue._id?.toString() || idValue.id?.toString() || idValue.toString() || '';
+  }
+  
+  return String(idValue);
+}
