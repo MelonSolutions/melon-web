@@ -520,26 +520,55 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                                   Verification Photos ({address.verificationData.verificationPhotos.length})
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
-                                  {address.verificationData.verificationPhotos.map((photo, i) => (
-                                    <a
-                                      key={i}
-                                      href={photo}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group"
-                                    >
-                                      <Image
-                                        src={photo}
-                                        alt={`Photo ${i + 1}`}
-                                        fill
-                                        className="object-cover"
-                                        sizes="(max-width: 768px) 100vw, 33vw"
-                                      />
-                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                        <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  {address.verificationData.verificationPhotos.map((photo: any, i: number) => {
+                                    let url = '';
+                                    let tag = null;
+
+                                    if (typeof photo === 'string') {
+                                      url = photo;
+                                    } else if (photo && typeof photo === 'object') {
+                                      if (photo.url) {
+                                        url = photo.url;
+                                        tag = photo.tag;
+                                      } else if (photo['0']) {
+                                        // Reconstruct mangled character-by-character object
+                                        url = Object.keys(photo)
+                                          .sort((a, b) => parseInt(a) - parseInt(b))
+                                          .filter(key => !isNaN(parseInt(key)))
+                                          .map(key => photo[key])
+                                          .join('');
+                                      }
+                                    }
+
+                                    if (!url || typeof url !== 'string') return null;
+
+                                    return (
+                                      <div key={i} className="space-y-1">
+                                        <a
+                                          href={url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group block"
+                                        >
+                                          <Image
+                                            src={url}
+                                            alt={tag || `Photo ${i + 1}`}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, 33vw"
+                                          />
+                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                            <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          </div>
+                                        </a>
+                                        {tag && (
+                                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                                            {tag.replace(/_/g, ' ')}
+                                          </div>
+                                        )}
                                       </div>
-                                    </a>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
