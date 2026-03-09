@@ -9,6 +9,7 @@ import { KYCUser } from '@/types/kyc';
 import { deleteKYCUser, downloadKYCReport, ApiError } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
+import { getUserId } from '@/lib/utils';
 
 interface KYCCardProps {
   user: KYCUser;
@@ -23,7 +24,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const { addToast } = useToast();
   const { openConfirmModal } = useModal();
 
-  const userId = user.id || user._id;
+  const userId = getUserId(user);
   const canDelete = user.status === 'PENDING';
 
   if (!userId) {
