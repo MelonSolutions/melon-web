@@ -1,0 +1,16 @@
+name: Sync to Mirror Repo
+on:
+  push:
+    branches:
+      - main
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Push to mirror repo
+        run: |
+          git remote add mirror https://x-access-token:${{ secrets.PERSONAL_REPO_TOKEN }}@github.com/MelonSolutions/melon-web.git
+          git push mirror main --force
