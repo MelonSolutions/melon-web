@@ -292,6 +292,15 @@ function KYCContent() {
                 >
                   Verified
                 </button>
+                <button
+                  onClick={() => setStatusFilter('REJECTED')}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'REJECTED'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                    }`}
+                >
+                  Rejected
+                </button>
               </div>
             </div>
           </div>

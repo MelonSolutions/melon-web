@@ -40,6 +40,12 @@ export interface AddressData {
   verificationData?: VerificationData;
   mobileJobId?: string;
   notes?: string;
+  rejectionReason?: string;
+  rejectionNote?: string;
+  rejectionEvidence?: {
+    url: string;
+    tag?: string;
+  }[];
 }
 
 export interface KYCUser {
@@ -69,6 +75,11 @@ export interface KYCUser {
   documents: KYCDocument[];
   verificationDate?: string;
   rejectionReason?: string;
+  rejectionNote?: string;
+  rejectionEvidence?: {
+    url: string;
+    tag?: string;
+  }[];
   assignedAgent?: {
     _id: string;
     firstName: string;
@@ -143,8 +154,16 @@ export interface CreateKYCUserRequest {
 }
 
 export interface UpdateKYCUserRequest {
-  status?: VerificationStatus;
-  rejectionReason?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  loanId?: string;
+  loanType?: LoanType;
+  bvn?: string;
+  nin?: string;
+  passportNumber?: string;
+  addresses?: AddressData[];
   streetNumber?: string;
   streetName?: string;
   landmark?: string;
@@ -152,10 +171,18 @@ export interface UpdateKYCUserRequest {
   lga?: string;
   state?: string;
   country?: string;
+  notes?: string;
+  status?: VerificationStatus;
   assignedAgent?: string;
   agentNotes?: string;
   latitude?: number;
   longitude?: number;
+  rejectionReason?: string;
+  rejectionNote?: string;
+  rejectionEvidence?: {
+    url: string;
+    tag?: string;
+  }[];
 }
 
 export interface AuditLog {
