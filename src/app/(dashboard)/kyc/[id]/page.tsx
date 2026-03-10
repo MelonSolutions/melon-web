@@ -14,10 +14,15 @@ import {
   Trash2,
   ExternalLink,
   CheckCircle,
-  XCircle
+  XCircle,
+  Edit2,
+  ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
+import { EditKYCModal } from '@/components/kyc/EditKYCModal';
+import { RejectKYCModal } from '@/components/kyc/RejectKYCModal';
+import { useAuth } from '@/hooks/useAuth';
 import {
   KYCDocument,
   getDocumentTypeDisplayName
@@ -45,6 +50,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const router = useRouter();
   const { addToast } = useToast();
   const { openModal, closeModal } = useModal();
+  const { organization } = useAuth();
+  const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
   const { user, loading, refetch } = useKYCUser(userId);
   const [updating, setUpdating] = useState(false);
@@ -329,13 +336,85 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
             </div>
           </div>
 
-          <StatusBadge status={user.status} size="md" />
+          <div className="flex items-center gap-3">
+            {isMelonAdmin && user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<ShieldAlert className="w-4 h-4" />}
+                onClick={() => openModal(<RejectKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'lg' })}
+              >
+                Reject Request
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Edit2 className="w-4 h-4" />}
+              onClick={() => openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'xl' })}
+            >
+              Edit Request
+            </Button>
+            <StatusBadge status={user.status} size="md" />
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            {user.status === 'REJECTED' && (
+              <Card className="border-2 border-error-light/50 bg-error-light/10">
+                <CardHeader>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-error-light/30 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-error" />
+                    </div>
+                    <div className="w-full">
+                      <CardTitle className="text-error mb-1">Verification Rejected</CardTitle>
+                      <div className="text-sm text-error/90 space-y-2">
+                        {user.rejectionReason && (
+                          <div className="font-medium text-base">
+                            Reason: {user.rejectionReason}
+                          </div>
+                        )}
+                        {user.rejectionNote && (
+                          <div className="whitespace-pre-wrap text-error/80">
+                            {user.rejectionNote}
+                          </div>
+                        )}
+                        {user.rejectionEvidence && user.rejectionEvidence.length > 0 && (
+                          <div className="mt-4 border-t border-error-light/30 pt-4">
+                            <span className="font-medium block mb-2">Attached Evidence:</span>
+                            <div className="flex gap-4 overflow-x-auto pb-2">
+                              {user.rejectionEvidence.map((ev, i) => (
+                                <a
+                                  key={i}
+                                  href={ev.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="shrink-0 group relative rounded-lg overflow-hidden border border-error-light/50 hover:border-error transition-colors"
+                                >
+                                  <img
+                                    src={ev.url}
+                                    alt={`Evidence ${i + 1}`}
+                                    className="h-24 w-32 object-cover group-hover:scale-105 transition-transform"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                                    <ExternalLink className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>

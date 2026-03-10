@@ -3,13 +3,16 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download } from 'lucide-react';
+import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { KYCUser } from '@/types/kyc';
 import { deleteKYCUser, downloadKYCReport, ApiError } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
+import { EditKYCModal } from './EditKYCModal';
+import { RejectKYCModal } from './RejectKYCModal';
 import { getUserId } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface KYCCardProps {
   user: KYCUser;
@@ -22,7 +25,9 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const { addToast } = useToast();
-  const { openConfirmModal } = useModal();
+  const { openModal, closeModal, openConfirmModal } = useModal();
+  const { organization } = useAuth();
+  const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
   const userId = getUserId(user);
   const canDelete = user.status === 'PENDING';
@@ -172,6 +177,46 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        openModal(
+                          <EditKYCModal
+                            user={user}
+                            onClose={closeModal}
+                            onSuccess={onRefetch}
+                          />,
+                          { size: 'xl' }
+                        );
+                        setShowDropdown(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                    >
+                      <Save className="w-4 h-4 text-blue-600" />
+                      Edit Request
+                    </button>
+                    {isMelonAdmin && user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openModal(
+                            <RejectKYCModal
+                              user={user}
+                              onClose={closeModal}
+                              onSuccess={onRefetch}
+                            />,
+                            { size: 'lg' }
+                          );
+                          setShowDropdown(false);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-error hover:bg-error-light/10 text-left"
+                      >
+                        <ShieldAlert className="w-4 h-4 text-error" />
+                        Reject Request
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         window.location.href = `/kyc/${userId}`;
                       }}
                       className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -297,6 +342,23 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                 <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
                   <div className="py-1">
+                    <button
+                      onClick={() => {
+                        openModal(
+                          <EditKYCModal
+                            user={user}
+                            onClose={closeModal}
+                            onSuccess={onRefetch}
+                          />,
+                          { size: 'xl' }
+                        );
+                        setShowDropdown(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                    >
+                      <Save className="w-4 h-4 text-blue-600" />
+                      Edit Request
+                    </button>
                     <button
                       onClick={() => (window.location.href = `/kyc/${userId}`)}
                       className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
