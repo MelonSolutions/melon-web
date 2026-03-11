@@ -39,6 +39,7 @@ interface CreateKYCFormData {
   passportNumber: string;
   addresses: AddressData[];
   organizationId: string;
+  relogReason: string;
 }
 
 const ADDRESS_LABELS = [
@@ -98,6 +99,7 @@ export default function AddKYCUserPage() {
   const { addToast } = useToast();
   const [creating, setCreating] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [needsRelog, setNeedsRelog] = useState<boolean>(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
 
@@ -128,6 +130,7 @@ export default function AddKYCUserPage() {
     passportNumber: '',
     addresses: [createEmptyAddress(0)],
     organizationId: '',
+    relogReason: '',
   });
 
   const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
@@ -143,8 +146,8 @@ export default function AddKYCUserPage() {
         maxLength: 50
       },
       email: {
-        required: true,
-        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        required: false,
+        pattern: formData.email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/ : undefined
       },
     },
     onSubmit: async () => {
@@ -253,6 +256,7 @@ export default function AddKYCUserPage() {
         nin: formData.nin || undefined,
         passportNumber: formData.passportNumber || undefined,
         organizationId: formData.organizationId || undefined,
+        relogReason: formData.relogReason || undefined,
         addresses: formData.addresses.map(addr => ({
           label: addr.label,
           streetNumber: addr.streetNumber || undefined,
@@ -430,16 +434,39 @@ export default function AddKYCUserPage() {
                 placeholder="Enter last name"
               />
 
-              <Input
-                label="Email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => handleFieldUpdate('email', e.target.value)}
-                onBlur={(e) => handleFieldBlur('email', e.target.value)}
-                error={getFieldError('email')}
-                placeholder="user@example.com"
-              />
+              <div className="space-y-4">
+                <Input
+                  label="Email (Optional)"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    handleFieldUpdate('email', e.target.value);
+                    if (needsRelog) setNeedsRelog(false);
+                  }}
+                  onBlur={(e) => handleFieldBlur('email', e.target.value)}
+                  error={getFieldError('email')}
+                  placeholder="user@example.com"
+                />
+
+                {needsRelog && (
+                  <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg space-y-3 animate-in fade-in zoom-in duration-200">
+                    <div>
+                      <h4 className="text-sm font-semibold text-orange-800">Existing Job Detected</h4>
+                      <p className="text-sm text-orange-700 mt-1">
+                        An active KYC request with this email already exists. To force re-creation, provide a solid relogging reason.
+                      </p>
+                    </div>
+                    <textarea
+                      placeholder="e.g. Rejecting old job due to unreadable images..."
+                      required
+                      value={formData.relogReason}
+                      onChange={(e) => handleFieldUpdate('relogReason', e.target.value)}
+                      className="w-full text-sm rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      rows={3}
+                    />
+                  </div>
+                )}
+              </div>
 
               <div>
                 <Input

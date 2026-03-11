@@ -103,6 +103,15 @@ export interface InviteUserRequest {
   role?: 'ADMIN' | 'MEMBER';
 }
 
+export class AuthError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'AuthError';
+    this.status = status;
+  }
+}
+
 class ApiClient {
   private baseURL: string;
 
@@ -152,7 +161,7 @@ private async request<T>(
         }
       }
       
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      throw new AuthError(errorData.message || `HTTP error! status: ${response.status}`, response.status);
     }
 
     return await response.json();
@@ -160,7 +169,9 @@ private async request<T>(
   clearTimeout(timeoutId);
   
   if (error instanceof Error && error.name === 'AbortError') {
-    throw new Error('Request timeout - please try again');
+    const timeoutError = new Error('Request timeout - please try again');
+    timeoutError.name = 'TimeoutError';
+    throw timeoutError;
   }
   
   console.error('API request failed:', error);

@@ -4,14 +4,14 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/context/AuthContext';
 import { useModal } from '@/components/ui/Modal';
 import DemoRequestModal from '@/components/auth/DemoRequestModal';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signin } = useAuth();
+  const { signin } = useAuthContext();
   const { openModal } = useModal();
   const [formData, setFormData] = useState({
     email: '',

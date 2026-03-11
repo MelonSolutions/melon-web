@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient, SigninResponse, User, OrganizationDetails } from '@/lib/api/auth';
+import { apiClient, AuthError, SigninResponse, User, OrganizationDetails } from '@/lib/api/auth';
 
 export interface AuthState {
   user: User | null;
@@ -47,6 +47,14 @@ export function useAuth(): AuthState & AuthActions {
 
   // Check if user is authenticated on mount
   useEffect(() => {
+    const fetchAuthData = async (): Promise<{ userData: User; orgData: OrganizationDetails }> => {
+      const [userData, orgData] = await Promise.all([
+        apiClient.getCurrentUser(),
+        apiClient.getOrganization()
+      ]);
+      return { userData, orgData };
+    };
+
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('authToken');
@@ -54,10 +62,7 @@ export function useAuth(): AuthState & AuthActions {
         if (token) {
           try {
             // Get fresh user data
-            const [userData, orgData] = await Promise.all([
-              apiClient.getCurrentUser(),
-              apiClient.getOrganization()
-            ]);
+            const { userData, orgData } = await fetchAuthData();
             
             localStorage.setItem('userData', JSON.stringify(userData));
             
@@ -67,10 +72,54 @@ export function useAuth(): AuthState & AuthActions {
               isAuthenticated: true,
               isLoading: false,
             });
-          } catch (error) {
-            // If token is invalid, logout
-            console.error('Token refresh failed:', error);
-            logout();
+          } catch (error: any) {
+            // Only logout if the server explicitly says the token is invalid (401)
+            if (error instanceof AuthError && error.status === 401) {
+              console.error('Token invalid (401), logging out.');
+              logout();
+              return;
+            }
+
+            // For timeouts or network errors, retry once
+            console.warn('Auth check failed (non-401), retrying...', error?.message);
+            try {
+              const { userData, orgData } = await fetchAuthData();
+              localStorage.setItem('userData', JSON.stringify(userData));
+              setState({
+                user: userData,
+                organization: orgData,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            } catch (retryError: any) {
+              // If retry also fails, check if it's a 401
+              if (retryError instanceof AuthError && retryError.status === 401) {
+                console.error('Token invalid on retry (401), logging out.');
+                logout();
+                return;
+              }
+
+              // Still not a 401 — fall back to cached data so user stays logged in
+              console.warn('Retry failed, falling back to cached user data.');
+              const cachedUserData = localStorage.getItem('userData');
+              if (cachedUserData) {
+                try {
+                  const parsedUser = JSON.parse(cachedUserData) as User;
+                  setState({
+                    user: parsedUser,
+                    organization: null,
+                    isAuthenticated: true,
+                    isLoading: false,
+                  });
+                } catch {
+                  // Corrupted cache — no choice but to logout
+                  logout();
+                }
+              } else {
+                // No cached data and can't reach server — logout
+                logout();
+              }
+            }
           }
         } else {
           setState({

@@ -22,7 +22,7 @@ import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
 import { EditKYCModal } from '@/components/kyc/EditKYCModal';
 import { RejectKYCModal } from '@/components/kyc/RejectKYCModal';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/context/AuthContext';
 import {
   KYCDocument,
   getDocumentTypeDisplayName
@@ -50,7 +50,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const router = useRouter();
   const { addToast } = useToast();
   const { openModal, closeModal } = useModal();
-  const { organization } = useAuth();
+  const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
   const { user, loading, refetch } = useKYCUser(userId);

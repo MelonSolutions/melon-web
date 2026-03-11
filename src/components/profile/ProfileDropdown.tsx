@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/context/AuthContext';
 import { 
   User, 
   Settings, 
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export function ProfileDropdown() {
-  const { user, logout, getInitials, getFullName } = useAuth();
+  const { user, logout, getInitials, getFullName } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

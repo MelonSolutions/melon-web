@@ -12,7 +12,7 @@ import { useModal } from '@/components/ui/Modal';
 import { EditKYCModal } from './EditKYCModal';
 import { RejectKYCModal } from './RejectKYCModal';
 import { getUserId } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/context/AuthContext';
 
 interface KYCCardProps {
   user: KYCUser;
@@ -26,7 +26,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const [downloading, setDownloading] = useState(false);
   const { addToast } = useToast();
   const { openModal, closeModal, openConfirmModal } = useModal();
-  const { organization } = useAuth();
+  const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
   const userId = getUserId(user);
@@ -287,44 +287,44 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
 
   return (
     <div className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
-      <div className="px-6 py-4">
-        <div className="grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-4">
+      <div className="px-4 sm:px-6 py-4">
+        <div className="flex lg:grid lg:grid-cols-12 gap-4 items-center justify-between">
+          <div className="flex-1 lg:col-span-4 min-w-0">
             <Link href={`/kyc/${userId}`} className="block group">
-              <div className="font-medium text-gray-900 group-hover:text-primary transition-colors">
+              <div className="font-medium text-gray-900 group-hover:text-primary transition-colors truncate">
                 {user.firstName} {user.lastName}
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs font-semibold text-primary uppercase">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-0.5">
+                <span className="text-[10px] sm:text-xs font-semibold text-primary uppercase whitespace-nowrap">
                   {user.loanId && user.loanId}
                   {user.loanId && user.loanType && ' • '}
                   <span className="text-gray-400 font-normal">{user.loanType?.toLowerCase()}</span>
                 </span>
-                <div className="text-sm text-gray-500 truncate">{user.email}</div>
+                <div className="text-xs sm:text-sm text-gray-500 truncate">{user.email}</div>
               </div>
               {user.organization?.name && (
-                <div className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-tight">
+                <div className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-tight truncate">
                   Source: {user.organization.name}
                 </div>
               )}
             </Link>
           </div>
 
-          <div className="col-span-3">
+          <div className="hidden lg:block lg:col-span-3">
             <span className="text-sm text-gray-600">{user.phone}</span>
           </div>
 
-          <div className="col-span-2">
+          <div className="lg:col-span-2">
             <StatusBadge status={user.status} size="sm" />
           </div>
 
-          <div className="col-span-2">
+          <div className="hidden lg:block lg:col-span-2">
             <span className="text-sm text-gray-900 font-medium">
               {user.addresses?.length || 1}
             </span>
           </div>
 
-          <div className="col-span-1 flex justify-end relative">
+          <div className="flex justify-end lg:col-span-1 relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"

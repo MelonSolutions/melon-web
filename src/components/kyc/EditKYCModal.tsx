@@ -110,26 +110,26 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
                             label="First Name"
-                            value={formData.firstName}
+                            value={formData.firstName || ''}
                             onChange={(e) => handleInputChange('firstName', e.target.value)}
                             required
                         />
                         <Input
                             label="Last Name"
-                            value={formData.lastName}
+                            value={formData.lastName || ''}
                             onChange={(e) => handleInputChange('lastName', e.target.value)}
                             required
                         />
                         <Input
                             label="Email Address"
                             type="email"
-                            value={formData.email}
+                            value={formData.email || ''}
                             onChange={(e) => handleInputChange('email', e.target.value)}
                             required
                         />
                         <Input
                             label="Phone Number"
-                            value={formData.phone}
+                            value={formData.phone || ''}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
                             required
                             helperText="Format: +234... or 080..."
@@ -142,7 +142,7 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
                             label="Loan ID"
-                            value={formData.loanId}
+                            value={formData.loanId || ''}
                             onChange={(e) => handleInputChange('loanId', e.target.value)}
                         />
                         <div className="space-y-1.5">
@@ -192,39 +192,39 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <Input
                                         label="Street Number"
-                                        value={address.streetNumber}
+                                        value={address.streetNumber || ''}
                                         onChange={(e) => handleAddressChange(index, 'streetNumber', e.target.value)}
                                     />
                                     <div className="md:col-span-2">
                                         <Input
                                             label="Street Name"
-                                            value={address.streetName}
+                                            value={address.streetName || ''}
                                             onChange={(e) => handleAddressChange(index, 'streetName', e.target.value)}
                                         />
                                     </div>
                                     <Input
                                         label="Landmark"
-                                        value={address.landmark}
+                                        value={address.landmark || ''}
                                         onChange={(e) => handleAddressChange(index, 'landmark', e.target.value)}
                                     />
                                     <Input
                                         label="City"
-                                        value={address.city}
+                                        value={address.city || ''}
                                         onChange={(e) => handleAddressChange(index, 'city', e.target.value)}
                                     />
                                     <Input
                                         label="LGA"
-                                        value={address.lga}
+                                        value={address.lga || ''}
                                         onChange={(e) => handleAddressChange(index, 'lga', e.target.value)}
                                     />
                                     <Input
                                         label="State"
-                                        value={address.state}
+                                        value={address.state || ''}
                                         onChange={(e) => handleAddressChange(index, 'state', e.target.value)}
                                     />
                                     <Input
                                         label="Country"
-                                        value={address.country}
+                                        value={address.country || ''}
                                         onChange={(e) => handleAddressChange(index, 'country', e.target.value)}
                                     />
                                 </div>
