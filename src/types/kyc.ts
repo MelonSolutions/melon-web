@@ -135,10 +135,11 @@ export interface CreateKYCUserRequest {
   loanType?: LoanType;
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   phone: string;
   bvn?: string;
   nin?: string;
+  relogReason?: string;
   passportNumber?: string;
   addresses?: AddressData[];
   streetNumber?: string;
