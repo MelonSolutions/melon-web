@@ -3,10 +3,10 @@
 
 import { useState } from 'react';
 import { Camera, Save, X, Upload } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/context/AuthContext';
 
 export default function ProfilePage() {
-  const { user, getInitials, getFullName } = useAuth();
+  const { user, getInitials, getFullName } = useAuthContext();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

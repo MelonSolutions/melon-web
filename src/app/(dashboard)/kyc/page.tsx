@@ -4,7 +4,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { UserPlus, Search, Download, Grid3x3, List } from 'lucide-react';
+import { UserPlus, Search, Download, Grid3x3, List, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
@@ -183,11 +183,20 @@ function KYCContent() {
         <KYCEmpty />
       ) : (
         <div className="bg-white rounded-lg border border-gray-200">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 border-b border-gray-200 gap-4">
             <h2 className="text-base font-semibold text-gray-900">
               Verification Requests
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={refetch}
+                loading={loading}
+                icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+              >
+                Refresh
+              </Button>
               <Button
                 variant="secondary"
                 size="sm"
@@ -198,7 +207,7 @@ function KYCContent() {
                 Export
               </Button>
 
-              <div className="flex items-center border border-gray-200 rounded-lg">
+              <div className="flex items-center border border-gray-200 rounded-lg bg-white">
                 <button
                   onClick={() => setView('grid')}
                   className={`p-2 transition-colors ${view === 'grid'
@@ -223,11 +232,11 @@ function KYCContent() {
             </div>
           </div>
 
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 max-w-md">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1 w-full max-w-md">
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder="Search by name, email, loan ID..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   icon={<Search className="w-4 h-4" />}
@@ -237,66 +246,66 @@ function KYCContent() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
                 <button
                   onClick={() => setStatusFilter('')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === ''
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === ''
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                   All
                 </button>
                 <button
                   onClick={() => setStatusFilter('PENDING')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'PENDING'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'PENDING'
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                   Pending
                 </button>
                 <button
                   onClick={() => setStatusFilter('ASSIGNED')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'ASSIGNED'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'ASSIGNED'
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                   Assigned
                 </button>
                 <button
                   onClick={() => setStatusFilter('IN_REVIEW')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'IN_REVIEW'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'IN_REVIEW'
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                   In Review
                 </button>
                 <button
                   onClick={() => setStatusFilter('VERIFICATION_SUBMITTED')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'VERIFICATION_SUBMITTED'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'VERIFICATION_SUBMITTED'
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                   Pending Approval
                 </button>
                 <button
                   onClick={() => setStatusFilter('VERIFIED')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'VERIFIED'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'VERIFIED'
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                   Verified
                 </button>
                 <button
                   onClick={() => setStatusFilter('REJECTED')}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${statusFilter === 'REJECTED'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'REJECTED'
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
                   Rejected
@@ -330,28 +339,32 @@ function KYCContent() {
                   })}
                 </div>
               ) : (
-                <div>
-                  <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-                    <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <div className="col-span-4">Customer</div>
-                      <div className="col-span-3">Contact</div>
-                      <div className="col-span-2">Status</div>
-                      <div className="col-span-2">Addresses</div>
-                      <div className="col-span-1">Actions</div>
+                <div className="overflow-x-auto">
+                  <div className="min-w-full inline-block align-middle">
+                    <div className="hidden lg:block px-6 py-3 bg-gray-50 border-b border-gray-200">
+                      <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <div className="col-span-4">Customer</div>
+                        <div className="col-span-3">Contact</div>
+                        <div className="col-span-2">Status</div>
+                        <div className="col-span-2">Addresses</div>
+                        <div className="col-span-1 text-right">Actions</div>
+                      </div>
+                    </div>
+
+                    <div className="divide-y divide-gray-100">
+                      {filteredUsers.map((user) => {
+                        const userId = getUserId(user);
+                        return userId ? (
+                          <KYCCard
+                            key={userId}
+                            user={user}
+                            view="list"
+                            onRefetch={refetch}
+                          />
+                        ) : null;
+                      })}
                     </div>
                   </div>
-
-                  {filteredUsers.map((user) => {
-                    const userId = getUserId(user);
-                    return userId ? (
-                      <KYCCard
-                        key={userId}
-                        user={user}
-                        view="list"
-                        onRefetch={refetch}
-                      />
-                    ) : null;
-                  })}
                 </div>
               )}
               <Pagination

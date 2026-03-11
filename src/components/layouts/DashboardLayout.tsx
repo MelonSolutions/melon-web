@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown';
+import { SearchModal } from '@/components/layouts/SearchModal';
 import {
   Layers,
   FileText,
@@ -35,7 +36,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, getInitials, getFullName, isLoading } = useAuth();
+  const { user, getInitials, getFullName, isLoading } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const isMapView = pathname === '/map-view';
@@ -286,12 +287,20 @@ export default function DashboardLayout({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="block w-full pl-10 pr-3 py-2 border text-black border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm"
-                />
+                <button
+                  type="button"
+                  onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                  className="block w-full pl-10 pr-16 py-2 border text-gray-400 border-gray-300 rounded-lg leading-5 bg-white text-left text-sm cursor-pointer hover:border-gray-400 transition-colors"
+                >
+                  Search...
+                </button>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded">
+                    ⌘K
+                  </kbd>
+                </div>
               </div>
+              <SearchModal />
 
               <div className="relative">
                 <button className="cursor-pointer p-1 rounded-full text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
