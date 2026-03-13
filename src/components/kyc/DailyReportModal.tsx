@@ -27,24 +27,24 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
   const [loading, setLoading] = useState(false);
   const [fetchingOrgs, setFetchingOrgs] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [mounted, setMounted] = useState(false);
-
+ 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
-
+ 
   const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
-
+ 
   useEffect(() => {
     if (isOpen && isMelonAdmin) {
       const fetchOrgs = async () => {
         try {
           setFetchingOrgs(true);
           const data = await apiClient.getOrganizations();
-          // The API might return an array or an object with a data property
           const orgList = Array.isArray(data) ? data : (data as any).data || [];
           setOrganizations(orgList.map((o: any) => ({ id: o.id || o._id, name: o.name })));
         } catch (error) {
@@ -56,34 +56,38 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
       fetchOrgs();
     }
   }, [isOpen, isMelonAdmin]);
-
+ 
   const handleDownload = async () => {
     try {
       setLoading(true);
-      await downloadDailyOrganizationReport(date, isMelonAdmin ? selectedOrgId : undefined);
+      await downloadDailyOrganizationReport(startDate, endDate, isMelonAdmin ? selectedOrgId : undefined);
+      
+      const dateLabel = startDate === endDate ? startDate : `${startDate} to ${endDate}`;
       addToast({
         type: 'success',
         title: 'Report Generated',
-        message: `Daily report for ${date} has been downloaded.`,
+        message: `Activity report for ${dateLabel} has been downloaded.`,
       });
       onClose();
     } catch (error: any) {
       addToast({
         type: 'error',
         title: 'Download Failed',
-        message: error.message || 'Failed to generate daily report.',
+        message: error.message || 'Failed to generate report.',
       });
     } finally {
       setLoading(false);
     }
   };
-
+ 
   if (!isOpen || !mounted) return null;
-
+ 
+  const isRangeValid = !endDate || startDate <= endDate;
+ 
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div 
-        className="bg-white rounded-2xl w-full max-w-md md:max-w-lg md:min-h-[520px] max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200"
+        className="bg-white rounded-2xl w-full max-w-md md:max-w-lg md:min-h-[550px] max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -93,8 +97,8 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900">Daily Report</h3>
-              <p className="text-xs text-gray-500 font-medium">KYC Activity Summary</p>
+              <h3 className="text-xl font-bold text-gray-900">Activity Report</h3>
+              <p className="text-xs text-gray-500 font-medium">KYC Fulfillment Summary</p>
             </div>
           </div>
           <button
@@ -104,24 +108,47 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
             <X size={20} />
           </button>
         </div>
-
+ 
         <div className="p-6 space-y-6 overflow-y-auto">
           <div className="space-y-5">
-            {/* Date Section */}
-            <div className="space-y-1.5">
+            {/* Date Range Section */}
+            <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <Calendar size={14} className="text-gray-400" />
-                Select Report Date
+                Select Activity Range
               </label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full !rounded-xl"
-                max={new Date().toISOString().split('T')[0]}
-              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Start Date</span>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full !rounded-xl"
+                    max={endDate || new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">End Date</span>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full !rounded-xl"
+                    min={startDate}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+              </div>
+              
+              {!isRangeValid && (
+                <p className="text-[10px] text-red-500 font-bold italic ml-1">
+                  * End date cannot be before start date.
+                </p>
+              )}
             </div>
-
+ 
             {/* Organization Section for Melon Admins */}
             {isMelonAdmin && (
               <div className="space-y-1.5">
@@ -149,13 +176,13 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
               <div className="flex gap-3">
                 <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5" />
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                  Report includes portal entry times, agent pick-up timestamps, and completion metrics for the selected day.
+                  Report includes portal entry times, agent pick-up timestamps, and completion metrics for the selected range.
                 </p>
               </div>
             </div>
           </div>
         </div>
-
+ 
         {/* Footer */}
         <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose} disabled={loading} className="!rounded-xl px-6">
@@ -163,7 +190,7 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
           </Button>
           <Button 
             onClick={handleDownload} 
-            disabled={loading || !date}
+            disabled={loading || !startDate || !isRangeValid}
             icon={<Download className="w-4 h-4" />}
             className="!rounded-xl px-6 shadow-lg shadow-primary/20"
           >

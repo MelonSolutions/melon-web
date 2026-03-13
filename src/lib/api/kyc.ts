@@ -279,11 +279,13 @@ export async function downloadKYCReport(userId: string): Promise<void> {
 }
 
 export async function downloadDailyOrganizationReport(
-  date: string,
+  startDate: string,
+  endDate?: string,
   organizationId?: string
 ): Promise<void> {
   const params = new URLSearchParams();
-  params.append('date', date);
+  params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
   if (organizationId) params.append('organizationId', organizationId);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -302,7 +304,7 @@ export async function downloadDailyOrganizationReport(
   }
 
   const contentDisposition = response.headers.get('Content-Disposition');
-  let filename = `Daily-KYC-Report-${date}.pdf`;
+  let filename = `Daily-KYC-Report-${startDate}.pdf`;
 
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename="(.+)"/);
