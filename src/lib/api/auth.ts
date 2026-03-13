@@ -165,18 +165,25 @@ private async request<T>(
     }
 
     return await response.json();
-  } catch (error: unknown) {
-  clearTimeout(timeoutId);
-  
-  if (error instanceof Error && error.name === 'AbortError') {
-    const timeoutError = new Error('Request timeout - please try again');
-    timeoutError.name = 'TimeoutError';
-    throw timeoutError;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error('Request timeout - please try again');
+      timeoutError.name = 'TimeoutError';
+      throw timeoutError;
+    }
+
+    if (error.message === 'Failed to fetch') {
+      console.error(`Network Error: Failed to fetch ${url}. Online: ${navigator.onLine}`);
+      const networkError = new Error('Connection failed. Please check your internet and try again.');
+      networkError.name = 'NetworkError';
+      throw networkError;
+    }
+    
+    console.error(`API request failed [${url}]:`, error);
+    throw error;
   }
-  
-  console.error('API request failed:', error);
-  throw error;
-}
 }
 
   // Auth endpoints

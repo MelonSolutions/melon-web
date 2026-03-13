@@ -291,7 +291,14 @@ export default function AddKYCUserPage() {
       setCreating(false);
 
       if (error instanceof ApiError) {
-        if (error.code === 'DUPLICATE_USER' || error.message.includes('already exists')) {
+        if (error.message === 'EMAIL_EXISTS_NEEDS_REASON') {
+          setNeedsRelog(true);
+          addToast({
+            type: 'warning',
+            title: 'Existing Job Found',
+            message: 'An active or rejected job already exists for this email. Please provide a reason to relog.',
+          });
+        } else if (error.code === 'DUPLICATE_USER' || error.message.includes('already exists')) {
           addToast({
             type: 'error',
             title: 'User Already Exists',

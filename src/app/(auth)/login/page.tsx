@@ -53,7 +53,9 @@ function LoginContent() {
     } catch (err: any) {
       console.error('Login error:', err);
 
-      if (err.message?.includes('verify your email')) {
+      if (err.name === 'NetworkError') {
+        setError('Connection failed. Please check your internet connection or try again later.');
+      } else if (err.message?.includes('verify your email')) {
         setError('Please verify your email before signing in. Check your inbox for the verification link.');
       } else if (err.message?.includes('not active')) {
         setError('Your account is not active. Please contact support.');
