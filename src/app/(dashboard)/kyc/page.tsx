@@ -4,11 +4,12 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { UserPlus, Search, Download, Grid3x3, List, RefreshCw } from 'lucide-react';
+import { UserPlus, Search, Download, Grid3x3, List, RefreshCw, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
 import { KYCCard } from '@/components/kyc/KYCCard';
+import { DailyReportModal } from '@/components/kyc/DailyReportModal';
 import { exportKYCData, getKYCUsers } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
@@ -44,6 +45,7 @@ function KYCContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [exporting, setExporting] = useState(false);
+  const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('list');
 
   const debouncedSearch = useDebounce(searchInput, 500);
@@ -205,6 +207,14 @@ function KYCContent() {
                 icon={<Download className="w-4 h-4" />}
               >
                 Export
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsDailyReportModalOpen(true)}
+                icon={<FileText className="w-4 h-4" />}
+              >
+                Daily Report
               </Button>
 
               <div className="flex items-center border border-gray-200 rounded-lg bg-white">
@@ -394,6 +404,11 @@ function KYCContent() {
           )}
         </div>
       )}
+
+      <DailyReportModal 
+        isOpen={isDailyReportModalOpen} 
+        onClose={() => setIsDailyReportModalOpen(false)} 
+      />
     </div>
   );
 }

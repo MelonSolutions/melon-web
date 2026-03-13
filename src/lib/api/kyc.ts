@@ -277,3 +277,47 @@ export async function downloadKYCReport(userId: string): Promise<void> {
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
+export async function downloadDailyOrganizationReport(
+  date: string,
+  organizationId?: string
+): Promise<void> {
+  const params = new URLSearchParams();
+  params.append('date', date);
+  if (organizationId) params.append('organizationId', organizationId);
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+
+  const response = await fetch(
+    `${API_BASE_URL}/kyc/reports/daily?${params.toString()}`,
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new ApiError('Failed to download daily report', response.status);
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = `Daily-KYC-Report-${date}.pdf`;
+
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+    if (filenameMatch) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
