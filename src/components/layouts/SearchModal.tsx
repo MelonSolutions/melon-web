@@ -20,6 +20,7 @@ import {
   Plus,
   ArrowRight,
   Command,
+  X,
 } from 'lucide-react';
 
 interface SearchItem {
@@ -295,8 +296,14 @@ export function SearchModal() {
       />
 
       {/* Modal */}
-      <div className="relative flex items-start justify-center min-h-screen pt-[15vh] px-4">
-        <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+      <div 
+        className="relative flex items-start justify-center min-h-screen pt-[15vh] px-4 cursor-default"
+        onClick={() => setIsOpen(false)}
+      >
+        <div 
+          className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Search Input */}
           <div className="flex items-center px-4 border-b border-gray-200">
             <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -312,6 +319,13 @@ export function SearchModal() {
             <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded">
               ESC
             </kbd>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="ml-2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+              title="Close search"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Results */}

@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { createKYCUser, ApiError } from '@/lib/api/kyc';
 import { apiClient } from '@/lib/api/auth';
+import { useAuthContext } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { Button } from '@/components/ui/Button';
@@ -96,6 +97,7 @@ const validatePhoneNumber = (phone: string): string | null => {
 
 export default function AddKYCUserPage() {
   const router = useRouter();
+  const { user } = useAuthContext();
   const { addToast } = useToast();
   const [creating, setCreating] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -103,12 +105,18 @@ export default function AddKYCUserPage() {
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
 
+  const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
+
   useEffect(() => {
+    if (!isMelonAdmin) return;
+
     const fetchOrgs = async () => {
       try {
         setLoadingOrgs(true);
-        const orgs = await apiClient.getOrganizations();
-        setOrganizations(orgs);
+        const data = await apiClient.getOrganizations();
+        // Handle both direct array and { data: [...] } responses
+        const orgList = Array.isArray(data) ? data : (data as any)?.data || [];
+        setOrganizations(orgList);
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
       } finally {
@@ -116,7 +124,7 @@ export default function AddKYCUserPage() {
       }
     };
     fetchOrgs();
-  }, []);
+  }, [isMelonAdmin]);
 
   const [formData, setFormData] = useState<CreateKYCFormData>({
     loanId: '',
@@ -398,7 +406,7 @@ export default function AddKYCUserPage() {
                 />
               </div>
 
-              {organizations.length > 0 && (
+              {isMelonAdmin && organizations.length > 0 && (
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
                     Source Organization <span className="text-red-500">*</span>
