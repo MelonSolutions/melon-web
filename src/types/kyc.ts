@@ -40,8 +40,10 @@ export interface AddressData {
   verificationData?: VerificationData;
   mobileJobId?: string;
   notes?: string;
+  relogReason?: string;
   rejectionReason?: string;
   rejectionNote?: string;
+  isDeleted?: boolean;
   rejectionEvidence?: {
     url: string;
     tag?: string;
@@ -69,6 +71,7 @@ export interface KYCUser {
   state?: string;
   country?: string;
   notes?: string;
+  relogReason?: string;
   latitude?: number;
   longitude?: number;
   status: VerificationStatus;
@@ -86,7 +89,9 @@ export interface KYCUser {
     lastName: string;
     email: string;
   } | string;
+  assignedAt?: string;
   agentNotes?: string;
+  verifiedAddress?: string;
   verifiedAt?: string;
   verificationData?: VerificationData;
   mobileJobId?: string;
@@ -94,6 +99,7 @@ export interface KYCUser {
     _id: string;
     name: string;
   };
+  isDeleted?: boolean;
   submittedAt: string;
   updatedAt: string;
   createdAt: string;
