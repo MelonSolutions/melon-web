@@ -33,6 +33,7 @@ export function useKYCUsers(filters?: {
   search?: string;
   status?: string;
   identityType?: string;
+  organizationId?: string;
 }): UseKYCUsersResult {
   const [users, setUsers] = useState<KYCUser[]>([]);
   const [dashboardStats, setDashboardStats] = useState<KYCDashboardStats>({
@@ -59,7 +60,7 @@ export function useKYCUsers(filters?: {
   // ← ADD THIS: Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters?.search, filters?.status, filters?.identityType]);
+  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -68,7 +69,7 @@ export function useKYCUsers(filters?: {
       
       const [response, statsData] = await Promise.all([
         getKYCUsers({ ...filters, page: currentPage }),
-        getKYCDashboardStats(),
+        getKYCDashboardStats(filters?.organizationId),
       ]);
       
       if (response.data && response.pagination) {
@@ -89,7 +90,7 @@ export function useKYCUsers(filters?: {
     } finally {
       setLoading(false);
     }
-  }, [filters?.search, filters?.status, filters?.identityType, currentPage]);
+  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId, currentPage]);
 
   useEffect(() => {
     fetchData();

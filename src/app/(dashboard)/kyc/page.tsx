@@ -4,16 +4,17 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { UserPlus, Search, Download, Grid3x3, List, RefreshCw, FileText } from 'lucide-react';
+import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
 import { KYCCard } from '@/components/kyc/KYCCard';
 import { DailyReportModal } from '@/components/kyc/DailyReportModal';
-import { exportKYCData, getKYCUsers } from '@/lib/api/kyc';
+import { exportKYCData, getKYCUsers, getOrganizations } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/ui/StatCard';
+import { useAuthContext } from '@/context/AuthContext';
 import Input from '@/components/ui/Input';
 import { exportKYCToCSV } from '@/lib/exportKYCToCSV';
 import { Pagination } from '@/components/ui/Pagination';
@@ -39,11 +40,14 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 function KYCContent() {
+  const { user } = useAuthContext();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
 
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+  const [organizationId, setOrganizationId] = useState(searchParams.get('organizationId') || '');
+  const [organizations, setOrganizations] = useState<any[]>([]);
   const [exporting, setExporting] = useState(false);
   const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('list');
@@ -53,6 +57,7 @@ function KYCContent() {
   const filters = {
     search: debouncedSearch,
     status: statusFilter,
+    organizationId: organizationId,
     identityType: '',
   };
 
@@ -65,6 +70,20 @@ function KYCContent() {
     refetch,
     setPage
   } = useKYCUsers(filters);
+ 
+  const isMelonAdmin = user?.organization?.name?.toLowerCase().includes('melon');
+ 
+  useEffect(() => {
+    async function fetchOrgs() {
+      try {
+        const orgs = await getOrganizations();
+        setOrganizations(orgs);
+      } catch (error) {
+        console.error('Failed to fetch organizations:', error);
+      }
+    }
+    fetchOrgs();
+  }, []);
 
   const handleExport = async () => {
     try {
@@ -134,18 +153,42 @@ function KYCContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Address Verification</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage address and business verification requests
           </p>
         </div>
-        <Link href="/kyc/create" prefetch={false}>
-          <Button variant="primary" icon={<UserPlus className="w-4 h-4" />}>
-            Create New Request
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          {isMelonAdmin && (
+            <div className="w-48 sm:w-64 transition-all">
+              <select
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer hover:border-gray-300 font-medium"
+                value={organizationId}
+                onChange={(e) => setOrganizationId(e.target.value)}
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundSize: '1.25rem'
+                }}
+              >
+                <option value="">All Organizations</option>
+                {organizations.map((org) => (
+                  <option key={org._id || org.id} value={org._id || org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <Link href="/kyc/create" prefetch={false}>
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />}>
+              Create New Request
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
