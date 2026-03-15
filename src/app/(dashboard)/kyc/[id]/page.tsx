@@ -60,22 +60,12 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [rejectionReason, setRejectionReason] = useState('');
 
   const handleVerificationApproval = async (addressIndex: number) => {
-    const note = window.prompt('Please provide a verification note for this approval:');
-    if (!note || note.trim().length === 0) {
-      addToast({
-        type: 'error',
-        title: 'Note Required',
-        message: 'A verification note is mandatory for approval.',
-      });
-      return;
-    }
-
     try {
       setUpdating(true);
 
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
 
-      await makeVerificationDecision(userId, true, undefined, addressIndex, note);
+      await makeVerificationDecision(userId, true, undefined, addressIndex, undefined);
       await refetch();
 
       addToast({
