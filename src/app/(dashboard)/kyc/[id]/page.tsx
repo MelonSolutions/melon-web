@@ -60,12 +60,22 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [rejectionReason, setRejectionReason] = useState('');
 
   const handleVerificationApproval = async (addressIndex: number) => {
+    const note = window.prompt('Please provide a verification note for this approval:');
+    if (!note || note.trim().length === 0) {
+      addToast({
+        type: 'error',
+        title: 'Note Required',
+        message: 'A verification note is mandatory for approval.',
+      });
+      return;
+    }
+
     try {
       setUpdating(true);
 
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
 
-      await makeVerificationDecision(userId, true, undefined, addressIndex);
+      await makeVerificationDecision(userId, true, undefined, addressIndex, note);
       await refetch();
 
       addToast({
@@ -96,7 +106,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
 
-      await makeVerificationDecision(userId, false, rejectionReason, addressIndex);
+      // Pass rejectionReason as Note as well since it's the detailed text
+      await makeVerificationDecision(userId, false, undefined, addressIndex, rejectionReason);
       await refetch();
 
       addToast({
@@ -337,7 +348,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            {isMelonAdmin && user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
+            {user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
               <Button
                 variant="danger"
                 size="sm"
@@ -408,6 +419,24 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             </div>
                           </div>
                         )}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+
+            {user.relogReason && (
+              <Card className="border-1 border-primary-light/50 bg-primary-light/5">
+                <CardHeader className="py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-primary-light/20 rounded-md">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-primary uppercase tracking-wider">Re-logged Job Information</div>
+                      <div className="text-sm text-gray-700 mt-1">
+                        <span className="font-medium">Reason for Re-logging:</span> {user.relogReason}
                       </div>
                     </div>
                   </div>

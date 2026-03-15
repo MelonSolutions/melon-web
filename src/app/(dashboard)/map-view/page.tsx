@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { 
+import {
   Clock,
   Download,
   Share2,
@@ -45,9 +45,9 @@ export default function MapViewPage() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importedDatasets, setImportedDatasets] = useState<any[]>([]);
-  
+
   const [layers, setLayers] = useState<Layer[]>([]);
-  
+
   const [filters, setFilters] = useState<MapFilters>({
     dateRange: timeRange,
     regions: [],
@@ -69,8 +69,8 @@ export default function MapViewPage() {
 
 
   const handleLayerToggle = (layerId: string, visible?: boolean) => {
-    setLayers(prev => prev.map(layer => 
-      layer.id === layerId 
+    setLayers(prev => prev.map(layer =>
+      layer.id === layerId
         ? { ...layer, visible: visible !== undefined ? visible : !layer.visible }
         : layer
     ));
@@ -82,7 +82,7 @@ export default function MapViewPage() {
   };
 
   const handleLayerUpdate = (updatedLayer: Layer) => {
-    setLayers(prev => prev.map(layer => 
+    setLayers(prev => prev.map(layer =>
       layer.id === updatedLayer.id ? updatedLayer : layer
     ));
   };
@@ -99,7 +99,7 @@ export default function MapViewPage() {
       }
 
       const processedData = DataService.processImportedData(importData.data, importData.fileName);
-      
+
       if (processedData.length === 0) {
         addToast({
           type: 'error',
@@ -110,9 +110,9 @@ export default function MapViewPage() {
       }
 
       const newLayer = DataService.createLayerFromData(processedData, importData.name, layers);
-      
+
       setLayers(prev => [...prev, newLayer]);
-      
+
       const importDataset = {
         id: newLayer.id,
         name: importData.name,
@@ -120,7 +120,7 @@ export default function MapViewPage() {
         rowCount: processedData.length
       };
       setImportedDatasets(prev => [...prev, importDataset]);
-      
+
       addToast({
         type: 'success',
         title: 'Data Import Successful',
@@ -144,7 +144,7 @@ export default function MapViewPage() {
       datasets: importedDatasets,
       exportedAt: new Date().toISOString()
     };
-    
+
     const dataStr = JSON.stringify(dataToExport, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -189,8 +189,8 @@ export default function MapViewPage() {
   };
 
   const refreshData = () => {
-    setLayers(prev => prev.map(layer => 
-      layer.id === 'sample-malaria-data' 
+    setLayers(prev => prev.map(layer =>
+      layer.id === 'sample-malaria-data'
         ? { ...layer, data: [...SAMPLE_MALARIA_DATA], count: SAMPLE_MALARIA_DATA.length }
         : layer
     ));
@@ -215,12 +215,12 @@ export default function MapViewPage() {
 
   const loadSampleData = () => {
     const sampleLayer = DataService.createSampleLayer();
-    
+
     setLayers([sampleLayer]);
     setImportedDatasets([]);
     setSelectedProject(null);
     setSidebarView('analytics');
-    
+
     addToast({
       type: 'success',
       title: 'Sample Data Loaded',
@@ -237,7 +237,7 @@ export default function MapViewPage() {
               Geospatial Intelligence
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Interactive malaria surveillance data • {layers.length} layers • {visibleProjects.length} points
+              {layers.length} layers • {visibleProjects.length} points
             </p>
           </div>
 

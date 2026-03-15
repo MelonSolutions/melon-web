@@ -68,6 +68,15 @@ export function RejectKYCModal({ user, onClose, onSuccess }: RejectKYCModalProps
             return;
         }
 
+        if (!note.trim()) {
+            addToast({
+                type: 'error',
+                title: 'Validation Error',
+                message: 'Detailed notes are mandatory.',
+            });
+            return;
+        }
+
         try {
             setLoading(true);
 
@@ -125,7 +134,7 @@ export function RejectKYCModal({ user, onClose, onSuccess }: RejectKYCModalProps
                     </p>
 
                     <Input
-                        label="Rejection Reason *"
+                        label="Rejection Reason"
                         placeholder="e.g. Invalid Address, Unreachable Customer"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
@@ -135,13 +144,14 @@ export function RejectKYCModal({ user, onClose, onSuccess }: RejectKYCModalProps
 
                     <div className="space-y-1.5">
                         <label className="block text-sm font-medium text-gray-900">
-                            Detailed Notes (Optional)
+                            Detailed Notes <span className="text-error">*</span>
                         </label>
                         <textarea
                             className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition-all placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10 min-h-[120px] resize-y"
-                            placeholder="Provide more context on the rejection, agent activity logs, or call issues."
+                            placeholder="Provide detail on the rejection, agent activity logs, or call issues. This note is mandatory."
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
+                            required
                         />
                     </div>
 

@@ -60,6 +60,7 @@ export async function getKYCUsers(filters?: {
   search?: string;
   status?: string;
   identityType?: string;
+  organizationId?: string;
   page?: number;
   pageSize?: number;
 }): Promise<any> {
@@ -68,6 +69,7 @@ export async function getKYCUsers(filters?: {
   if (filters?.search) params.append('search', filters.search);
   if (filters?.status) params.append('status', filters.status);
   if (filters?.identityType) params.append('identityType', filters.identityType);
+  if (filters?.organizationId) params.append('organizationId', filters.organizationId);
   
   params.append('currentPage', String(filters?.page || 1));
   params.append('pageSize', String(filters?.pageSize || 10));
@@ -82,8 +84,15 @@ export async function getKYCUser(id: string): Promise<KYCUser> {
   return fetchWithAuth(`${API_BASE_URL}/kyc/details/${id}`);
 }
 
-export async function getKYCDashboardStats(): Promise<KYCDashboardStats> {
-  return fetchWithAuth(`${API_BASE_URL}/kyc/stats`);
+export async function getKYCDashboardStats(organizationId?: string): Promise<KYCDashboardStats> {
+  const params = new URLSearchParams();
+  if (organizationId) params.append('organizationId', organizationId);
+  const url = `${API_BASE_URL}/kyc/stats${params.toString() ? `?${params.toString()}` : ''}`;
+  return fetchWithAuth(url);
+}
+
+export async function getOrganizations(): Promise<any[]> {
+  return fetchWithAuth(`${API_BASE_URL}/auth/organizations`);
 }
 
 export async function createKYCUser(data: CreateKYCUserRequest): Promise<KYCUser> {
@@ -107,10 +116,12 @@ export async function makeVerificationDecision(
   id: string,
   approved: boolean,
   rejectionReason?: string,
-  addressIndex?: number
+  addressIndex?: number,
+  rejectionNote?: string
 ): Promise<{ message: string }> {
   const payload: any = { 
-    approved: approved.toString() 
+    approved: approved.toString(),
+    rejectionNote: rejectionNote // Now required by backend
   };
   
   if (!approved && rejectionReason) {
@@ -169,26 +180,30 @@ export async function uploadDocument(
 export async function uploadImageToCloudinary(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('upload_preset', 'melon_kyc_uploads'); 
 
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  if (!cloudName) throw new Error('Cloudinary cloud name is not configured');
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    {
-      method: 'POST',
-      body: formData,
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/kyc/upload-image`, {
+    method: 'POST',
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: formData,
+  });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error?.message || 'Failed to upload image to Cloudinary');
+    let errorMessage = 'Failed to upload image';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      errorMessage = response.statusText;
+    }
+    throw new ApiError(errorMessage, response.status);
   }
 
   const data = await response.json();
-  return data.secure_url;
+  return data.url;
 }
 
 export async function deleteDocument(
