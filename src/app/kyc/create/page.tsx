@@ -205,6 +205,7 @@ export default function AddKYCUserPage() {
 
   const handlePhoneChange = (value: string) => {
     setFormData(prev => ({ ...prev, phone: value }));
+    if (needsRelog) setNeedsRelog(false);
 
     if (value.trim()) {
       const error = validatePhoneNumber(value);
@@ -291,12 +292,14 @@ export default function AddKYCUserPage() {
       setCreating(false);
 
       if (error instanceof ApiError) {
-        if (error.message === 'EMAIL_EXISTS_NEEDS_REASON') {
+        if (error.message === 'EMAIL_EXISTS_NEEDS_REASON' || error.message === 'DUPLICATE_EXISTS_NEEDS_REASON') {
           setNeedsRelog(true);
           addToast({
             type: 'warning',
-            title: 'Existing Job Found',
-            message: 'An active or rejected job already exists for this email. Please provide a reason to relog.',
+            title: 'Existing Record Found',
+            message: error.message === 'EMAIL_EXISTS_NEEDS_REASON' 
+              ? 'An active or rejected job already exists for this email. Please provide a reason to relog.'
+              : 'A duplicate record (Loan ID, Phone, or Name) already exists. Please provide a reason to relog.',
           });
         } else if (error.code === 'DUPLICATE_USER' || error.message.includes('already exists')) {
           addToast({
@@ -335,6 +338,9 @@ export default function AddKYCUserPage() {
 
   const handleFieldUpdate = (field: keyof Omit<CreateKYCFormData, 'addresses'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (needsRelog && ['firstName', 'lastName', 'email', 'loanId', 'phone'].includes(field)) {
+      setNeedsRelog(false);
+    }
     handleFieldChange(field, value);
   };
 
@@ -466,9 +472,9 @@ export default function AddKYCUserPage() {
                 {needsRelog && (
                   <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg space-y-3 animate-in fade-in zoom-in duration-200">
                     <div>
-                      <h4 className="text-sm font-semibold text-orange-800">Existing Job Detected</h4>
+                      <h4 className="text-sm font-semibold text-orange-800">Existing Record Detected</h4>
                       <p className="text-sm text-orange-700 mt-1">
-                        An active KYC request with this email already exists. To force re-creation, provide a solid relogging reason.
+                        A KYC request with these details (Email, Loan ID, Phone, or Name) already exists. To force re-creation, provide a solid relogging reason.
                       </p>
                     </div>
                     <textarea
