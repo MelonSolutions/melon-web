@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { KYCUser } from '@/types/kyc';
@@ -271,13 +271,45 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
             <StatusBadge status={user.status} size="sm" />
           </div>
 
-          <div className="space-y-2 pt-4 border-t border-gray-100">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Addresses:</span>
-              <span className="text-gray-900 font-medium">{user.addresses?.length || 1}</span>
+          <div className="space-y-3 pt-4 border-t border-gray-100">
+            {user.status === 'REJECTED' && user.rejectionReason && (
+              <div className="bg-error-light/10 border border-error-light/50 rounded-lg p-3 mb-2">
+                <span className="text-[10px] font-bold text-error uppercase tracking-wider block mb-1">Rejection Reason</span>
+                <p className="text-xs text-error font-medium leading-tight">{user.rejectionReason}</p>
+                {user.rejectionNote && <p className="text-[10px] text-error/70 mt-1 line-clamp-2">{user.rejectionNote}</p>}
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="flex flex-col">
+                <span className="text-gray-400">Logged</span>
+                <span className="text-gray-700 font-medium">
+                  {user.submittedAt ? format(new Date(user.submittedAt), 'MM/dd, HH:mm') : '-'}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-400">Assigned</span>
+                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                  {user.assignedAt ? format(new Date(user.assignedAt), 'MM/dd, HH:mm') : 'Not Assigned'}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-400">Submitted</span>
+                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                  {user.verifiedAt ? format(new Date(user.verifiedAt), 'MM/dd, HH:mm') : 'Pending'}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-400">Decision</span>
+                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                  {user.verificationDate ? format(new Date(user.verificationDate), 'MM/dd, HH:mm') : 'Pending'}
+                </span>
+              </div>
             </div>
-            <div className="text-xs text-gray-400 pt-2">
-              {formatDistanceToNow(new Date(user.updatedAt), { addSuffix: true })}
+
+            <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-50">
+              <span className="text-gray-500">Addresses:</span>
+              <span className="text-gray-900 font-bold">{user.addresses?.length || 1}</span>
             </div>
           </div>
         </div>
@@ -286,45 +318,62 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   }
 
   return (
-    <div className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+    <div className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 relative">
       <div className="px-4 sm:px-6 py-4">
-        <div className="flex lg:grid lg:grid-cols-12 gap-4 items-center justify-between">
-          <div className="flex-1 lg:col-span-4 min-w-0">
+        <div 
+          className="flex lg:grid gap-4 items-center justify-between"
+          style={{ gridTemplateColumns: 'minmax(200px, 2fr) 120px 100px 100px 100px 100px 60px' }}
+        >
+          <div className="flex-1 lg:col-span-1 min-w-0">
             <Link href={`/kyc/${userId}`} className="block group">
-              <div className="font-medium text-gray-900 group-hover:text-primary transition-colors truncate">
+              <div className="font-semibold text-gray-900 group-hover:text-primary transition-colors truncate text-sm">
                 {user.firstName} {user.lastName}
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-0.5">
-                <span className="text-[10px] sm:text-xs font-semibold text-primary uppercase whitespace-nowrap">
-                  {user.loanId && user.loanId}
-                  {user.loanId && user.loanType && ' • '}
-                  <span className="text-gray-400 font-normal">{user.loanType?.toLowerCase()}</span>
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                <span className="text-[10px] font-bold text-primary uppercase whitespace-nowrap">
+                  {user.loanId || 'N/A'} {user.loanType && `• ${user.loanType.toLowerCase()}`}
                 </span>
-                <div className="text-xs sm:text-sm text-gray-500 truncate">{user.email}</div>
+                <div className="text-[11px] text-gray-500 truncate">{user.email}</div>
               </div>
-              {user.organization?.name && (
-                <div className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-tight truncate">
-                  Source: {user.organization.name}
-                </div>
-              )}
             </Link>
           </div>
 
-          <div className="hidden lg:block lg:col-span-3">
-            <span className="text-sm text-gray-600">{user.phone}</span>
-          </div>
-
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1 flex flex-col items-start gap-1">
             <StatusBadge status={user.status} size="sm" />
+            {user.status === 'REJECTED' && user.rejectionReason && (
+              <span className="text-[10px] text-error font-semibold leading-tight line-clamp-1" title={user.rejectionReason}>
+                {user.rejectionReason}
+              </span>
+            )}
           </div>
 
-          <div className="hidden lg:block lg:col-span-2">
-            <span className="text-sm text-gray-900 font-medium">
-              {user.addresses?.length || 1}
-            </span>
+          <div className="hidden lg:block text-center">
+            <div className="text-[11px] text-gray-900 font-medium">
+              {user.submittedAt ? format(new Date(user.submittedAt), 'MM/dd, HH:mm') : '-'}
+            </div>
           </div>
 
-          <div className="flex justify-end lg:col-span-1 relative">
+          <div className="hidden lg:block text-center">
+            <div className={`text-[11px] font-medium ${user.assignedAt ? 'text-gray-900' : 'text-gray-300 italic'}`}>
+              {user.assignedAt ? format(new Date(user.assignedAt), 'MM/dd, HH:mm') : 'None'}
+            </div>
+          </div>
+
+          <div className="hidden lg:block text-center">
+            <div className={`text-[11px] font-medium ${user.verifiedAt ? 'text-gray-900' : 'text-gray-300 italic'}`}>
+              {user.verifiedAt ? format(new Date(user.verifiedAt), 'MM/dd, HH:mm') : 'Pending'}
+            </div>
+          </div>
+
+          <div className="hidden lg:block text-center">
+            <div className={`text-[11px] font-medium ${(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate ? 'text-gray-900' : 'text-gray-300 italic'}`}>
+              {(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate 
+                ? format(new Date(user.verificationDate), 'MM/dd, HH:mm') 
+                : 'Pending'}
+            </div>
+          </div>
+
+          <div className="flex justify-end relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
