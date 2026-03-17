@@ -40,7 +40,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 function KYCContent() {
-  const { user } = useAuthContext();
+  const { user, organization } = useAuthContext();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
 
@@ -71,7 +71,7 @@ function KYCContent() {
     setPage
   } = useKYCUsers(filters);
  
-  const isMelonAdmin = user?.organization?.name?.toLowerCase().includes('melon');
+  const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
  
   useEffect(() => {
     async function fetchOrgs() {
@@ -395,12 +395,17 @@ function KYCContent() {
                 <div className="overflow-x-auto">
                   <div className="min-w-full inline-block align-middle">
                     <div className="hidden lg:block px-6 py-3 bg-gray-50 border-b border-gray-200">
-                      <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <div className="col-span-4">Customer</div>
-                        <div className="col-span-3">Contact</div>
-                        <div className="col-span-2">Status</div>
-                        <div className="col-span-2">Addresses</div>
-                        <div className="col-span-1 text-right">Actions</div>
+                      <div 
+                        className="grid gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest"
+                        style={{ gridTemplateColumns: 'minmax(200px, 2fr) 120px 100px 100px 100px 100px 60px' }}
+                      >
+                        <div>Customer</div>
+                        <div>Status</div>
+                        <div className="text-center">Logged</div>
+                        <div className="text-center">Assigned</div>
+                        <div className="text-center">Submitted</div>
+                        <div className="text-center">Decision</div>
+                        <div className="text-right">Action</div>
                       </div>
                     </div>
 
