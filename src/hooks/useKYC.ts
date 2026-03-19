@@ -29,12 +29,15 @@ interface UseKYCUsersResult {
   setPage: (page: number) => void;
 }
 
-export function useKYCUsers(filters?: {
-  search?: string;
-  status?: string;
-  identityType?: string;
-  organizationId?: string;
-}): UseKYCUsersResult {
+export function useKYCUsers(
+  filters?: {
+    search?: string;
+    status?: string;
+    identityType?: string;
+    organizationId?: string;
+  },
+  options?: { skip?: boolean }
+): UseKYCUsersResult {
   const [users, setUsers] = useState<KYCUser[]>([]);
   const [dashboardStats, setDashboardStats] = useState<KYCDashboardStats>({
     totalUsers: 0,
@@ -57,12 +60,14 @@ export function useKYCUsers(filters?: {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ← ADD THIS: Reset to page 1 when filters change
+  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isSubsequent: boolean = false) => {
+    if (options?.skip && !isSubsequent) return null;
+    
     try {
       setLoading(true);
       setError(null);
@@ -72,14 +77,7 @@ export function useKYCUsers(filters?: {
         getKYCDashboardStats(filters?.organizationId),
       ]);
       
-      if (response.data && response.pagination) {
-        setUsers(response.data);
-        setPagination(response.pagination);
-      } else {
-        setUsers(Array.isArray(response) ? response : []);
-      }
-      
-      setDashboardStats(statsData);
+      return { response, statsData };
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -87,13 +85,40 @@ export function useKYCUsers(filters?: {
         setError('Failed to fetch KYC data');
       }
       console.error('Error fetching KYC data:', err);
+      return null;
     } finally {
-      setLoading(false);
+      if (!isSubsequent) setLoading(false);
     }
-  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId, currentPage]);
+  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId, currentPage, options?.skip]);
 
   useEffect(() => {
-    fetchData();
+    let ignore = false;
+
+    if (options?.skip) {
+      setLoading(false);
+      return;
+    }
+
+    const startFetch = async () => {
+      const result = await fetchData();
+      if (!ignore && result) {
+        const { response, statsData } = result;
+        if (response.data && response.pagination) {
+          setUsers(response.data);
+          setPagination(response.pagination);
+        } else {
+          setUsers(Array.isArray(response) ? response : []);
+        }
+        setDashboardStats(statsData);
+        setLoading(false);
+      }
+    };
+
+    startFetch();
+
+    return () => {
+      ignore = true;
+    };
   }, [fetchData]);
 
   const setPage = (page: number) => {
@@ -107,7 +132,7 @@ export function useKYCUsers(filters?: {
     pagination,
     loading,
     error,
-    refetch: fetchData,
+    refetch: async () => { await fetchData(true); },
     setPage,
   };
 }

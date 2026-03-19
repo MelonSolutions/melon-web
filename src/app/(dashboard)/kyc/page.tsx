@@ -46,11 +46,35 @@ function KYCContent() {
 
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
-  const [organizationId, setOrganizationId] = useState(searchParams.get('organizationId') || '');
+  const [organizationId, setOrganizationId] = useState('');
+  const [isFilterInitialized, setIsFilterInitialized] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [exporting, setExporting] = useState(false);
   const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('list');
+
+  // Load saved organization selection on mount
+  useEffect(() => {
+    const urlOrgId = searchParams.get('organizationId');
+    const savedOrgId = localStorage.getItem('selectedOrganizationId');
+
+    if (urlOrgId) {
+      setOrganizationId(urlOrgId);
+      localStorage.setItem('selectedOrganizationId', urlOrgId);
+    } else if (savedOrgId) {
+      setOrganizationId(savedOrgId);
+    }
+    
+    // Mark as initialized so useKYCUsers can start fetching
+    setIsFilterInitialized(true);
+  }, []);
+
+  // Save organization selection whenever it changes
+  useEffect(() => {
+    if (isFilterInitialized && organizationId !== undefined) {
+      localStorage.setItem('selectedOrganizationId', organizationId);
+    }
+  }, [organizationId, isFilterInitialized]);
 
   const debouncedSearch = useDebounce(searchInput, 500);
 
@@ -69,7 +93,7 @@ function KYCContent() {
     error,
     refetch,
     setPage
-  } = useKYCUsers(filters);
+  } = useKYCUsers(filters, { skip: !isFilterInitialized });
  
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
  
@@ -397,9 +421,10 @@ function KYCContent() {
                     <div className="hidden lg:block px-6 py-3 bg-gray-50 border-b border-gray-200">
                       <div 
                         className="grid gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest"
-                        style={{ gridTemplateColumns: 'minmax(200px, 2fr) 120px 100px 100px 100px 100px 60px' }}
+                        style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
                       >
                         <div>Customer</div>
+                        <div>Source</div>
                         <div>Status</div>
                         <div className="text-center">Logged</div>
                         <div className="text-center">Assigned</div>
