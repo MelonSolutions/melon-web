@@ -322,7 +322,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
       <div className="px-4 sm:px-6 py-4">
         <div 
           className="flex lg:grid gap-4 items-center justify-between"
-          style={{ gridTemplateColumns: 'minmax(200px, 2fr) 120px 100px 100px 100px 100px 60px' }}
+          style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
         >
           <div className="flex-1 lg:col-span-1 min-w-0">
             <Link href={`/kyc/${userId}`} className="block group">
@@ -336,6 +336,10 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                 <div className="text-[11px] text-gray-500 truncate">{user.email}</div>
               </div>
             </Link>
+          </div>
+
+          <div className="hidden lg:block text-[11px] text-gray-600 font-medium truncate" title={user.organization?.name}>
+            {user.organization?.name || '-'}
           </div>
 
           <div className="lg:col-span-1 flex flex-col items-start gap-1">
