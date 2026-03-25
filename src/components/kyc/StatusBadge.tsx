@@ -4,9 +4,10 @@ import { Badge } from '@/components/ui/Badge';
 interface StatusBadgeProps {
   status: VerificationStatus;
   size?: 'sm' | 'md';
+  className?: string;
 }
 
-export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
+export function StatusBadge({ status, size = 'md', className }: StatusBadgeProps) {
   const displayName = getStatusDisplayName(status);
 
   const variantMap: Record<VerificationStatus, 'success' | 'warning' | 'info' | 'error' | 'neutral'> = {
@@ -23,6 +24,7 @@ export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
       variant={variantMap[status]} 
       size={size}
       dot
+      className={className}
     >
       {displayName}
     </Badge>

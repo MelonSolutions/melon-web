@@ -46,14 +46,14 @@ export function Pagination({
   };
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-      <div className="text-sm text-gray-500">
-        Showing <span className="font-medium text-gray-900">{startItem}</span> to{' '}
+    <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 gap-4 sm:gap-0">
+      <div className="text-sm text-gray-500 order-2 sm:order-1">
+        Showing <span className="font-medium text-gray-900">{totalItems === 0 ? 0 : startItem}</span> to{' '}
         <span className="font-medium text-gray-900">{endItem}</span> of{' '}
         <span className="font-medium text-gray-900">{totalItems}</span> results
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 order-1 sm:order-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPreviousPage}
@@ -62,7 +62,8 @@ export function Pagination({
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-1">
+        {/* Desktop View: Full page numbers */}
+        <div className="hidden sm:flex items-center gap-1">
           {getPageNumbers().map((page, index) =>
             page === '...' ? (
               <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-400">
@@ -74,14 +75,19 @@ export function Pagination({
                 onClick={() => onPageChange(page as number)}
                 className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   currentPage === page
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 {page}
               </button>
             )
           )}
+        </div>
+
+        {/* Mobile View: Page X of Y */}
+        <div className="flex sm:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg">
+          Page {currentPage} of {totalPages}
         </div>
 
         <button

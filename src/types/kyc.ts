@@ -99,6 +99,21 @@ export interface KYCUser {
     _id: string;
     name: string;
   };
+  requestMetadata?: {
+    ipAddress?: string;
+    userAgent?: string;
+    device?: string;
+    browser?: string;
+    os?: string;
+    location?: {
+      city?: string;
+      region?: string;
+      country?: string;
+      isp?: string;
+      latitude?: number;
+      longitude?: number;
+    };
+  };
   isDeleted?: boolean;
   submittedAt: string;
   updatedAt: string;
