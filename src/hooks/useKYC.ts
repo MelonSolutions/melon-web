@@ -69,7 +69,7 @@ export function useKYCUsers(
     if (options?.skip && !isSubsequent) return null;
     
     try {
-      setLoading(true);
+      if (!isSubsequent) setLoading(true);
       setError(null);
       
       const [response, statsData] = await Promise.all([
@@ -87,7 +87,7 @@ export function useKYCUsers(
       console.error('Error fetching KYC data:', err);
       return null;
     } finally {
-      if (!isSubsequent) setLoading(false);
+      setLoading(false);
     }
   }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId, currentPage, options?.skip]);
 

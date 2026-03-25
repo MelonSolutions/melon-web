@@ -323,27 +323,28 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link href="/kyc" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <Link href="/kyc" className="p-2 hover:bg-gray-100 rounded-lg transition-colors shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold text-gray-900 truncate">
                 {user.firstName} {user.lastName}
               </h1>
               <p className="text-sm text-gray-500">Verification Details</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
             {user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
               <Button
                 variant="danger"
                 size="sm"
                 icon={<ShieldAlert className="w-4 h-4" />}
                 onClick={() => openModal(<RejectKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'lg' })}
+                className="flex-1 sm:flex-none"
               >
                 Reject Request
               </Button>
@@ -353,10 +354,11 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               size="sm"
               icon={<Edit2 className="w-4 h-4" />}
               onClick={() => openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'xl' })}
+              className="flex-1 sm:flex-none"
             >
               Edit Request
             </Button>
-            <StatusBadge status={user.status} size="md" />
+            <StatusBadge status={user.status} size="md" className="shrink-0" />
           </div>
         </div>
       </div>
@@ -507,9 +509,9 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 {address.status === 'VERIFICATION_SUBMITTED' && address.verificationData && (
                   <Card className="border-2 border-blue-200 bg-blue-50">
                     <CardHeader>
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                         <div className="flex items-start gap-3 flex-1">
-                          <div className="p-2 bg-blue-100 rounded-lg">
+                          <div className="p-2 bg-blue-100 rounded-lg shrink-0">
                             <AlertTriangle className="w-5 h-5 text-blue-600" />
                           </div>
                           <div>
@@ -521,13 +523,14 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                           <Button
                             variant="success"
                             size="sm"
                             onClick={() => handleVerificationApproval(index)}
                             disabled={updating}
                             icon={<CheckCircle className="w-4 h-4" />}
+                            className="flex-1 sm:flex-none"
                           >
                             Approve
                           </Button>
@@ -537,6 +540,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             onClick={() => setRejectingIndex(index)}
                             disabled={updating}
                             icon={<XCircle className="w-4 h-4" />}
+                            className="flex-1 sm:flex-none"
                           >
                             Reject
                           </Button>
@@ -617,7 +621,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
                                   Verification Photos ({address.verificationData.verificationPhotos.length})
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   {address.verificationData.verificationPhotos.map((photo: any, i: number) => {
                                     let url = '';
                                     let tag = null;
@@ -813,6 +817,74 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {user.requestMetadata && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Submission Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                        IP Address
+                      </div>
+                      <div className="text-sm text-gray-900 font-mono">
+                        {user.requestMetadata.ipAddress || 'Unknown'}
+                      </div>
+                    </div>
+
+                    {user.requestMetadata.location ? (
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                          Approx. Location
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {user.requestMetadata.location.city},{' '}
+                          {user.requestMetadata.location.country}
+                        </div>
+                        {user.requestMetadata.location.isp && (
+                          <div className="text-[10px] text-gray-400 mt-0.5">
+                            {user.requestMetadata.location.isp}
+                          </div>
+                        )}
+                      </div>
+                    ) : user.requestMetadata.ipAddress ? (
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                          Approx. Location
+                        </div>
+                        <div className="text-sm text-gray-400 italic">
+                          {user.requestMetadata.ipAddress.includes('127.0.0.1') || user.requestMetadata.ipAddress === '::1'
+                            ? 'Local Network (No Geo Data)'
+                            : 'Location Not Available'}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="pt-3 border-t border-gray-100">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                        Device & Platform
+                      </div>
+                      <div className="text-sm text-gray-900 flex items-center gap-2">
+                        <span>
+                          {user.requestMetadata.device || 'Unknown Device'}
+                        </span>
+                        <span className="text-gray-300">•</span>
+                        <span>
+                          {user.requestMetadata.browser || 'Unknown Browser'}
+                        </span>
+                      </div>
+                      {user.requestMetadata.os && (
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          on {user.requestMetadata.os}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

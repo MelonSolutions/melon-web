@@ -177,14 +177,14 @@ function KYCContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold text-gray-900">Address Verification</h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage address and business verification requests
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {isMelonAdmin && (
             <div className="w-48 sm:w-64 transition-all">
               <select
@@ -207,44 +207,44 @@ function KYCContent() {
               </select>
             </div>
           )}
-          <Link href="/kyc/create" prefetch={false}>
-            <Button variant="primary" icon={<Plus className="w-4 h-4" />}>
+          <Link href="/kyc/create" prefetch={false} className="w-full sm:w-auto">
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />} className="w-full sm:w-auto">
               Create New Request
             </Button>
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard
-          label="Total Requests"
+          label="Total"
           value={dashboardStats.totalUsers}
-          description="All verification requests"
+          description="All requests"
         />
         <StatCard
           label="Pending"
           value={dashboardStats.pending}
-          description="Awaiting assignment"
+          description="Unassigned"
         />
         <StatCard
           label="Assigned"
           value={dashboardStats.assigned}
-          description="Agent claimed"
+          description="Claimed"
         />
         <StatCard
           label="In Review"
           value={dashboardStats.inReview}
-          description="Being verified"
+          description="Ongoing"
         />
         <StatCard
           label="Verified"
           value={dashboardStats.verified}
-          description="Completed successfully"
+          description="Completed"
         />
         <StatCard
           label="Rejected"
           value={dashboardStats.rejected}
-          description="Failed verification"
+          description="Failed"
         />
       </div>
 
@@ -263,8 +263,9 @@ function KYCContent() {
                 onClick={refetch}
                 loading={loading}
                 icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+                className="order-1"
               >
-                Refresh
+                <span className="hidden xs:inline">Refresh</span>
               </Button>
               <Button
                 variant="secondary"
@@ -272,22 +273,24 @@ function KYCContent() {
                 onClick={handleExport}
                 loading={exporting}
                 icon={<Download className="w-4 h-4" />}
+                className="order-2"
               >
-                Export
+                <span className="hidden xs:inline">Export</span>
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setIsDailyReportModalOpen(true)}
                 icon={<FileText className="w-4 h-4" />}
+                className="order-3"
               >
-                Daily Report
+                <span className="hidden xs:inline">Daily Report</span>
               </Button>
 
-              <div className="flex items-center border border-gray-200 rounded-lg bg-white">
+              <div className="flex items-center border border-gray-200 rounded-lg bg-white order-last sm:order-4">
                 <button
                   onClick={() => setView('grid')}
-                  className={`p-2 transition-colors ${view === 'grid'
+                  className={`p-2 transition-colors border-r border-gray-100 ${view === 'grid'
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
@@ -323,11 +326,11 @@ function KYCContent() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide no-scrollbar">
                 <button
                   onClick={() => setStatusFilter('')}
-                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === ''
-                    ? 'bg-gray-900 text-white border-gray-900'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === ''
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
@@ -335,8 +338,8 @@ function KYCContent() {
                 </button>
                 <button
                   onClick={() => setStatusFilter('PENDING')}
-                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'PENDING'
-                    ? 'bg-gray-900 text-white border-gray-900'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'PENDING'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
@@ -344,8 +347,8 @@ function KYCContent() {
                 </button>
                 <button
                   onClick={() => setStatusFilter('ASSIGNED')}
-                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'ASSIGNED'
-                    ? 'bg-gray-900 text-white border-gray-900'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'ASSIGNED'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
@@ -353,8 +356,8 @@ function KYCContent() {
                 </button>
                 <button
                   onClick={() => setStatusFilter('IN_REVIEW')}
-                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'IN_REVIEW'
-                    ? 'bg-gray-900 text-white border-gray-900'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'IN_REVIEW'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
@@ -362,8 +365,8 @@ function KYCContent() {
                 </button>
                 <button
                   onClick={() => setStatusFilter('VERIFICATION_SUBMITTED')}
-                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'VERIFICATION_SUBMITTED'
-                    ? 'bg-gray-900 text-white border-gray-900'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'VERIFICATION_SUBMITTED'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
@@ -371,8 +374,8 @@ function KYCContent() {
                 </button>
                 <button
                   onClick={() => setStatusFilter('VERIFIED')}
-                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'VERIFIED'
-                    ? 'bg-gray-900 text-white border-gray-900'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'VERIFIED'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >
@@ -380,8 +383,8 @@ function KYCContent() {
                 </button>
                 <button
                   onClick={() => setStatusFilter('REJECTED')}
-                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-colors border ${statusFilter === 'REJECTED'
-                    ? 'bg-gray-900 text-white border-gray-900'
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'REJECTED'
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                     }`}
                 >

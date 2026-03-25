@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert } from 'lucide-react';
+import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert, Building2, Clock, User } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { KYCUser } from '@/types/kyc';
 import { deleteKYCUser, downloadKYCReport, ApiError } from '@/lib/api/kyc';
@@ -279,7 +279,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                 {user.rejectionNote && <p className="text-[10px] text-error/70 mt-1 line-clamp-2">{user.rejectionNote}</p>}
               </div>
             )}
-            
+
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               <div className="flex flex-col">
                 <span className="text-gray-400">Logged</span>
@@ -321,28 +321,127 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
     <div className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 relative">
       <div className="px-4 sm:px-6 py-4">
         <div 
-          className="flex lg:grid gap-4 items-center justify-between"
+          className="flex lg:grid gap-4 items-center justify-between lg:justify-start"
           style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
         >
+          {/* Main Content Area - Column 1 on Desktop */}
           <div className="flex-1 lg:col-span-1 min-w-0">
             <Link href={`/kyc/${userId}`} className="block group">
               <div className="font-semibold text-gray-900 group-hover:text-primary transition-colors truncate text-sm">
                 {user.firstName} {user.lastName}
               </div>
               <div className="flex flex-col gap-0.5 mt-0.5">
-                <span className="text-[10px] font-bold text-primary uppercase whitespace-nowrap">
-                  {user.loanId || 'N/A'} {user.loanType && `• ${user.loanType.toLowerCase()}`}
+                <span className="text-[10px] font-bold text-primary uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                  {user.loanId || 'N/A'} {user.loanType && `• ${(user.loanType as string).toLowerCase()}`}
                 </span>
-                <div className="text-[11px] text-gray-500 truncate">{user.email}</div>
+                <div className="text-[11px] text-gray-500 truncate max-w-full">{user.email}</div>
+                
+                {user.organization?.name && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium lg:hidden mt-1.5">
+                    <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
+                    <span className="truncate">Source: {user.organization?.name}</span>
+                  </div>
+                )}
+
+                {/* Mobile-only timestamps */}
+                <div className="grid grid-cols-2 gap-6 mt-3 pt-2.5 border-t border-gray-100/50 lg:hidden">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-tight font-bold leading-none">Logged</span>
+                    <span className="text-[11px] text-gray-800 font-bold whitespace-nowrap">
+                      {user.submittedAt ? format(new Date(user.submittedAt as string), 'MM/dd, HH:mm') : '-'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-tight font-bold leading-none">Assigned</span>
+                    <span className="text-[11px] text-gray-800 font-bold whitespace-nowrap">
+                      {user.assignedAt ? format(new Date(user.assignedAt as string), 'MM/dd, HH:mm') : 'None'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </Link>
           </div>
 
-          <div className="hidden lg:block text-[11px] text-gray-600 font-medium truncate" title={user.organization?.name}>
+          {/* Mobile Actions/Status (Hidden on Desktop) */}
+          <div className="lg:hidden flex flex-col items-end gap-3 shrink-0">
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                disabled={loading || downloading}
+              >
+                {loading || downloading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                ) : (
+                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+              {showDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={onRefetch} />, { size: 'xl' });
+                          setShowDropdown(false);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <Save className="w-4 h-4 text-blue-600" />
+                        Edit Request
+                      </button>
+                      <button
+                        onClick={() => (window.location.href = `/kyc/${userId}`)}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => (window.location.href = `/kyc/${userId}/documents`)}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Documents
+                      </button>
+                      <button
+                        onClick={handleDownloadReport}
+                        disabled={downloading}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left disabled:opacity-50"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download Report
+                      </button>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <button
+                        onClick={handleDelete}
+                        disabled={loading || !canDelete}
+                        className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete {!canDelete && '(Pending Only)'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <StatusBadge status={user.status} size="sm" />
+            {user.status === 'REJECTED' && user.rejectionReason && (
+              <span className="text-[9px] text-error font-bold leading-tight line-clamp-1 max-w-[80px]" title={user.rejectionReason}>
+                {user.rejectionReason}
+              </span>
+            )}
+          </div>
+
+          {/* Column 2: Source (Desktop-only) */}
+          <div className="hidden lg:block text-[11px] text-gray-600 font-medium truncate" title={user.organization?.name || ''}>
             {user.organization?.name || '-'}
           </div>
 
-          <div className="lg:col-span-1 flex flex-col items-start gap-1">
+          {/* Column 3: Status (Desktop-only) */}
+          <div className="hidden lg:flex flex-col items-start gap-1 shrink-0">
             <StatusBadge status={user.status} size="sm" />
             {user.status === 'REJECTED' && user.rejectionReason && (
               <span className="text-[10px] text-error font-semibold leading-tight line-clamp-1" title={user.rejectionReason}>
@@ -351,45 +450,45 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
             )}
           </div>
 
+          {/* Column 4: Logged (Desktop-only) */}
           <div className="hidden lg:block text-center">
             <div className="text-[11px] text-gray-900 font-medium">
-              {user.submittedAt ? format(new Date(user.submittedAt), 'MM/dd, HH:mm') : '-'}
+              {user.submittedAt ? format(new Date(user.submittedAt as string), 'MM/dd, HH:mm') : '-'}
             </div>
           </div>
 
+          {/* Column 5: Assigned (Desktop-only) */}
           <div className="hidden lg:block text-center">
             <div className={`text-[11px] font-medium ${user.assignedAt ? 'text-gray-900' : 'text-gray-300 italic'}`}>
-              {user.assignedAt ? format(new Date(user.assignedAt), 'MM/dd, HH:mm') : 'None'}
+              {user.assignedAt ? format(new Date(user.assignedAt as string), 'MM/dd, HH:mm') : 'None'}
             </div>
           </div>
 
+          {/* Column 6: Submitted (Desktop-only) */}
           <div className="hidden lg:block text-center">
             <div className={`text-[11px] font-medium ${user.verifiedAt ? 'text-gray-900' : 'text-gray-300 italic'}`}>
-              {user.verifiedAt ? format(new Date(user.verifiedAt), 'MM/dd, HH:mm') : 'Pending'}
+              {user.verifiedAt ? format(new Date(user.verifiedAt as string), 'MM/dd, HH:mm') : 'Pending'}
             </div>
           </div>
 
+          {/* Column 7: Decision (Desktop-only) */}
           <div className="hidden lg:block text-center">
             <div className={`text-[11px] font-medium ${(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate ? 'text-gray-900' : 'text-gray-300 italic'}`}>
-              {(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate 
-                ? format(new Date(user.verificationDate), 'MM/dd, HH:mm') 
+              {(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate
+                ? format(new Date(user.verificationDate as string), 'MM/dd, HH:mm')
                 : 'Pending'}
             </div>
           </div>
 
-          <div className="flex justify-end relative">
+          {/* Column 8: Actions (Desktop-only) */}
+          <div className="hidden lg:flex justify-end relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
               disabled={loading || downloading}
             >
-              {loading || downloading ? (
-                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-              ) : (
-                <MoreHorizontal className="w-4 h-4 text-gray-400" />
-              )}
+              <MoreHorizontal className="w-4 h-4 text-gray-400" />
             </button>
-
             {showDropdown && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
@@ -397,14 +496,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                   <div className="py-1">
                     <button
                       onClick={() => {
-                        openModal(
-                          <EditKYCModal
-                            user={user}
-                            onClose={closeModal}
-                            onSuccess={onRefetch}
-                          />,
-                          { size: 'xl' }
-                        );
+                        openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={onRefetch} />, { size: 'xl' });
                         setShowDropdown(false);
                       }}
                       className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -412,6 +504,18 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                       <Save className="w-4 h-4 text-blue-600" />
                       Edit Request
                     </button>
+                    {isMelonAdmin && user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
+                      <button
+                        onClick={() => {
+                          openModal(<RejectKYCModal user={user} onClose={closeModal} onSuccess={onRefetch} />, { size: 'lg' });
+                          setShowDropdown(false);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-error hover:bg-error-light/10 text-left"
+                      >
+                        <ShieldAlert className="w-4 h-4 text-error" />
+                        Reject Request
+                      </button>
+                    )}
                     <button
                       onClick={() => (window.location.href = `/kyc/${userId}`)}
                       className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
@@ -438,8 +542,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                     <button
                       onClick={handleDelete}
                       disabled={loading || !canDelete}
-                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'
-                        }`}
+                      className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'}`}
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete {!canDelete && '(Pending Only)'}
