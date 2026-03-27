@@ -257,30 +257,44 @@ function KYCContent() {
       {/* Insights & Analysis Section */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all">
         <div 
-          className="flex items-center justify-between px-6 py-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 bg-gradient-to-r from-white to-gray-50/50"
-          onClick={() => setShowAnalysis(!showAnalysis)}
+          className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-white to-gray-50/50 gap-4"
         >
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-indigo-600" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-5 h-5 text-indigo-600" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Insights & Analysis</h2>
-              <p className="text-xs text-gray-500">Visualizing {organizationId ? 'organization' : 'platform'} performance & trends</p>
+            <div onClick={() => setShowAnalysis(!showAnalysis)} className="cursor-pointer min-w-0">
+              <h2 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-widest truncate">Insights & Analysis</h2>
+              <p className="text-[10px] sm:text-xs text-gray-500 truncate">Visualizing {organizationId ? 'organization' : 'platform'} performance & trends</p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-400 hover:text-gray-600"
-          >
-            {showAnalysis ? 'Hide' : 'Show'} details
-          </Button>
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
+            <Link href="/map-view?layer=kyc" prefetch={false}>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 h-9"
+                icon={<MapPin className="w-4 h-4" />}
+              >
+                <span className="hidden xs:inline">Mapping Spread</span>
+                <span className="xs:hidden">Map</span>
+              </Button>
+            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-400 hover:text-gray-600 h-9"
+              onClick={() => setShowAnalysis(!showAnalysis)}
+            >
+              <span className="hidden xs:inline">{showAnalysis ? 'Hide' : 'Show'} details</span>
+              <span className="xs:hidden">{showAnalysis ? 'Hide' : 'Show'}</span>
+            </Button>
+          </div>
         </div>
         
         {showAnalysis && (
           <div className="p-6">
-            <div className={`grid grid-cols-1 ${isMelonAdmin ? 'xl:grid-cols-3' : 'lg:grid-cols-2'} gap-8`}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -290,18 +304,6 @@ function KYCContent() {
                 </div>
                 <VerificationTrends data={dashboardStats.timeSeries || []} />
               </div>
-
-              {isMelonAdmin && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <LayoutGrid className="w-4 h-4 text-indigo-500" />
-                      Organization Breakdown
-                    </h3>
-                  </div>
-                  <OrgBreakdown data={dashboardStats.orgBreakdown || []} />
-                </div>
-              )}
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -334,7 +336,7 @@ function KYCContent() {
                 icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
                 className="order-1"
               >
-                <span className="hidden xs:inline">Refresh</span>
+                <span>Refresh</span>
               </Button>
               <Button
                 variant="secondary"
@@ -344,7 +346,7 @@ function KYCContent() {
                 icon={<Download className="w-4 h-4" />}
                 className="order-2"
               >
-                <span className="hidden xs:inline">Export</span>
+                <span>Export</span>
               </Button>
               <Button
                 variant="secondary"
@@ -353,29 +355,31 @@ function KYCContent() {
                 icon={<FileText className="w-4 h-4" />}
                 className="order-3"
               >
-                <span className="hidden xs:inline">Daily Report</span>
+                <span>Daily Report</span>
               </Button>
 
               <div className="flex items-center border border-gray-200 rounded-lg bg-white order-last sm:order-4">
                 <button
                   onClick={() => setView('grid')}
-                  className={`p-2 transition-colors border-r border-gray-100 ${view === 'grid'
+                  className={`px-3 py-2 transition-colors border-r border-gray-100 flex items-center gap-2 ${view === 'grid'
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
                   title="Grid view"
                 >
                   <Grid3x3 className="w-4 h-4" />
+                  <span className="text-xs font-medium">Grid</span>
                 </button>
                 <button
                   onClick={() => setView('list')}
-                  className={`p-2 transition-colors ${view === 'list'
+                  className={`px-3 py-2 transition-colors border-gray-100 flex items-center gap-2 ${view === 'list'
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-500 hover:text-gray-700'
                     }`}
                   title="List view"
                 >
                   <List className="w-4 h-4" />
+                  <span className="text-xs font-medium">List</span>
                 </button>
               </div>
             </div>

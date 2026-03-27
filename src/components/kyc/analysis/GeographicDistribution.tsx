@@ -34,22 +34,22 @@ export const GeographicDistribution: React.FC<GeographicDistributionProps> = ({ 
   const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899'];
 
   return (
-    <div className="w-full h-80">
+    <div className="w-full h-64 sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           layout="vertical"
           data={data}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" horizontal={true} stroke="#F3F4F6" vertical={false} />
           <XAxis type="number" hide />
           <YAxis 
             dataKey="state" 
             type="category" 
-            width={100}
+            width={70}
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 12, fill: '#374151', fontWeight: 500 }}
+            tick={{ fontSize: 10, fill: '#374151', fontWeight: 500 }}
           />
           <Tooltip 
             cursor={{ fill: '#F9FAFB' }}

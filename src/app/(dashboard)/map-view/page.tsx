@@ -2,8 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
+import { getKYCDashboardStats } from '@/lib/api/kyc';
 import {
   Clock,
   Download,
@@ -37,6 +39,12 @@ const InteractiveMap = dynamic(
 );
 
 export default function MapViewPage() {
+  const searchParams = useSearchParams();
+  const kycLayerRequested = searchParams.get('layer') === 'kyc';
+  const focusId = searchParams.get('focus');
+  const focalLat = searchParams.get('lat');
+  const focalLng = searchParams.get('lng');
+  
   const [selectedProject, setSelectedProject] = useState<ProjectLocation | null>(null);
   const [sidebarView, setSidebarView] = useState<'analytics' | 'details'>('analytics');
   const [timeRange, setTimeRange] = useState<[string, string]>(['2020-01-01', '2024-12-31']);
@@ -47,6 +55,72 @@ export default function MapViewPage() {
   const [importedDatasets, setImportedDatasets] = useState<any[]>([]);
 
   const [layers, setLayers] = useState<Layer[]>([]);
+  const kycLoadedRef = useRef(false);
+
+  // Effect to load KYC data if requested
+  useEffect(() => {
+    if (kycLayerRequested && !kycLoadedRef.current) {
+      const fetchKYCData = async () => {
+        try {
+          const stats = await getKYCDashboardStats();
+          if (stats.locations && stats.locations.length > 0) {
+            kycLoadedRef.current = true;
+            const kycPoints = stats.locations.map((loc: any, index: number) => ({
+              id: loc._id || `kyc-${index}`,
+              title: loc.customer || 'KYC Request',
+              description: `Status: ${loc.status}`,
+              lat: loc.lat,
+              lng: loc.lng,
+              sector: 'Finance' as any, // Use Finance for KYC
+              status: (loc.status === 'VERIFIED' ? 'active' : 'inactive') as any,
+              kycStatus: loc.status, // Custom field for coloring
+              impactScore: 100,
+              beneficiaries: 1,
+              coverage: 0,
+              activeAgents: 0
+            }));
+
+            const kycLayer: Layer = {
+              id: 'kyc-mapping-spread',
+              name: 'KYC Mapping Spread',
+              visible: true,
+              type: 'points',
+              count: kycPoints.length,
+              color: '#10b981', // Emerald
+              opacity: 80,
+              data: kycPoints,
+              description: 'Real-time spread of KYC verification activities',
+              createdAt: new Date()
+            };
+
+            setLayers(prev => {
+              // Avoid duplicates
+              if (prev.find(l => l.id === kycLayer.id)) return prev;
+              return [kycLayer, ...prev];
+            });
+
+            addToast({
+              type: 'success',
+              title: 'KYC Layer Loaded',
+              message: `Showing spread of ${kycPoints.length} recent verification activities.`,
+            });
+
+            // If a focus ID was provided, select it
+            if (focusId) {
+              const project = kycPoints.find((p: any) => p.id === focusId);
+              if (project) {
+                setSelectedProject(project);
+                setSidebarView('details');
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch KYC map data:', error);
+        }
+      };
+      fetchKYCData();
+    }
+  }, [kycLayerRequested]);
 
   const [filters, setFilters] = useState<MapFilters>({
     dateRange: timeRange,
@@ -317,6 +391,7 @@ export default function MapViewPage() {
               showHeatmap={showHeatmap}
               onLoadSampleData={loadSampleData}
               onOpenImportModal={() => setShowImportModal(true)}
+              focalPoint={focalLat && focalLng ? { lat: parseFloat(focalLat), lng: parseFloat(focalLng) } : undefined}
             />
           )}
 

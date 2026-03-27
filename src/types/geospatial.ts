@@ -8,7 +8,8 @@ export interface ProjectLocation extends Coordinates {
   id: string;
   title: string;
   sector: 'Health' | 'Education' | 'Agriculture' | 'Energy' | 'Finance' | 'Infrastructure';
-  status: 'active' | 'completed' | 'draft' | 'paused';
+  status: 'active' | 'completed' | 'draft' | 'paused' | 'inactive';
+  kycStatus?: string;
   impactScore: number;
   beneficiaries: number;
   activeAgents: number;

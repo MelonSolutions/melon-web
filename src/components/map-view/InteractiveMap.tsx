@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, useMap, Popup, Tooltip } from 'react-leaflet';
 import { LatLngBounds, Icon, DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ProjectLocation } from '@/types/geospatial';
@@ -18,14 +18,18 @@ Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-interface InteractiveMapProps {
-  projects: ProjectLocation[];
-  selectedProject: ProjectLocation | null;
-  onProjectSelect: (project: ProjectLocation) => void;
-  showCoverage: boolean;
-  showHeatmap: boolean;
-  onLoadSampleData?: () => void;
-  onOpenImportModal?: () => void;
+function FocalCenter({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (map && lat && lng && !focusedRef.current) {
+      focusedRef.current = true;
+      map.setView([lat, lng], 14, { animate: true });
+    }
+  }, [map, lat, lng]);
+
+  return null;
 }
 
 function HeatmapLayer({ projects, show }: { projects: ProjectLocation[]; show: boolean }) {
@@ -130,7 +134,6 @@ function HeatmapLayer({ projects, show }: { projects: ProjectLocation[]; show: b
   return null;
 }
 
-// Enhanced Project Marker component
 function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
   project: ProjectLocation;
   isSelected: boolean;
@@ -155,15 +158,25 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
     }
   };
 
-  const color = getSectorColor(project.sector);
+  let color = getSectorColor(project.sector);
+  if (project.kycStatus === 'VERIFIED') {
+    color = '#10b981';
+  } else if (project.kycStatus === 'REJECTED') {
+    color = '#ef4444';
+  }
+
+  const size = isSelected ? 34 : (project.id.startsWith('kyc') ? 20 : 26);
+  const iconSize: [number, number] = [size, size];
+  const iconAnchor: [number, number] = [size / 2, size / 2];
+
   const icon = getSectorIcon(project.sector);
   
   const customIcon = new DivIcon({
     html: `
       <div class="relative">
         <div style="
-          width: ${isSelected ? '40px' : '32px'};
-          height: ${isSelected ? '40px' : '32px'};
+          width: ${size}px;
+          height: ${size}px;
           background: ${color};
           border: ${isSelected ? '3px' : '2px'} solid white;
           border-radius: 50%;
@@ -182,8 +195,8 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
             position: absolute;
             top: -2px;
             right: -2px;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             background: #10b981;
             border: 2px solid white;
             border-radius: 50%;
@@ -200,8 +213,8 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
       </style>
     `,
     className: 'custom-marker',
-    iconSize: [isSelected ? 40 : 32, isSelected ? 40 : 32],
-    iconAnchor: [isSelected ? 20 : 16, isSelected ? 20 : 16],
+    iconSize: iconSize,
+    iconAnchor: iconAnchor,
   });
 
   return (
@@ -213,6 +226,42 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
           click: () => onSelect(project),
         }}
       >
+        <Tooltip direction="top" offset={[0, -10]} opacity={1}>
+          <div className="px-1 py-0.5 font-medium text-gray-900 leading-none">
+            {project.title}
+          </div>
+        </Tooltip>
+        
+        <Popup className="kyc-popup" maxWidth={300}>
+          <div className="p-3 min-w-[220px] bg-white rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-gray-900 pr-4">{project.title}</h3>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                project.kycStatus === 'VERIFIED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {project.kycStatus || project.status}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-500">
+              <span className="font-medium px-1.5 py-0.5 bg-gray-100 rounded tracking-wider">{project.sector}</span>
+              <span>•</span>
+              <span className="italic">{project.id.startsWith('kyc') ? 'Address Verification' : 'Geospatial Project'}</span>
+            </div>
+            <p className="text-xs text-gray-600 mb-4 leading-relaxed line-clamp-2">
+              {project.description}
+            </p>
+            <div className="grid grid-cols-2 gap-3 py-2 border-t border-gray-100">
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Impact</span>
+                <span className="text-sm font-bold text-indigo-600">{project.impactScore}%</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Volume</span>
+                <span className="text-sm font-bold text-gray-900">{project.beneficiaries.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </Popup>
       </Marker>
       
       {showCoverage && (
@@ -233,44 +282,42 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
   );
 }
 
-function MapBounds({ projects }: { projects: ProjectLocation[] }) {
+function MapBounds({ projects, hasSelection }: { projects: ProjectLocation[]; hasSelection: boolean }) {
   const map = useMap();
+  const lastCountRef = useRef(0);
 
   useEffect(() => {
     if (!map) return;
 
     try {
       if (projects.length > 0) {
-        const validProjects = projects.filter(p => 
-          p.lat && p.lng && 
-          !isNaN(p.lat) && !isNaN(p.lng) &&
-          p.lat >= -90 && p.lat <= 90 &&
-          p.lng >= -180 && p.lng <= 180
-        );
-
-        if (validProjects.length > 0) {
-          const bounds = new LatLngBounds(
-            validProjects.map(project => [project.lat, project.lng])
+        if (!hasSelection && projects.length !== lastCountRef.current) {
+          lastCountRef.current = projects.length;
+          const validProjects = projects.filter(p => 
+            p.lat && p.lng && 
+            !isNaN(p.lat) && !isNaN(p.lng) &&
+            p.lat >= -90 && p.lat <= 90 &&
+            p.lng >= -180 && p.lng <= 180
           );
-          map.fitBounds(bounds, { 
-            padding: [50, 50],
-            maxZoom: 10 
-          });
-        } else {
-          map.setView([9.0820, 8.6753], 6);
+
+          if (validProjects.length > 0) {
+            const bounds = new LatLngBounds(
+              validProjects.map(project => [project.lat, project.lng])
+            );
+            map.fitBounds(bounds, { 
+              padding: [50, 50],
+              maxZoom: 10 
+            });
+          }
         }
-      } else {
+      } else if (lastCountRef.current !== 0) {
+        lastCountRef.current = 0;
         map.setView([9.0820, 8.6753], 6);
       }
     } catch (error) {
       console.warn('Error setting map bounds:', error);
-      try {
-        map.setView([9.0820, 8.6753], 6);
-      } catch (fallbackError) {
-        console.error('Error setting fallback map view:', fallbackError);
-      }
     }
-  }, [projects, map]);
+  }, [projects, map, hasSelection]);
 
   return null;
 }
@@ -278,114 +325,82 @@ function MapBounds({ projects }: { projects: ProjectLocation[] }) {
 function CustomZoomControls() {
   const map = useMap();
 
-  const handleZoomIn = () => {
-    try {
-      if (map) map.zoomIn();
-    } catch (error) {
-      console.warn('Error zooming in:', error);
-    }
-  };
-
-  const handleZoomOut = () => {
-    try {
-      if (map) map.zoomOut();
-    } catch (error) {
-      console.warn('Error zooming out:', error);
-    }
-  };
-
-  const handleZoomToFit = () => {
-    try {
-      if (map) map.setView([9.0820, 8.6753], 6);
-    } catch (error) {
-      console.warn('Error resetting view:', error);
-    }
-  };
+  const handleZoomIn = () => { map?.zoomIn(); };
+  const handleZoomOut = () => { map?.zoomOut(); };
+  const handleZoomToFit = () => { map?.setView([9.0820, 8.6753], 6); };
 
   if (!map) return null;
 
   return (
     <div className="absolute top-20 left-4 z-[1000] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-      <button 
-        className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
-        onClick={handleZoomIn}
-        title="Zoom in"
-      >
-        +
-      </button>
-      <button 
-        className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors"
-        onClick={handleZoomOut}
-        title="Zoom out"
-      >
-        −
-      </button>
-      <button 
-        className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 flex items-center justify-center text-xs font-medium transition-colors"
-        onClick={handleZoomToFit}
-        title="Reset view"
-      >
-        <MapPin className="w-4 h-4" />
-      </button>
+      <button className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors" onClick={handleZoomIn} title="Zoom in">+</button>
+      <button className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors" onClick={handleZoomOut} title="Zoom out">−</button>
+      <button className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 flex items-center justify-center text-xs font-medium transition-colors" onClick={handleZoomToFit} title="Reset view"><MapPin className="w-4 h-4" /></button>
     </div>
   );
 }
 
+export interface InteractiveMapProps {
+  projects: ProjectLocation[];
+  onProjectSelect: (project: ProjectLocation) => void;
+  selectedProject: ProjectLocation | null;
+  showCoverage: boolean;
+  showHeatmap: boolean;
+  basemap?: 'streets' | 'satellite' | 'terrain' | 'light' | 'dark';
+  focalPoint?: { lat: number; lng: number };
+  onLoadSampleData?: () => void;
+  onOpenImportModal?: () => void;
+}
+
 export default function InteractiveMap({
   projects,
-  selectedProject,
   onProjectSelect,
+  selectedProject,
   showCoverage,
   showHeatmap,
+  basemap = 'streets',
+  focalPoint,
   onLoadSampleData,
   onOpenImportModal
 }: InteractiveMapProps) {
   const mapRef = useRef<any>(null);
-  const [currentTerrain, setCurrentTerrain] = useState('streets');
-  
-  // Get current tile layer configuration
+  const [currentTerrain, setCurrentTerrain] = useState<'streets' | 'satellite' | 'terrain' | 'light' | 'dark'>(basemap);
+
+  useEffect(() => { setCurrentTerrain(basemap); }, [basemap]);
+
+  const handleTerrainChange = (terrain: string) => {
+    setCurrentTerrain(terrain as any);
+  };
+
   const currentTileLayer = Object.values(MAP_TILE_LAYERS).find(
     layer => layer.id === currentTerrain
   ) || MAP_TILE_LAYERS.STREETS;
 
-  // Default center (Nigeria)
-  const defaultCenter: [number, number] = [9.0820, 8.6753];
-  const defaultZoom = 6;
-
   const validProjects = projects.filter(project => 
-    project && 
-    project.lat && 
-    project.lng && 
-    !isNaN(project.lat) && 
-    !isNaN(project.lng) &&
-    project.lat >= -90 && 
-    project.lat <= 90 &&
-    project.lng >= -180 && 
-    project.lng <= 180
+    project && project.lat && project.lng && !isNaN(project.lat) && !isNaN(project.lng) &&
+    project.lat >= -90 && project.lat <= 90 && project.lng >= -180 && project.lng <= 180
   );
 
   return (
     <div className="w-full h-full relative">
       <MapContainer
         ref={mapRef}
-        center={defaultCenter}
-        zoom={defaultZoom}
+        center={[9.0820, 8.6753]}
+        zoom={6}
         className="w-full h-full z-0"
         zoomControl={false}
-        attributionControl={true}
         scrollWheelZoom={true}
-        doubleClickZoom={true}
-        touchZoom={true}
         style={{ height: '100%', width: '100%' }}
       >
-        {/* FIXED: Dynamic TileLayer that changes based on terrain selection */}
         <TileLayer
-          key={currentTerrain} // This forces re-render when terrain changes
+          key={currentTerrain}
           url={currentTileLayer.url}
           attribution={currentTileLayer.attribution}
           maxZoom={currentTileLayer.maxZoom}
           minZoom={2}
         />
+        
+        {focalPoint && <FocalCenter lat={focalPoint.lat} lng={focalPoint.lng} />}
         
         {showHeatmap && validProjects.length > 0 && (
           <HeatmapLayer projects={validProjects} show={showHeatmap} />
@@ -402,59 +417,19 @@ export default function InteractiveMap({
         ))}
 
         <CustomZoomControls />
-        <MapBounds projects={validProjects} />
+        <MapBounds projects={validProjects} hasSelection={!!selectedProject || !!focalPoint} />
       </MapContainer>
       
-      <TerrainSelector
-        currentTerrain={currentTerrain}
-        onTerrainChange={setCurrentTerrain}
-      />
+      <TerrainSelector currentTerrain={currentTerrain} onTerrainChange={handleTerrainChange} />
       
-      {/* Scale bar */}
-      <div className="absolute bottom-4 right-4 z-[1000]">
-        <div className="bg-white bg-opacity-90 px-3 py-2 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center space-x-2">
-            <div className="w-16 h-1 bg-gray-900 relative">
-              <div className="absolute -bottom-2 left-0 text-xs text-gray-600">0</div>
-              <div className="absolute -bottom-2 right-0 text-xs text-gray-600">50km</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Empty State */}
       {validProjects.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white bg-opacity-95">
           <div className="text-center max-w-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {projects.length > 0 ? 'Invalid Data Points' : 'No Data Points'}
-            </h3>
-            
-            <p className="text-sm text-gray-600 mb-6">
-              {projects.length > 0 
-                ? 'All data points have invalid coordinates. Please check your CSV format.'
-                : 'Import CSV data or load sample data to get started.'
-              }
-            </p>
-
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{projects.length > 0 ? 'Invalid Data Points' : 'No Data Points'}</h3>
+            <p className="text-sm text-gray-600 mb-6">{projects.length > 0 ? 'Invalid coordinates detected.' : 'Import CSV or load sample data.'}</p>
             <div className="flex gap-3 justify-center">
-              {onLoadSampleData && (
-                <button 
-                  onClick={onLoadSampleData}
-                  className="cursor-pointer px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
-                >
-                  Load Sample Data
-                </button>
-              )}
-              
-              {onOpenImportModal && (
-                <button 
-                  onClick={onOpenImportModal}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors"
-                >
-                  Import CSV
-                </button>
-              )}
+              {onLoadSampleData && <button onClick={onLoadSampleData} className="cursor-pointer px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">Load Sample Data</button>}
+              {onOpenImportModal && <button onClick={onOpenImportModal} className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">Import CSV</button>}
             </div>
           </div>
         </div>
