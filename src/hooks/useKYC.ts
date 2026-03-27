@@ -50,6 +50,7 @@ export function useKYCUsers(
     timeSeries: [],
     orgBreakdown: [],
     geographicBreakdown: [],
+    locations: [],
   });
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,

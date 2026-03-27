@@ -43,7 +43,7 @@ export const VerificationTrends: React.FC<VerificationTrendsProps> = ({ data }) 
   };
 
   return (
-    <div className="w-full h-80">
+    <div className="w-full h-64 sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
@@ -71,7 +71,8 @@ export const VerificationTrends: React.FC<VerificationTrendsProps> = ({ data }) 
           <YAxis 
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tick={{ fontSize: 10, fill: '#6B7280' }}
+            width={30}
           />
           <Tooltip 
             labelFormatter={formatDate}

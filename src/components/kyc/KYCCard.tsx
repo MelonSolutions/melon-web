@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert, Building2, Clock, User } from 'lucide-react';
+import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert, Building2, Clock, User, MapPin } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { KYCUser } from '@/types/kyc';
 import { deleteKYCUser, downloadKYCReport, ApiError } from '@/lib/api/kyc';
@@ -29,7 +29,9 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
-  const userId = getUserId(user);
+  const userId = user._id || user.id;
+  const userLat = user.latitude || (user.addresses && user.addresses[0]?.latitude);
+  const userLng = user.longitude || (user.addresses && user.addresses[0]?.longitude);
   const canDelete = user.status === 'PENDING';
 
   if (!userId) {
@@ -213,6 +215,16 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         Reject Request
                       </button>
                     )}
+                    {userLat && userLng && (
+                      <Link
+                        href={`/map-view?layer=kyc&focus=${userId}&lat=${userLat}&lng=${userLng}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <MapPin className="w-4 h-4 text-emerald-600" />
+                        View on Map
+                      </Link>
+                    )}
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -307,7 +319,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-50">
+            <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-100">
               <span className="text-gray-500">Addresses:</span>
               <span className="text-gray-900 font-bold">{user.addresses?.length || 1}</span>
             </div>
@@ -515,6 +527,15 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         <ShieldAlert className="w-4 h-4 text-error" />
                         Reject Request
                       </button>
+                    )}
+                    {userLat && userLng && (
+                      <Link
+                        href={`/map-view?layer=kyc&focus=${userId}&lat=${userLat}&lng=${userLng}`}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <MapPin className="w-4 h-4 text-emerald-600" />
+                        View on Map
+                      </Link>
                     )}
                     <button
                       onClick={() => (window.location.href = `/kyc/${userId}`)}

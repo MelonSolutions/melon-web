@@ -168,6 +168,12 @@ export interface KYCDashboardStats {
     count: number;
     verified: number;
   }[];
+  locations?: {
+    lat: number;
+    lng: number;
+    status: string;
+    customer: string;
+  }[];
 }
 
 export interface CreateKYCUserRequest {
