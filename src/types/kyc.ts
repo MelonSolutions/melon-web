@@ -59,6 +59,7 @@ export interface KYCUser {
   lastName: string;
   email: string;
   phone: string;
+  occupation: string;
   bvn?: string;
   nin?: string;
   passportNumber?: string;
@@ -148,6 +149,25 @@ export interface KYCDashboardStats {
   verificationSubmitted: number;
   verified: number;
   rejected: number;
+  timeSeries?: {
+    date: string;
+    pending: number;
+    verified: number;
+    rejected: number;
+    total: number;
+  }[];
+  orgBreakdown?: {
+    _id: string;
+    name: string;
+    total: number;
+    verified: number;
+    rejected: number;
+  }[];
+  geographicBreakdown?: {
+    state: string;
+    count: number;
+    verified: number;
+  }[];
 }
 
 export interface CreateKYCUserRequest {
@@ -158,6 +178,7 @@ export interface CreateKYCUserRequest {
   lastName: string;
   email?: string;
   phone: string;
+  occupation: string;
   bvn?: string;
   nin?: string;
   relogReason?: string;
@@ -180,6 +201,7 @@ export interface UpdateKYCUserRequest {
   lastName?: string;
   email?: string;
   phone?: string;
+  occupation?: string;
   loanId?: string;
   loanType?: LoanType;
   bvn?: string;

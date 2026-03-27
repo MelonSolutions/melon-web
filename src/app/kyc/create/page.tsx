@@ -35,6 +35,7 @@ interface CreateKYCFormData {
   lastName: string;
   email: string;
   phone: string;
+  occupation: string;
   bvn: string;
   nin: string;
   passportNumber: string;
@@ -133,6 +134,7 @@ export default function AddKYCUserPage() {
     lastName: '',
     email: '',
     phone: '',
+    occupation: '',
     bvn: '',
     nin: '',
     passportNumber: '',
@@ -156,6 +158,10 @@ export default function AddKYCUserPage() {
       email: {
         required: false,
         pattern: formData.email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/ : undefined
+      },
+      occupation: {
+        required: true,
+        minLength: 2,
       },
     },
     onSubmit: async () => {
@@ -261,6 +267,7 @@ export default function AddKYCUserPage() {
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
+        occupation: formData.occupation,
         bvn: formData.bvn || undefined,
         nin: formData.nin || undefined,
         passportNumber: formData.passportNumber || undefined,
@@ -488,25 +495,19 @@ export default function AddKYCUserPage() {
                   </div>
                 )}
               </div>
+            </div>
 
-              <div>
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => handlePhoneChange(formatPhoneNumber(e.target.value))}
-                  onBlur={handlePhoneBlur}
-                  error={phoneError || undefined}
-                  placeholder="+234XXXXXXXXXX"
-                  maxLength={14}
-                />
-                {!phoneError && formData.phone && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Format: +234 followed by 10 digits (e.g., +2348012345678)
-                  </p>
-                )}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <Input
+                label="Occupation or Business Type"
+                required
+                value={formData.occupation}
+                onChange={(e) => handleFieldUpdate('occupation', e.target.value)}
+                onBlur={(e) => handleFieldBlur('occupation', e.target.value)}
+                error={getFieldError('occupation')}
+                placeholder="e.g. Civil Servant, Banker, Spare Parts Dealer..."
+                helperText="Enter customer's primary occupation or business description"
+              />
 
               <Input
                 label="BVN (Optional)"

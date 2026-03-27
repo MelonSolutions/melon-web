@@ -38,6 +38,7 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
+        occupation: user.occupation,
         loanId: user.loanId,
         loanType: user.loanType,
         bvn: user.bvn,
@@ -119,6 +120,13 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
                             value={formData.lastName || ''}
                             onChange={(e) => handleInputChange('lastName', e.target.value)}
                             required
+                        />
+                        <Input
+                            label="Occupation"
+                            value={formData.occupation || ''}
+                            onChange={(e) => handleInputChange('occupation', e.target.value)}
+                            required
+                            placeholder="e.g. Banker, Trader"
                         />
                         <Input
                             label="Email Address"
