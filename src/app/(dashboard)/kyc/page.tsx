@@ -4,12 +4,15 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus } from 'lucide-react';
+import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
 import { KYCCard } from '@/components/kyc/KYCCard';
 import { DailyReportModal } from '@/components/kyc/DailyReportModal';
+import { VerificationTrends } from '@/components/kyc/analysis/VerificationTrends';
+import { OrgBreakdown } from '@/components/kyc/analysis/OrgBreakdown';
+import { GeographicDistribution } from '@/components/kyc/analysis/GeographicDistribution';
 import { exportKYCData, getKYCUsers, getOrganizations } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
@@ -52,6 +55,7 @@ function KYCContent() {
   const [exporting, setExporting] = useState(false);
   const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('list');
+  const [showAnalysis, setShowAnalysis] = useState(true);
 
   // Load saved organization selection on mount
   useEffect(() => {
@@ -215,37 +219,102 @@ function KYCContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard
-          label="Total"
-          value={dashboardStats.totalUsers}
-          description="All requests"
-        />
-        <StatCard
-          label="Pending"
-          value={dashboardStats.pending}
-          description="Unassigned"
-        />
-        <StatCard
-          label="Assigned"
-          value={dashboardStats.assigned}
-          description="Claimed"
-        />
-        <StatCard
-          label="In Review"
-          value={dashboardStats.inReview}
-          description="Ongoing"
-        />
-        <StatCard
-          label="Verified"
-          value={dashboardStats.verified}
-          description="Completed"
-        />
-        <StatCard
-          label="Rejected"
-          value={dashboardStats.rejected}
-          description="Failed"
-        />
+      <div className="flex items-center justify-between">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 flex-1">
+          <StatCard
+            label="Total"
+            value={dashboardStats.totalUsers}
+            description="All requests"
+          />
+          <StatCard
+            label="Pending"
+            value={dashboardStats.pending}
+            description="Unassigned"
+          />
+          <StatCard
+            label="Assigned"
+            value={dashboardStats.assigned}
+            description="Claimed"
+          />
+          <StatCard
+            label="In Review"
+            value={dashboardStats.inReview}
+            description="Ongoing"
+          />
+          <StatCard
+            label="Verified"
+            value={dashboardStats.verified}
+            description="Completed"
+          />
+          <StatCard
+            label="Rejected"
+            value={dashboardStats.rejected}
+            description="Failed"
+          />
+        </div>
+      </div>
+
+      {/* Insights & Analysis Section */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all">
+        <div 
+          className="flex items-center justify-between px-6 py-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 bg-gradient-to-r from-white to-gray-50/50"
+          onClick={() => setShowAnalysis(!showAnalysis)}
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Insights & Analysis</h2>
+              <p className="text-xs text-gray-500">Visualizing {organizationId ? 'organization' : 'platform'} performance & trends</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-gray-400 hover:text-gray-600"
+          >
+            {showAnalysis ? 'Hide' : 'Show'} details
+          </Button>
+        </div>
+        
+        {showAnalysis && (
+          <div className="p-6">
+            <div className={`grid grid-cols-1 ${isMelonAdmin ? 'xl:grid-cols-3' : 'lg:grid-cols-2'} gap-8`}>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                    Verification Trends (30d)
+                  </h3>
+                </div>
+                <VerificationTrends data={dashboardStats.timeSeries || []} />
+              </div>
+
+              {isMelonAdmin && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <LayoutGrid className="w-4 h-4 text-indigo-500" />
+                      Organization Breakdown
+                    </h3>
+                  </div>
+                  <OrgBreakdown data={dashboardStats.orgBreakdown || []} />
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-orange-500" />
+                    Geographic Distribution
+                  </h3>
+                </div>
+                <GeographicDistribution data={dashboardStats.geographicBreakdown || []} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {!hasUsers && !hasFilters ? (

@@ -471,6 +471,11 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   </div>
 
                   <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Occupation</div>
+                    <div className="text-sm text-gray-900">{user.occupation || <span className="text-gray-400 italic">Not provided</span>}</div>
+                  </div>
+
+                  <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Phone Number</div>
                     <div className="text-sm text-gray-900">{user.phone}</div>
                   </div>

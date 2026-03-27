@@ -47,6 +47,9 @@ export function useKYCUsers(
     verificationSubmitted: 0,
     verified: 0,
     rejected: 0,
+    timeSeries: [],
+    orgBreakdown: [],
+    geographicBreakdown: [],
   });
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
