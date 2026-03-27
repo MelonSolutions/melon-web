@@ -244,7 +244,11 @@ export default function AddKYCUserPage() {
 
     try {
       setCreating(true);
-      await handleSubmit(formData);
+      const isValid = await handleSubmit(formData);
+      if (!isValid) {
+        setCreating(false);
+        return;
+      }
 
       const hasValidAddress = formData.addresses.some(addr =>
         addr.city || addr.state || addr.streetName

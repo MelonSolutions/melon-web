@@ -39,7 +39,7 @@ export function useFormValidation({ schema, onSubmit }: UseFormValidationOptions
     }
   }, [validateSingleField]);
 
-  const handleSubmit = useCallback(async (data: any) => {
+  const handleSubmit = useCallback(async (data: any): Promise<boolean> => {
     setIsSubmitting(true);
     
     // Validate all fields
@@ -48,12 +48,13 @@ export function useFormValidation({ schema, onSubmit }: UseFormValidationOptions
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       setIsSubmitting(false);
-      return;
+      return false;
     }
 
     try {
       await onSubmit(data);
       setErrors({});
+      return true;
     } catch (error) {
       throw error;
     } finally {
