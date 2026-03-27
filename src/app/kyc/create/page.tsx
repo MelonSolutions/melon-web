@@ -72,7 +72,7 @@ const createEmptyAddress = (index: number): AddressData => ({
   notes: '',
 });
 
-const validatePhoneNumber = (phone: string): string | null => {
+const validatePhoneNumber = (phone: string): string | undefined => {
   const trimmed = phone.trim();
 
   if (!trimmed) {
@@ -93,7 +93,7 @@ const validatePhoneNumber = (phone: string): string | null => {
     return 'Phone number must be exactly 10 digits after +234';
   }
 
-  return null;
+  return undefined;
 };
 
 export default function AddKYCUserPage() {
@@ -101,7 +101,7 @@ export default function AddKYCUserPage() {
   const { user } = useAuthContext();
   const { addToast } = useToast();
   const [creating, setCreating] = useState(false);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
   const [needsRelog, setNeedsRelog] = useState<boolean>(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -217,7 +217,7 @@ export default function AddKYCUserPage() {
       const error = validatePhoneNumber(value);
       setPhoneError(error);
     } else {
-      setPhoneError(null);
+      setPhoneError(undefined);
     }
   };
 
@@ -460,6 +460,17 @@ export default function AddKYCUserPage() {
                 onBlur={(e) => handleFieldBlur('lastName', e.target.value)}
                 error={getFieldError('lastName')}
                 placeholder="Enter last name"
+              />
+
+              <Input
+                label="Phone Number"
+                required
+                value={formData.phone}
+                onChange={(e) => handlePhoneChange(formatPhoneNumber(e.target.value))}
+                onBlur={handlePhoneBlur}
+                error={phoneError}
+                placeholder="+234..."
+                helperText="Format: +234 followed by 10 digits"
               />
 
               <div className="space-y-4">
