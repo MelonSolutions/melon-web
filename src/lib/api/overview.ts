@@ -62,12 +62,13 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
     try {
       const errorData = await response.json();
-      errorMessage = errorData.message || errorMessage;
+      errorMessage = errorData.message || errorData.error || errorMessage;
       errorCode = errorData.code;
     } catch {
       errorMessage = response.statusText;
     }
 
+    console.error(`API Error [${response.status}] ${url}:`, errorMessage);
     throw new ApiError(errorMessage, response.status, errorCode);
   }
 

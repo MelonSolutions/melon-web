@@ -73,52 +73,32 @@ export function useAuth(): AuthState & AuthActions {
               isLoading: false,
             });
           } catch (error: any) {
-            // Only logout if the server explicitly says the token is invalid (401)
-            if (error instanceof AuthError && error.status === 401) {
-              console.error('Token invalid (401), logging out.');
+            console.error('Auth refresh failed:', error);
+
+            // Handle 401 explicitly
+            if (error?.status === 401 || (error instanceof AuthError && error.status === 401)) {
+              console.error('Session expired (401), logging out.');
               logout();
               return;
             }
 
-            // For timeouts or network errors, retry once
-            console.warn('Auth check failed (non-401), retrying...', error?.message);
-            try {
-              const { userData, orgData } = await fetchAuthData();
-              localStorage.setItem('userData', JSON.stringify(userData));
-              setState({
-                user: userData,
-                organization: orgData,
-                isAuthenticated: true,
-                isLoading: false,
-              });
-            } catch (retryError: any) {
-              // If retry also fails, check if it's a 401
-              if (retryError instanceof AuthError && retryError.status === 401) {
-                console.error('Token invalid on retry (401), logging out.');
-                logout();
-                return;
-              }
-
-              // Still not a 401 — fall back to cached data so user stays logged in
-              console.warn('Retry failed, falling back to cached user data.');
-              const cachedUserData = localStorage.getItem('userData');
-              if (cachedUserData) {
-                try {
-                  const parsedUser = JSON.parse(cachedUserData) as User;
-                  setState({
-                    user: parsedUser,
-                    organization: null,
-                    isAuthenticated: true,
-                    isLoading: false,
-                  });
-                } catch {
-                  // Corrupted cache — no choice but to logout
-                  logout();
-                }
-              } else {
-                // No cached data and can't reach server — logout
+            // For non-401 errors (network, 500, etc.), try to use cached data
+            const cachedUserData = localStorage.getItem('userData');
+            if (cachedUserData) {
+              try {
+                const parsedUser = JSON.parse(cachedUserData) as User;
+                setState({
+                  user: parsedUser,
+                  organization: null,
+                  isAuthenticated: true, // Optimistically keep them in
+                  isLoading: false,
+                });
+                console.warn('Using cached user data due to server error (non-401).');
+              } catch {
                 logout();
               }
+            } else {
+              logout();
             }
           }
         } else {
