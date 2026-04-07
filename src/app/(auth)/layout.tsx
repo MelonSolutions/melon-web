@@ -21,7 +21,7 @@ export default function AuthLayout({
         </div>
       </div>
 
-      <div 
+      <div
         className="hidden lg:flex lg:w-1/2 relative bg-cover bg-center"
         style={{
           backgroundImage: 'url(/images/signup.jpg)',
@@ -45,7 +45,7 @@ export default function AuthLayout({
             <h1 className="text-4xl text-[#FFFFFF] font-semibold mb-10 leading-tight">
               Transform Data into Measurable Impact
             </h1>
-            
+
             <DynamicTestimonials />
           </div>
 
@@ -59,35 +59,35 @@ export default function AuthLayout({
                 alt="Remote Gravity"
                 width={120}
                 height={40}
-                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                className="h-8 w-auto object-contain transition-all duration-300"
               />
               <Image
                 src="/images/leading-clients/Sycamore-3.png"
                 alt="Sycamore"
                 width={120}
                 height={40}
-                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                className="h-8 w-auto object-contain transition-all duration-300"
               />
               <Image
                 src="/images/leading-clients/images-13.jpeg"
                 alt="Client 3"
                 width={120}
                 height={40}
-                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                className="h-8 w-auto object-contain transition-all duration-300"
               />
               <Image
                 src="/images/leading-clients/images-23.png"
                 alt="Client 4"
                 width={120}
                 height={40}
-                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                className="h-8 w-auto object-contain transition-all duration-300"
               />
               <Image
                 src="/images/leading-clients/images-31.png"
                 alt="Client 5"
                 width={120}
                 height={40}
-                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                className="h-8 w-auto object-contain transition-all duration-300"
               />
             </div>
           </div>
