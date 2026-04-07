@@ -1,6 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import Image from 'next/image';
+import { DynamicTestimonials } from '@/components/auth/DynamicTestimonials';
 
 export const metadata: Metadata = {
   title: 'Authentication | Melon',
@@ -41,68 +42,53 @@ export default function AuthLayout({
           </div>
 
           <div className="text-white max-w-lg">
-            <h1 className="text-4xl text-[#FFFFFF] font-semibold mb-6 leading-tight">
+            <h1 className="text-4xl text-[#FFFFFF] font-semibold mb-10 leading-tight">
               Transform Data into Measurable Impact
             </h1>
             
-            <blockquote className="text-lg mb-8 opacity-90 leading-relaxed">
-              &ldquo;Melon&apos;s geospatial intelligence helped us identify underserved communities, 
-              allowing iWello to extend health coverage to places we would have otherwise overlooked.&rdquo;
-            </blockquote>
-
-            <div className="flex items-center space-x-4">
-              <div className="text-left">
-                <div className="font-semibold">Adejonwo Ismail</div>
-                <div className="text-white/70 text-sm">Founder, iWello Inc</div>
-              </div>
-            </div>
+            <DynamicTestimonials />
           </div>
 
-          <div>
-            <p className="text-white/60 text-xs uppercase tracking-wider mb-4">
-              Trusted by leading organizations
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 mt-12 shadow-xl border border-white/20">
+            <p className="text-gray-500 text-xs uppercase tracking-[0.2em] mb-6 font-bold">
+              LEADING CLIENTS
             </p>
-            <div className="flex items-center space-x-6 opacity-70">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
-                <Image
-                  src="/images/unilever.png"
-                  alt="Remote Gravity"
-                  width={60}
-                  height={24}
-                  className="object-contain filter brightness-0 invert"
-                  style={{ maxHeight: '20px', width: 'auto' }}
-                />
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
-                <Image
-                  src="/images/iwello.png"
-                  alt="iWello"
-                  width={60}
-                  height={24}
-                  className="object-contain filter brightness-0 invert"
-                  style={{ maxHeight: '20px', width: 'auto' }}
-                />
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
-                <Image
-                  src="/images/fairmoney.png"
-                  alt="FairMoney"
-                  width={70}
-                  height={24}
-                  className="object-contain filter brightness-0 invert"
-                  style={{ maxHeight: '20px', width: 'auto' }}
-                />
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
-                <Image
-                  src="/images/remote-gravity.png"
-                  alt="Remote Gravity"
-                  width={60}
-                  height={24}
-                  className="object-contain filter brightness-0 invert"
-                  style={{ maxHeight: '20px', width: 'auto' }}
-                />
-              </div>
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-6">
+              <Image
+                src="/images/leading-clients/R.jpg"
+                alt="Remote Gravity"
+                width={120}
+                height={40}
+                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+              />
+              <Image
+                src="/images/leading-clients/Sycamore-3.png"
+                alt="Sycamore"
+                width={120}
+                height={40}
+                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+              />
+              <Image
+                src="/images/leading-clients/images-13.jpeg"
+                alt="Client 3"
+                width={120}
+                height={40}
+                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+              />
+              <Image
+                src="/images/leading-clients/images-23.png"
+                alt="Client 4"
+                width={120}
+                height={40}
+                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+              />
+              <Image
+                src="/images/leading-clients/images-31.png"
+                alt="Client 5"
+                width={120}
+                height={40}
+                className="h-8 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+              />
             </div>
           </div>
         </div>
