@@ -49,7 +49,7 @@ export default function AuthLayout({
             <DynamicTestimonials />
           </div>
 
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 mt-12 shadow-xl border border-white/20">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 mt-12 shadow-xl border border-white/20 w-fit max-w-full">
             <p className="text-gray-500 text-xs uppercase tracking-[0.2em] mb-6 font-bold">
               LEADING CLIENTS
             </p>
