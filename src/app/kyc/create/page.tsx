@@ -107,17 +107,6 @@ export default function AddKYCUserPage() {
   const [loadingOrgs, setLoadingOrgs] = useState(false);
 
   const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
-  const isPilotEnded = user?.organization?.name?.toLowerCase().includes('sycamore') || user?.organization?.name?.toLowerCase().includes('renmoney');
-
-  useEffect(() => {
-    if (isPilotEnded) {
-      addToast({
-        type: 'warning',
-        title: 'Pilot Concluded',
-        message: 'Your organization\'s pilot program has ended. New requests are currently disabled.',
-      });
-    }
-  }, [isPilotEnded, addToast]);
 
   useEffect(() => {
     if (!isMelonAdmin) return;
@@ -126,7 +115,6 @@ export default function AddKYCUserPage() {
       try {
         setLoadingOrgs(true);
         const data = await apiClient.getOrganizations();
-        // Handle both direct array and { data: [...] } responses
         const orgList = Array.isArray(data) ? data : (data as any)?.data || [];
         setOrganizations(orgList);
       } catch (error) {
@@ -319,7 +307,7 @@ export default function AddKYCUserPage() {
           addToast({
             type: 'warning',
             title: 'Existing Record Found',
-            message: error.message === 'EMAIL_EXISTS_NEEDS_REASON' 
+            message: error.message === 'EMAIL_EXISTS_NEEDS_REASON'
               ? 'An active or rejected job already exists for this email. Please provide a reason to relog.'
               : 'A duplicate record (Loan ID, Phone, or Name) already exists. Please provide a reason to relog.',
           });
@@ -406,319 +394,292 @@ export default function AddKYCUserPage() {
               size="md"
               onClick={handleSave}
               loading={creating}
-              disabled={creating || !!phoneError || isPilotEnded}
+              disabled={creating || !!phoneError}
               icon={<Save className="w-4 h-4" />}
             >
-              {isPilotEnded ? 'Integration Required' : 'Create Request'}
+              Create Request
             </Button>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
-        {isPilotEnded ? (
-          <Card className="border-orange-200 bg-orange-50/50">
-            <CardContent className="pt-6">
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Save className="w-8 h-8 opacity-50" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Pilot Program Concluded</h3>
-                <p className="text-gray-600 max-w-md mx-auto mb-8 leading-relaxed">
-                  The pilot phase for {user?.organization?.name} has officially ended. 
-                  To continue creating new verification requests, please upgrade to a full production environment.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="mailto:support@melon.ng">
-                    <Button variant="primary">Contact Melon Support</Button>
-                  </Link>
-                  <Link href="/kyc">
-                    <Button variant="secondary">View Past Requests</Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`grid grid-cols-1 md:grid-cols-${organizations.length > 0 ? '3' : '2'} gap-6 mb-6 pb-6 border-b border-gray-100`}>
-                  <Input
-                    label="Loan ID (Optional)"
-                    value={formData.loanId}
-                    onChange={(e) => handleFieldUpdate('loanId', e.target.value)}
-                    placeholder="e.g. LN-12345"
-                  />
+        <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`grid grid-cols-1 md:grid-cols-${organizations.length > 0 ? '3' : '2'} gap-6 mb-6 pb-6 border-b border-gray-100`}>
+              <Input
+                label="Loan ID (Optional)"
+                value={formData.loanId}
+                onChange={(e) => handleFieldUpdate('loanId', e.target.value)}
+                placeholder="e.g. LN-12345"
+              />
 
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Request Category (Optional)
-                    </label>
-                    <CustomSelect
-                      value={formData.loanType}
-                      onChange={(value) => handleFieldUpdate('loanType', value)}
-                      options={LOAN_TYPES}
-                      placeholder="Select category"
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Request Category (Optional)
+                </label>
+                <CustomSelect
+                  value={formData.loanType}
+                  onChange={(value) => handleFieldUpdate('loanType', value)}
+                  options={LOAN_TYPES}
+                  placeholder="Select category"
+                />
+              </div>
+
+              {isMelonAdmin && organizations.length > 0 && (
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Source Organization <span className="text-red-500">*</span>
+                  </label>
+                  <CustomSelect
+                    value={formData.organizationId}
+                    onChange={(value) => handleFieldUpdate('organizationId', value)}
+                    options={organizations.map(org => ({ value: org._id || org.id, label: org.name }))}
+                    placeholder="Select source"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="First Name"
+                required
+                value={formData.firstName}
+                onChange={(e) => handleFieldUpdate('firstName', e.target.value)}
+                onBlur={(e) => handleFieldBlur('firstName', e.target.value)}
+                error={getFieldError('firstName')}
+                placeholder="Enter first name"
+              />
+
+              <Input
+                label="Last Name"
+                required
+                value={formData.lastName}
+                onChange={(e) => handleFieldUpdate('lastName', e.target.value)}
+                onBlur={(e) => handleFieldBlur('lastName', e.target.value)}
+                error={getFieldError('lastName')}
+                placeholder="Enter last name"
+              />
+
+              <Input
+                label="Phone Number"
+                required
+                value={formData.phone}
+                onChange={(e) => handlePhoneChange(formatPhoneNumber(e.target.value))}
+                onBlur={handlePhoneBlur}
+                error={phoneError}
+                placeholder="+234..."
+                helperText="Format: +234 followed by 10 digits"
+              />
+
+              <div className="space-y-4">
+                <Input
+                  label="Email (Optional)"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    handleFieldUpdate('email', e.target.value);
+                    if (needsRelog) setNeedsRelog(false);
+                  }}
+                  onBlur={(e) => handleFieldBlur('email', e.target.value)}
+                  error={getFieldError('email')}
+                  placeholder="user@example.com"
+                />
+
+                {needsRelog && (
+                  <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg space-y-3 animate-in fade-in zoom-in duration-200">
+                    <div>
+                      <h4 className="text-sm font-semibold text-orange-800">Existing Record Detected</h4>
+                      <p className="text-sm text-orange-700 mt-1">
+                        A KYC request with these details (Email, Loan ID, Phone, or Name) already exists. To force re-creation, provide a solid relogging reason.
+                      </p>
+                    </div>
+                    <textarea
+                      placeholder="e.g. Rejecting old job due to unreadable images..."
+                      required
+                      value={formData.relogReason}
+                      onChange={(e) => handleFieldUpdate('relogReason', e.target.value)}
+                      className="w-full text-sm rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                      rows={3}
                     />
                   </div>
+                )}
+              </div>
+            </div>
 
-                  {isMelonAdmin && organizations.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Source Organization <span className="text-red-500">*</span>
-                      </label>
-                      <CustomSelect
-                        value={formData.organizationId}
-                        onChange={(value) => handleFieldUpdate('organizationId', value)}
-                        options={organizations.map(org => ({ value: org._id || org.id, label: org.name }))}
-                        placeholder="Select source"
-                      />
-                    </div>
-                  )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <Input
+                label="Occupation or Business Type"
+                required
+                value={formData.occupation}
+                onChange={(e) => handleFieldUpdate('occupation', e.target.value)}
+                onBlur={(e) => handleFieldBlur('occupation', e.target.value)}
+                error={getFieldError('occupation')}
+                placeholder="e.g. Civil Servant, Banker, Spare Parts Dealer..."
+                helperText="Enter customer's primary occupation or business description"
+              />
+
+              <Input
+                label="BVN (Optional)"
+                value={formData.bvn}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  handleFieldUpdate('bvn', value);
+                }}
+                placeholder="Enter 11-digit BVN"
+                maxLength={11}
+              />
+
+              <Input
+                label="NIN (Optional)"
+                value={formData.nin}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  handleFieldUpdate('nin', value);
+                }}
+                placeholder="Enter 11-digit NIN"
+                maxLength={11}
+              />
+
+              <Input
+                label="Passport Number (Optional)"
+                value={formData.passportNumber}
+                onChange={(e) => handleFieldUpdate('passportNumber', e.target.value.toUpperCase())}
+                placeholder="A12345678"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {formData.addresses.map((address, index) => (
+          <Card key={address.id}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>
+                  Address {index + 1}
+                  {index === 0 && <span className="text-sm font-normal text-gray-500 ml-2">(Required)</span>}
+                </CardTitle>
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveAddress(address.id)}
+                    icon={<Trash2 className="w-4 h-4" />}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {index === 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-700">
+                      Enter address details. GPS coordinates will be automatically generated and sent to nearby agents for verification.
+                      {formData.addresses.length > 1 && ' Each address will be assigned to agents in its respective location.'}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address Label
+                    </label>
+                    <CustomSelect
+                      value={address.label}
+                      onChange={(value) => handleAddressFieldUpdate(address.id, 'label', value)}
+                      options={ADDRESS_LABELS.map(label => ({
+                        value: label,
+                        label: label
+                      }))}
+                      placeholder="Select address type"
+                    />
+                  </div>
+                  <Input
+                    label="Street Number"
+                    value={address.streetNumber}
+                    onChange={(e) => handleAddressFieldUpdate(address.id, 'streetNumber', e.target.value)}
+                    placeholder="e.g., 45"
+                  />
+
+                  <Input
+                    label="Street Name"
+                    value={address.streetName}
+                    onChange={(e) => handleAddressFieldUpdate(address.id, 'streetName', e.target.value)}
+                    placeholder="e.g., Adeniran Ogunsanya"
+                  />
+                </div>
+
+                <Input
+                  label="Landmark or Nearest Bus Stop"
+                  value={address.landmark}
+                  onChange={(e) => handleAddressFieldUpdate(address.id, 'landmark', e.target.value)}
+                  placeholder="e.g., Opposite Shoprite"
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input
+                    label="City/Town"
+                    value={address.city}
+                    onChange={(e) => handleAddressFieldUpdate(address.id, 'city', e.target.value)}
+                    placeholder="e.g., Surulere"
+                  />
+
+                  <Input
+                    label="LGA"
+                    value={address.lga}
+                    onChange={(e) => handleAddressFieldUpdate(address.id, 'lga', e.target.value)}
+                    placeholder="e.g., Surulere"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label="First Name"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) => handleFieldUpdate('firstName', e.target.value)}
-                    onBlur={(e) => handleFieldBlur('firstName', e.target.value)}
-                    error={getFieldError('firstName')}
-                    placeholder="Enter first name"
+                    label="State"
+                    value={address.state}
+                    onChange={(e) => handleAddressFieldUpdate(address.id, 'state', e.target.value)}
+                    placeholder="e.g., Lagos"
                   />
 
                   <Input
-                    label="Last Name"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) => handleFieldUpdate('lastName', e.target.value)}
-                    onBlur={(e) => handleFieldBlur('lastName', e.target.value)}
-                    error={getFieldError('lastName')}
-                    placeholder="Enter last name"
+                    label="Country"
+                    value={address.country}
+                    onChange={(e) => handleAddressFieldUpdate(address.id, 'country', e.target.value)}
+                    placeholder="e.g., Nigeria"
                   />
 
-                  <Input
-                    label="Phone Number"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => handlePhoneChange(formatPhoneNumber(e.target.value))}
-                    onBlur={handlePhoneBlur}
-                    error={phoneError}
-                    placeholder="+234..."
-                    helperText="Format: +234 followed by 10 digits"
-                  />
-
-                  <div className="space-y-4">
-                    <Input
-                      label="Email (Optional)"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => {
-                        handleFieldUpdate('email', e.target.value);
-                        if (needsRelog) setNeedsRelog(false);
-                      }}
-                      onBlur={(e) => handleFieldBlur('email', e.target.value)}
-                      error={getFieldError('email')}
-                      placeholder="user@example.com"
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Instructions for Agent (Optional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm resize-none"
+                      placeholder="e.g. Call before coming, The building has a blue gate..."
+                      value={address.notes}
+                      onChange={(e) => handleAddressFieldUpdate(address.id, 'notes', e.target.value)}
                     />
-
-                    {needsRelog && (
-                      <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg space-y-3 animate-in fade-in zoom-in duration-200">
-                        <div>
-                          <h4 className="text-sm font-semibold text-orange-800">Existing Record Detected</h4>
-                          <p className="text-sm text-orange-700 mt-1">
-                            A KYC request with these details (Email, Loan ID, Phone, or Name) already exists. To force re-creation, provide a solid relogging reason.
-                          </p>
-                        </div>
-                        <textarea
-                          placeholder="e.g. Rejecting old job due to unreadable images..."
-                          required
-                          value={formData.relogReason}
-                          onChange={(e) => handleFieldUpdate('relogReason', e.target.value)}
-                          className="w-full text-sm rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                          rows={3}
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  <Input
-                    label="Occupation or Business Type"
-                    required
-                    value={formData.occupation}
-                    onChange={(e) => handleFieldUpdate('occupation', e.target.value)}
-                    onBlur={(e) => handleFieldBlur('occupation', e.target.value)}
-                    error={getFieldError('occupation')}
-                    placeholder="e.g. Civil Servant, Banker, Spare Parts Dealer..."
-                    helperText="Enter customer's primary occupation or business description"
-                  />
-
-                  <Input
-                    label="BVN (Optional)"
-                    value={formData.bvn}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      handleFieldUpdate('bvn', value);
-                    }}
-                    placeholder="Enter 11-digit BVN"
-                    maxLength={11}
-                  />
-
-                  <Input
-                    label="NIN (Optional)"
-                    value={formData.nin}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      handleFieldUpdate('nin', value);
-                    }}
-                    placeholder="Enter 11-digit NIN"
-                    maxLength={11}
-                  />
-
-                  <Input
-                    label="Passport Number (Optional)"
-                    value={formData.passportNumber}
-                    onChange={(e) => handleFieldUpdate('passportNumber', e.target.value.toUpperCase())}
-                    placeholder="A12345678"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {formData.addresses.map((address, index) => (
-              <Card key={address.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>
-                      Address {index + 1}
-                      {index === 0 && <span className="text-sm font-normal text-gray-500 ml-2">(Required)</span>}
-                    </CardTitle>
-                    {index > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveAddress(address.id)}
-                        icon={<Trash2 className="w-4 h-4" />}
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {index === 0 && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm text-blue-700">
-                          Enter address details. GPS coordinates will be automatically generated and sent to nearby agents for verification.
-                          {formData.addresses.length > 1 && ' Each address will be assigned to agents in its respective location.'}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Address Label
-                        </label>
-                        <CustomSelect
-                          value={address.label}
-                          onChange={(value) => handleAddressFieldUpdate(address.id, 'label', value)}
-                          options={ADDRESS_LABELS.map(label => ({
-                            value: label,
-                            label: label
-                          }))}
-                          placeholder="Select address type"
-                        />
-                      </div>
-                      <Input
-                        label="Street Number"
-                        value={address.streetNumber}
-                        onChange={(e) => handleAddressFieldUpdate(address.id, 'streetNumber', e.target.value)}
-                        placeholder="e.g., 45"
-                      />
-
-                      <Input
-                        label="Street Name"
-                        value={address.streetName}
-                        onChange={(e) => handleAddressFieldUpdate(address.id, 'streetName', e.target.value)}
-                        placeholder="e.g., Adeniran Ogunsanya"
-                      />
-                    </div>
-
-                    <Input
-                      label="Landmark or Nearest Bus Stop"
-                      value={address.landmark}
-                      onChange={(e) => handleAddressFieldUpdate(address.id, 'landmark', e.target.value)}
-                      placeholder="e.g., Opposite Shoprite"
-                    />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input
-                        label="City/Town"
-                        value={address.city}
-                        onChange={(e) => handleAddressFieldUpdate(address.id, 'city', e.target.value)}
-                        placeholder="e.g., Surulere"
-                      />
-
-                      <Input
-                        label="LGA"
-                        value={address.lga}
-                        onChange={(e) => handleAddressFieldUpdate(address.id, 'lga', e.target.value)}
-                        placeholder="e.g., Surulere"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input
-                        label="State"
-                        value={address.state}
-                        onChange={(e) => handleAddressFieldUpdate(address.id, 'state', e.target.value)}
-                        placeholder="e.g., Lagos"
-                      />
-
-                      <Input
-                        label="Country"
-                        value={address.country}
-                        onChange={(e) => handleAddressFieldUpdate(address.id, 'country', e.target.value)}
-                        placeholder="e.g., Nigeria"
-                      />
-
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Instructions for Agent (Optional)
-                        </label>
-                        <textarea
-                          rows={3}
-                          className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm resize-none"
-                          placeholder="e.g. Call before coming, The building has a blue gate..."
-                          value={address.notes}
-                          onChange={(e) => handleAddressFieldUpdate(address.id, 'notes', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-
-            {formData.addresses.length < 5 && (
-              <button
-                onClick={handleAddAddress}
-                className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary-light transition-colors flex items-center justify-center gap-2 text-gray-600 hover:text-primary"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="font-medium">Add Another Address ({formData.addresses.length}/5)</span>
-              </button>
-            )}
-          </>
+        {formData.addresses.length < 5 && (
+          <button
+            onClick={handleAddAddress}
+            className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary-light transition-colors flex items-center justify-center gap-2 text-gray-600 hover:text-primary"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">Add Another Address ({formData.addresses.length}/5)</span>
+          </button>
         )}
       </div>
     </div>
