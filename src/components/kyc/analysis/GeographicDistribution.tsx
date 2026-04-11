@@ -25,8 +25,8 @@ interface GeographicDistributionProps {
 export const GeographicDistribution: React.FC<GeographicDistributionProps> = ({ data }) => {
   if (!data || data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center bg-surface-secondary rounded-xl border border-dashed border-border">
-        <p className="text-gray-500 dark:text-gray-400 text-sm">No geographic data available</p>
+      <div className="h-64 flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+        <p className="text-gray-500 text-sm">No geographic data available</p>
       </div>
     );
   }
@@ -41,7 +41,7 @@ export const GeographicDistribution: React.FC<GeographicDistributionProps> = ({ 
           data={data}
           margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={true} stroke="var(--chart-grid)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" horizontal={true} stroke="#F3F4F6" vertical={false} />
           <XAxis type="number" hide />
           <YAxis 
             dataKey="state" 
@@ -49,18 +49,16 @@ export const GeographicDistribution: React.FC<GeographicDistributionProps> = ({ 
             width={70}
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 10, fill: 'var(--chart-axis)', fontWeight: 500 }}
+            tick={{ fontSize: 10, fill: '#374151', fontWeight: 500 }}
           />
           <Tooltip 
-            cursor={{ fill: 'var(--color-surface-secondary)' }}
+            cursor={{ fill: '#F9FAFB' }}
             contentStyle={{ 
-              backgroundColor: 'var(--chart-tooltip-bg)', 
-              border: '1px solid var(--color-border)', 
+              backgroundColor: '#FFF', 
+              border: 'none', 
               borderRadius: '8px',
-              boxShadow: 'var(--shadow-md)'
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
             }}
-            itemStyle={{ fontSize: '12px' }}
-            labelStyle={{ fontWeight: '600', color: 'var(--color-text-primary)', marginBottom: '4px' }}
             formatter={(value: any, name: string) => [value, name === 'count' ? 'Total' : 'Verified']}
           />
           <Bar 

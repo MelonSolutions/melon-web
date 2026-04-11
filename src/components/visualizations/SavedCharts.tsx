@@ -1,19 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
-import { MoreHorizontal, Edit, Eye, Share2, Trash2, Copy, BarChart3, Calendar, Activity, Layers, X, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Edit, Eye, Share2, Trash2, Copy } from 'lucide-react';
 import { ChartConfig, CHART_TYPES } from '@/types/visualization';
 import { formatDistanceToNow } from 'date-fns';
 import { ChartPreview } from './ChartPreview';
-import { Button } from '@/components/ui/Button';
 
 interface SavedChartsProps {
   charts: ChartConfig[];
   onEdit: (chart: ChartConfig) => void;
   onDuplicate: (chart: ChartConfig) => Promise<{ success: boolean; error?: string }>;
   onDelete: (chartId: string) => Promise<{ success: boolean; error?: string }>;
-  onShare: (chart: ChartConfig) => Promise<{ success: boolean; data?: any; error?: string }>;
+  onShare: (chart: ChartConfig) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: SavedChartsProps) {
@@ -25,11 +23,11 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
     return CHART_TYPES[type as keyof typeof CHART_TYPES] || {
       name: 'Unknown',
       description: 'Chart type',
-      requiredAxes: [] as string[]
+      requiredAxes: []
     };
   };
 
-  const formatDate = (dateString: string | undefined) => {
+  const formatUploadDate = (dateString: string | undefined) => {
     if (!dateString) return 'Recently';
     try {
       const date = new Date(dateString);
@@ -50,19 +48,17 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
           onEdit(chart);
           break;
         case 'duplicate':
-          const dupResult = await onDuplicate(chart);
-          if (!dupResult.success) console.error(dupResult.error);
+          await onDuplicate(chart);
           break;
         case 'delete':
           if (confirm('Are you sure you want to delete this chart?')) {
-            const delResult = await onDelete(chart.id);
-            if (!delResult.success) console.error(delResult.error);
+            await onDelete(chart.id);
           }
           break;
         case 'share':
           const result = await onShare(chart);
-          if (result.success && result.data?.shareUrl && typeof navigator !== 'undefined' && navigator.clipboard) {
-            await navigator.clipboard.writeText(result.data.shareUrl);
+          if (result.success) {
+            alert('Chart link copied to clipboard!');
           }
           break;
         case 'preview':
@@ -76,116 +72,121 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
     }
   };
 
-  return (
-    <div className="space-y-10">
-      <div className="bg-surface dark:bg-black/20 rounded-[3rem] border border-border dark:border-white/10 shadow-sm flex flex-col relative">
-        <div className="px-10 py-8 border-b border-border/60 dark:border-white/10 bg-surface-secondary/30 dark:bg-white/5 flex items-center gap-4 rounded-t-[3rem]">
-          <div className="p-3 bg-surface dark:bg-white/10 rounded-2xl border border-border dark:border-white/10 shadow-sm">
-            <Layers className="w-5 h-5 text-emerald-500" />
-          </div>
-          <div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 tracking-tight uppercase tracking-widest text-sm">Saved Charts</h3>
-            <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-0.5 opacity-80">Manage and share your visualizations</p>
-          </div>
+  if (charts.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+          <MoreHorizontal className="w-6 h-6 text-gray-400" />
         </div>
         
-        <div className="divide-y divide-border/30 dark:divide-white/10">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          No saved charts yet
+        </h3>
+        
+        <p className="text-gray-500 mb-6">
+          Create your first chart in the Chart Builder to see it here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Saved Charts</h3>
+        </div>
+        
+        <div className="divide-y divide-gray-200">
           {charts.map((chart, index) => {
             const typeInfo = getChartTypeInfo(chart.type);
-            const chartId = chart.id || `chart-${index}`;
-            const isLoading = actionLoading?.includes(chartId);
-            const isLast = index === charts.length - 1;
+            const isLoading = actionLoading?.includes(chart.id || '');
             
             return (
-              <div 
-                key={chartId} 
-                className={`px-10 py-8 group hover:bg-emerald-500/[0.02] dark:hover:bg-emerald-500/5 transition-all duration-300 ${isLast ? 'rounded-b-[3rem]' : ''}`}
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="flex items-start gap-6 flex-1 min-w-0">
-                    <div className="p-4 bg-surface-secondary/50 dark:bg-white/5 rounded-2xl border border-border dark:border-white/10 group-hover:border-emerald-500/20 transition-all shrink-0">
-                      <BarChart3 className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-                    </div>
-                    
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <h4 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest truncate">
+              <div key={chart.id || `chart-${index}`} className="px-6 py-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="text-base font-medium text-gray-900 truncate">
                           {chart.name || 'Untitled Chart'}
                         </h4>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          {typeInfo.name.toUpperCase()}
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                          {typeInfo.name}
                         </span>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] font-bold text-gray-400 dark:text-gray-500">
-                        <div className="flex items-center gap-2">
-                          <Activity className="w-3.5 h-3.5" />
-                          Axes: {chart.xAxis} {chart.yAxis ? `× ${chart.yAxis}` : ''}
-                        </div>
-                        <div className="flex items-center gap-2">
-                           <Calendar className="w-3.5 h-3.5" />
-                           Updated {formatDate(chart.updatedAt)}
-                        </div>
+                      <div className="flex items-center gap-6 text-sm text-gray-500">
+                        <span>{chart.xAxis} {chart.yAxis ? `× ${chart.yAxis}` : ''}</span>
+                        <span className="capitalize">{chart.aggregation || 'count'}</span>
+                        <span>
+                          Updated {formatUploadDate(chart.updatedAt)}
+                        </span>
                       </div>
+                      
+                      {chart.groupBy && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          Grouped by {chart.groupBy}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="rounded-xl px-5 font-black uppercase tracking-widest text-[9px] border-border/60"
-                      onClick={() => handleAction('preview', chart)}
+                  <div className="relative ml-4">
+                    <button
+                      onClick={() => setShowActions(showActions === chart.id ? null : chart.id)}
                       disabled={isLoading}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      Preview
-                    </Button>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowActions(showActions === chartId ? null : chartId)}
-                        disabled={isLoading}
-                        className="p-3 hover:bg-surface-secondary/50 dark:hover:bg-white/5 rounded-xl border border-transparent hover:border-border dark:hover:border-white/10 transition-all disabled:opacity-50"
-                      >
-                        <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                      </button>
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
 
-                      {showActions === chartId && (
-                        <>
-                          <div className="fixed inset-0 z-20" onClick={() => setShowActions(null)} />
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-surface dark:bg-gray-900 rounded-2xl shadow-2xl border border-border dark:border-white/10 py-2 z-30 animate-in fade-in zoom-in-95 duration-200">
-                            <button
-                              onClick={() => handleAction('edit', chart)}
-                              className="flex items-center gap-3 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:bg-surface-secondary/50 dark:hover:bg-white/5 w-full text-left transition-colors rounded-t-2xl"
-                            >
-                              <Edit className="w-4 h-4" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleAction('duplicate', chart)}
-                              className="flex items-center gap-3 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:bg-surface-secondary/50 dark:hover:bg-white/5 w-full text-left transition-colors"
-                            >
-                              <Copy className="w-4 h-4" />
-                              Duplicate
-                            </button>
-                            <button
-                              onClick={() => handleAction('share', chart)}
-                              className="flex items-center gap-3 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-400 hover:bg-surface-secondary/50 dark:hover:bg-white/5 w-full text-left transition-colors"
-                            >
-                              <Share2 className="w-4 h-4" />
-                              Share
-                            </button>
-                            <div className="border-t border-border/40 dark:border-white/10 my-1 mx-2"></div>
-                            <button
-                              onClick={() => handleAction('delete', chart)}
-                              className="flex items-center gap-3 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-error hover:bg-error/5 w-full text-left transition-colors rounded-b-2xl"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    {showActions === chart.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setShowActions(null)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                          <button
+                            onClick={() => handleAction('preview', chart)}
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Preview
+                          </button>
+                          <button
+                            onClick={() => handleAction('edit', chart)}
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleAction('duplicate', chart)}
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Duplicate
+                          </button>
+                          <button
+                            onClick={() => handleAction('share', chart)}
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left"
+                          >
+                            <Share2 className="w-4 h-4" />
+                            Share
+                          </button>
+                          <div className="border-t border-gray-100 my-1"></div>
+                          <button
+                            onClick={() => handleAction('delete', chart)}
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -195,55 +196,59 @@ export function SavedCharts({ charts, onEdit, onDuplicate, onDelete, onShare }: 
       </div>
 
       {previewChart && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-50 animate-in fade-in duration-300">
-          <div className="bg-surface dark:bg-gray-900 rounded-[2rem] max-w-xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-border dark:border-white/10 shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-border/60 dark:border-white/10 bg-surface-secondary/30 dark:bg-white/5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 border border-emerald-500/20">
-                  <Eye className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">
-                    {previewChart.name || 'Untitled Chart'}
-                  </h3>
-                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-0.5 opacity-60">Chart Preview</p>
-                </div>
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  {previewChart.name || 'Untitled Chart'}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {getChartTypeInfo(previewChart.type).name} • {previewChart.aggregation || 'count'} aggregation
+                </p>
               </div>
               <button
                 onClick={() => setPreviewChart(null)}
-                className="p-2 hover:bg-surface-secondary/50 dark:hover:bg-white/10 rounded-xl transition-all"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <X className="w-4 h-4 text-gray-400" />
+                <span className="text-xl leading-none">×</span>
               </button>
             </div>
             
-            <div className="p-8 overflow-auto flex-1 flex items-center justify-center bg-surface dark:bg-black/20">
-              <div className="w-full bg-surface dark:bg-white/5 rounded-2xl p-6 border border-border dark:border-white/10">
-                <ChartPreview config={previewChart} data={[]} isEmpty={false} />
-              </div>
+            <div className="p-6">
+              <ChartPreview
+                config={previewChart}
+                data={[]}
+                isEmpty={false}
+              />
             </div>
             
-            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-border/60 dark:border-white/10 bg-surface-secondary/20 dark:bg-white/5 gap-4">
-              <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                <span className="opacity-50">ID:</span> 
-                <span className="text-gray-700 dark:text-gray-300 font-mono">{previewChart.id || 'N/A'}</span>
+            <div className="flex items-center justify-between p-6 border-t border-gray-200">
+              <div className="text-sm text-gray-500">
+                Chart ID: {previewChart.id || 'N/A'}
               </div>
               
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <Button variant="secondary" onClick={() => setPreviewChart(null)} className="flex-1 sm:flex-none px-6 py-2.5 rounded-lg font-black uppercase tracking-widest text-[9px] border-border/60">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPreviewChart(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   Close
-                </Button>
-                <Button 
-                  onClick={() => { previewChart && onEdit(previewChart); setPreviewChart(null); }} 
-                  className="flex-1 sm:flex-none px-8 py-2.5 rounded-lg shadow-lg font-black uppercase tracking-widest text-[9px] bg-primary shadow-primary/20"
+                </button>
+                <button
+                  onClick={() => {
+                    onEdit(previewChart);
+                    setPreviewChart(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   Edit Chart
-                </Button>
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -233,33 +233,31 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
         </Tooltip>
         
         <Popup className="kyc-popup" maxWidth={300}>
-          <div className="p-3 min-w-[220px] bg-surface rounded-lg">
+          <div className="p-3 min-w-[220px] bg-white rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-gray-900 dark:text-gray-100 pr-4">{project.title}</h3>
+              <h3 className="font-bold text-gray-900 pr-4">{project.title}</h3>
               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                project.kycStatus === 'VERIFIED' 
-                  ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' 
-                  : 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400'
+                project.kycStatus === 'VERIFIED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
               }`}>
                 {project.kycStatus || project.status}
               </span>
             </div>
-            <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-500 dark:text-gray-400">
-              <span className="font-medium px-1.5 py-0.5 bg-surface-secondary border border-border rounded tracking-wider">{project.sector}</span>
+            <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-500">
+              <span className="font-medium px-1.5 py-0.5 bg-gray-100 rounded tracking-wider">{project.sector}</span>
               <span>•</span>
               <span className="italic">{project.id.startsWith('kyc') ? 'Address Verification' : 'Geospatial Project'}</span>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-4 leading-relaxed line-clamp-2">
+            <p className="text-xs text-gray-600 mb-4 leading-relaxed line-clamp-2">
               {project.description}
             </p>
-            <div className="grid grid-cols-2 gap-3 py-2 border-t border-border">
+            <div className="grid grid-cols-2 gap-3 py-2 border-t border-gray-100">
               <div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 block uppercase tracking-wider font-semibold">Impact</span>
-                <span className="text-sm font-bold text-primary">{project.impactScore}%</span>
+                <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Impact</span>
+                <span className="text-sm font-bold text-indigo-600">{project.impactScore}%</span>
               </div>
               <div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 block uppercase tracking-wider font-semibold">Volume</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{project.beneficiaries.toLocaleString()}</span>
+                <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Volume</span>
+                <span className="text-sm font-bold text-gray-900">{project.beneficiaries.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -334,10 +332,10 @@ function CustomZoomControls() {
   if (!map) return null;
 
   return (
-    <div className="absolute top-20 left-4 z-[1000] bg-surface rounded-xl shadow-lg overflow-hidden border border-border">
-      <button className="cursor-pointer w-10 h-10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-surface-secondary border-b border-border flex items-center justify-center text-lg font-bold transition-colors" onClick={handleZoomIn} title="Zoom in">+</button>
-      <button className="cursor-pointer w-10 h-10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-surface-secondary border-b border-border flex items-center justify-center text-lg font-bold transition-colors" onClick={handleZoomOut} title="Zoom out">−</button>
-      <button className="cursor-pointer w-10 h-10 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-surface-secondary flex items-center justify-center text-xs font-medium transition-colors" onClick={handleZoomToFit} title="Reset view"><MapPin className="w-4 h-4" /></button>
+    <div className="absolute top-20 left-4 z-[1000] bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+      <button className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors" onClick={handleZoomIn} title="Zoom in">+</button>
+      <button className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-b border-gray-200 flex items-center justify-center text-lg font-bold transition-colors" onClick={handleZoomOut} title="Zoom out">−</button>
+      <button className="cursor-pointer w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-blue-50 flex items-center justify-center text-xs font-medium transition-colors" onClick={handleZoomToFit} title="Reset view"><MapPin className="w-4 h-4" /></button>
     </div>
   );
 }
@@ -425,13 +423,13 @@ export default function InteractiveMap({
       <TerrainSelector currentTerrain={currentTerrain} onTerrainChange={handleTerrainChange} />
       
       {validProjects.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-surface/90 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white bg-opacity-95">
           <div className="text-center max-w-sm">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{projects.length > 0 ? 'Invalid Data Points' : 'No Data Points'}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">{projects.length > 0 ? 'Invalid coordinates detected.' : 'Import CSV or load sample data.'}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{projects.length > 0 ? 'Invalid Data Points' : 'No Data Points'}</h3>
+            <p className="text-sm text-gray-600 mb-6">{projects.length > 0 ? 'Invalid coordinates detected.' : 'Import CSV or load sample data.'}</p>
             <div className="flex gap-3 justify-center">
-              {onLoadSampleData && <button onClick={onLoadSampleData} className="cursor-pointer px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">Load Sample Data</button>}
-              {onOpenImportModal && <button onClick={onOpenImportModal} className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-secondary text-gray-700 dark:text-gray-200 border border-border text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition-colors">Import CSV</button>}
+              {onLoadSampleData && <button onClick={onLoadSampleData} className="cursor-pointer px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">Load Sample Data</button>}
+              {onOpenImportModal && <button onClick={onOpenImportModal} className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">Import CSV</button>}
             </div>
           </div>
         </div>

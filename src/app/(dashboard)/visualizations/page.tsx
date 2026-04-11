@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, Suspense, useMemo } from 'react';
-import { Upload, Database, BarChart3, Share2, Activity, Layers, PieChart, Info, Plus } from 'lucide-react';
+import { Upload, Database, BarChart3, Share2 } from 'lucide-react';
 import { VisualizationLoading } from '@/components/visualizations/VisualizationLoading';
 import { VisualizationEmpty } from '@/components/visualizations/VisualizationEmpty';
 import { ChartBuilder } from '@/components/visualizations/ChartBuilder';
@@ -11,31 +11,28 @@ import { DataSourceManager } from '@/components/visualizations/DataSourceManager
 import { SavedCharts } from '@/components/visualizations/SavedCharts';
 import { CSVImportModal } from '@/components/visualizations/CSVImportModal';
 import { ReportConnectionModal } from '@/components/visualizations/ReportConnectionModal';
-import {
+import { 
   useVisualizationStats,
   useDataSources,
   useCharts,
   useCsvImport,
-  useReportsIntegration
+  useReportsIntegration 
 } from '@/hooks/useVisualizations';
-import { Button } from '@/components/ui/Button';
 
-function StatsCard({ icon: Icon, title, value, color, bg }: {
+function StatsCard({ icon: Icon, title, value }: {
   icon: React.ComponentType<any>;
   title: string;
   value: string | number;
-  color: string;
-  bg: string;
 }) {
   return (
-    <div className="bg-surface dark:bg-black/20 rounded-[2.5rem] border border-border dark:border-white/10 p-8 shadow-sm group hover:border-primary/20 transition-all duration-500 font-sans">
-      <div className="flex items-center justify-between mb-6">
-        <div className={`p-4 rounded-2xl ${bg} group-hover:scale-110 transition-transform duration-500 border border-border/20`}>
-          <Icon className={`w-5 h-5 ${color}`} />
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">{value}</p>
         </div>
+        <Icon className="w-5 h-5 text-gray-400" />
       </div>
-      <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.25em] mb-2">{title}</p>
-      <p className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight">{value}</p>
     </div>
   );
 }
@@ -46,28 +43,28 @@ function VisualizationContent() {
   const [showReportModal, setShowReportModal] = useState(false);
 
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useVisualizationStats();
-  const {
-    dataSources,
-    loading: dataSourcesLoading,
+  const { 
+    dataSources, 
+    loading: dataSourcesLoading, 
     error: dataSourcesError,
-    deleteDataSource,
+    deleteDataSource, 
     previewDataSource,
-    refetch: refetchDataSources
+    refetch: refetchDataSources 
   } = useDataSources();
-
+  
   const chartFilters = useMemo(() => ({}), []);
-
-  const {
-    charts,
-    loading: chartsLoading,
+  
+  const { 
+    charts, 
+    loading: chartsLoading, 
     error: chartsError,
-    createChart,
-    duplicateChart,
-    deleteChart,
+    createChart, 
+    duplicateChart, 
+    deleteChart, 
     shareChart,
-    refetch: refetchCharts
+    refetch: refetchCharts 
   } = useCharts(chartFilters);
-
+  
   const { importCsv, uploading } = useCsvImport();
   const { createDataSourceFromReport } = useReportsIntegration();
 
@@ -80,21 +77,20 @@ function VisualizationContent() {
 
   if (hasError) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 font-sans animate-in fade-in duration-500">
-        <div className="w-24 h-24 bg-error/10 rounded-3xl flex items-center justify-center mb-8 border border-error/20">
-          <Info className="w-10 h-10 text-error" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto bg-red-100 rounded-lg flex items-center justify-center mb-4">
+            <BarChart3 className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Data</h3>
+          <p className="text-gray-500 mb-4">{hasError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Retry
+          </button>
         </div>
-        <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-3">Sync Error</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-10 font-bold text-center max-w-md uppercase tracking-wider opacity-70 leading-relaxed">
-          {hasError}
-        </p>
-        <Button
-          variant="primary"
-          onClick={() => window.location.reload()}
-          className="px-12 py-5 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
-        >
-          Retry Connection
-        </Button>
       </div>
     );
   }
@@ -129,9 +125,9 @@ function VisualizationContent() {
 
   const handleSaveChart = async (config: any) => {
     if (!config.name?.trim()) {
-      config.name = `Chart-${new Date().getTime()}`;
+      config.name = `Chart ${new Date().toLocaleString()}`;
     }
-
+    
     try {
       const result = await createChart(config);
       if (result.success) {
@@ -209,108 +205,100 @@ function VisualizationContent() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 font-sans pb-24 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-4 md:px-0">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-2 h-10 bg-primary rounded-full"></div>
-            <div>
-              <h1 className="text-4xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">Visualizations</h1>
-              <p className="text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.25em] mt-1 opacity-70">Import data and create interactive charts and visualizations</p>
-            </div>
-          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">Visualizations</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Import data and create interactive charts and visualizations
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="secondary"
+        <div className="flex items-center gap-3">
+          <button
             onClick={() => setShowImportModal(true)}
-            className="rounded-xl px-10 py-5 font-black uppercase tracking-widest text-[10px] border-border/60"
-            icon={<Upload className="w-4 h-4" />}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
+            <Upload className="w-4 h-4" />
             Import CSV
-          </Button>
-          <Button
-            variant="primary"
+          </button>
+          <button
             onClick={() => setShowReportModal(true)}
-            className="rounded-xl px-12 py-5 shadow-2xl shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
-            icon={<Database className="w-4 h-4" />}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-             Connect Report
-          </Button>
+            <Database className="w-4 h-4" />
+            Connect Report
+          </button>
         </div>
       </div>
 
-      {/* Stats Overview */}
       {hasData && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatsCard
             icon={Database}
             title="Data Sources"
             value={stats.totalDataSources}
-            color="text-primary"
-            bg="bg-primary/10"
           />
           <StatsCard
-            icon={Layers}
+            icon={Database}
             title="Total Records"
             value={stats.totalRecords.toLocaleString()}
-            color="text-blue-500"
-            bg="bg-blue-500/10"
           />
           <StatsCard
             icon={BarChart3}
             title="Active Charts"
             value={stats.activeCharts}
-            color="text-emerald-500"
-            bg="bg-emerald-500/10"
           />
           <StatsCard
             icon={Share2}
-            title="Shared Assets"
+            title="Shared"
             value={stats.sharedCharts}
-            color="text-amber-500"
-            bg="bg-amber-500/10"
           />
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <div className="border-b border-border/40 dark:border-white/10 px-4 md:px-0">
-        <nav className="flex space-x-12">
-          {[
-            { id: 'data-sources', label: 'Data Sources', icon: <Database className="w-4 h-4" /> },
-            { id: 'chart-builder', label: 'Chart Builder', icon: <BarChart3 className="w-4 h-4" /> },
-            { id: 'saved-charts', label: 'Saved Charts', icon: <PieChart className="w-4 h-4" /> },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`group flex items-center gap-3 py-6 px-1 border-b-[3px] font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-500 outline-none ${activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-gray-400 dark:text-gray-600 hover:text-gray-900 dark:hover:text-gray-300 hover:border-gray-200 dark:hover:border-gray-800'
-                }`}
-            >
-              <span className={`transition-transform duration-500 ${activeTab === tab.id ? 'scale-125' : 'scale-100 group-hover:scale-125'}`}>
-                {tab.icon}
-              </span>
-              {tab.label}
-            </button>
-          ))}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('data-sources')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'data-sources'
+                ? 'border-gray-900 text-gray-900'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Data Sources
+          </button>
+          <button
+            onClick={() => setActiveTab('chart-builder')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'chart-builder'
+                ? 'border-gray-900 text-gray-900'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Chart Builder
+          </button>
+          <button
+            onClick={() => setActiveTab('saved-charts')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'saved-charts'
+                ? 'border-gray-900 text-gray-900'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Saved Charts
+          </button>
         </nav>
       </div>
 
-      {/* Component Content */}
-      <div className="animate-in fade-in duration-1000 min-h-[600px] px-4 md:px-0 mt-8">
+      <div className="min-h-[600px]">
         {activeTab === 'data-sources' && (
           dataSources.length === 0 ? (
-            <div className="pt-4">
-              <VisualizationEmpty
-                activeTab={activeTab}
-                onImportData={() => setShowImportModal(true)}
-                onConnectReport={() => setShowReportModal(true)}
-              />
-            </div>
+            <VisualizationEmpty
+              activeTab={activeTab}
+              onImportData={() => setShowImportModal(true)}
+              onConnectReport={() => setShowReportModal(true)}
+            />
           ) : (
             <DataSourceManager
               dataSources={dataSources}
@@ -324,30 +312,26 @@ function VisualizationContent() {
 
         {activeTab === 'chart-builder' && (
           dataSources.length === 0 ? (
-            <div className="pt-4">
-              <VisualizationEmpty
-                activeTab={activeTab}
-                onImportData={() => setShowImportModal(true)}
-                onConnectReport={() => setShowReportModal(true)}
-              />
-            </div>
+            <VisualizationEmpty
+              activeTab={activeTab}
+              onImportData={() => setShowImportModal(true)}
+              onConnectReport={() => setShowReportModal(true)}
+            />
           ) : (
             <ChartBuilder
               dataSources={dataSources}
               onSave={handleSaveChart}
-              onPreview={() => { }}
+              onPreview={() => {}}
             />
           )
         )}
 
         {activeTab === 'saved-charts' && (
           charts.length === 0 ? (
-            <div className="pt-4">
-              <VisualizationEmpty
-                activeTab={activeTab}
-                onSwitchToChartBuilder={() => setActiveTab('chart-builder')}
-              />
-            </div>
+            <VisualizationEmpty
+              activeTab={activeTab}
+              onSwitchToChartBuilder={() => setActiveTab('chart-builder')}
+            />
           ) : (
             <SavedCharts
               charts={charts}

@@ -31,30 +31,30 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
     : 0;
 
   return (
-    <tr className="hover:bg-surface-secondary/50 transition-colors">
+    <tr className="hover:bg-gray-50 transition-colors">
       <td className="px-6 py-4">
         <div className="flex items-start">
           <div className="min-w-0 flex-1">
             <Link
               href={`/portfolio/${project._id}`}
-              className="text-sm font-bold text-gray-900 dark:text-gray-100 hover:text-primary transition-colors"
+              className="text-sm font-medium text-gray-900 hover:text-[#5B94E5] transition-colors"
             >
               {project.title}
             </Link>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-md mt-1 italic font-medium">
+            <p className="text-sm text-gray-600 truncate max-w-md mt-0.5">
               {project.description}
             </p>
-            <div className="flex items-center gap-2 mt-3">
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-surface-secondary text-gray-600 dark:text-gray-400 border border-border">
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                 {getSectorDisplayName(project.sector)}
               </span>
               {project.tags.length > 0 && (
                 <>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-surface-secondary text-gray-600 dark:text-gray-400 border border-border">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
                     {project.tags[0].name}
                   </span>
                   {project.tags.length > 1 && (
-                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-500">
+                    <span className="text-xs text-gray-500">
                       +{project.tags.length - 1}
                     </span>
                   )}
@@ -66,50 +66,50 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusColor(project.status)}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(project.status)}`}>
           {getStatusDisplayName(project.status)}
         </span>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center gap-3">
-          <div className="w-20 bg-surface-secondary rounded-full h-1.5 border border-border/50">
+          <div className="w-20 bg-gray-200 rounded-full h-1.5">
             <div
-              className="bg-primary h-1.5 rounded-full transition-all duration-300"
+              className="bg-[#5B94E5] h-1.5 rounded-full transition-all duration-300"
               style={{ width: `${project.progressPercentage}%` }}
             />
           </div>
-          <span className="text-xs text-gray-900 dark:text-gray-100 font-bold w-8">{project.progressPercentage}%</span>
+          <span className="text-sm text-gray-900 font-medium w-8">{project.progressPercentage}%</span>
         </div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{project.impactScore}%</div>
+        <div className="text-sm font-medium text-gray-900">{project.impactScore}%</div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
+        <div className="text-sm font-medium text-gray-900">
           {project.actualHouseholds?.toLocaleString() || '0'}
         </div>
         {project.targetHouseholds && (
-          <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+          <div className="text-xs text-gray-500 mt-0.5">
             of {project.targetHouseholds.toLocaleString()}
           </div>
         )}
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
+        <div className="text-sm font-medium text-gray-900">
           {formatBudget(project.totalBudget)}
         </div>
-        <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+        <div className="text-xs text-gray-500 mt-0.5">
           {budgetUtilization}% used
         </div>
       </td>
 
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatDate(project.updatedAt)}</div>
-        <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+        <div className="text-sm text-gray-900">{formatDate(project.updatedAt)}</div>
+        <div className="text-xs text-gray-500 mt-0.5">
           {project.createdBy?.firstName} {project.createdBy?.lastName}
         </div>
       </td>
@@ -117,9 +117,9 @@ export function ProjectListItem({ project }: ProjectListItemProps) {
       <td className="px-6 py-4 whitespace-nowrap text-right">
         <Link
           href={`/portfolio/${project._id}`}
-          className="inline-flex items-center px-4 py-2 bg-surface-secondary hover:bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest rounded-lg border border-border transition-all"
+          className="text-sm font-medium text-[#5B94E5] hover:text-[#4A7BC8] transition-colors"
         >
-          View Details
+          View
         </Link>
       </td>
     </tr>

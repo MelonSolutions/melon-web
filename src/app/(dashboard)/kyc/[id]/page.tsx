@@ -16,30 +16,7 @@ import {
   CheckCircle,
   XCircle,
   Edit2,
-  ShieldAlert,
-  Mail,
-  Phone,
-  User,
-  Building2,
-  Calendar,
-  DollarSign,
-  Hash,
-  Archive,
-  LayoutGrid,
-  Users,
-  Navigation,
-  Compass,
-  TrendingUp,
-  BarChart3,
-  ShieldCheck,
-  CheckCircle2,
-  Search,
-  UserCheck,
-  FileCheck,
-  Loader2,
-  MapPin,
-  RefreshCw,
-  AlertCircle
+  ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
@@ -272,32 +249,38 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen font-sans animate-pulse px-2">
-        {/* Header Skeleton */}
-        <div className="bg-surface border-b border-border px-6 py-6 sticky top-0 z-20">
-          <div className="max-w-7xl mx-auto flex items-center gap-6">
-            <div className="h-12 w-12 bg-border/30 rounded-2xl"></div>
-            <div className="space-y-2">
-               <div className="h-8 w-64 bg-border/40 rounded-xl"></div>
-               <div className="h-3 w-48 bg-border/20 rounded-full"></div>
-            </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center gap-4">
+            <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-6 w-64 bg-gray-200 rounded animate-pulse"></div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            <div className="lg:col-span-2 space-y-10">
-              {/* Identity Matrix Skeleton */}
-              <div className="bg-surface rounded-3xl border border-border h-[400px] shadow-sm"></div>
-              
-              {/* Geographical Assets Skeleton */}
-              <div className="bg-surface rounded-3xl border border-border h-[400px] shadow-sm"></div>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-4"></div>
+                  <div className="space-y-3">
+                    {[...Array(4)].map((_, j) => (
+                      <div key={j} className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="space-y-8">
-              {/* Context Hub Skeleton */}
-              <div className="bg-surface rounded-3xl border border-border h-64 shadow-sm"></div>
-              <div className="bg-surface rounded-3xl border border-border h-96 shadow-sm"></div>
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-4"></div>
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -307,16 +290,12 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-surface-secondary/5 flex items-center justify-center p-6">
-        <div className="text-center bg-surface rounded-3xl border border-border p-12 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 bg-surface-secondary rounded-full flex items-center justify-center mx-auto mb-6 border border-border/50">
-            <Search className="w-10 h-10 text-gray-300 dark:text-gray-700" />
-          </div>
-          <h2 className="text-xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-2">Request Not Found</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 font-medium">We couldn't locate the verification request you're looking for. It may have been deleted or archived.</p>
-          <Link href="/kyc" className="w-full block">
-            <Button variant="primary" className="w-full py-4 rounded-xl shadow-lg shadow-primary/20 font-black uppercase tracking-widest">
-              Return to Pipeline
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center bg-white rounded-lg border border-gray-200 p-8">
+          <p className="text-sm text-gray-500 mb-3">User not found</p>
+          <Link href="/kyc">
+            <Button variant="secondary" size="sm">
+              Back to Verification Dashboard
             </Button>
           </Link>
         </div>
@@ -326,78 +305,48 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
   const hasMultipleAddresses = user.addresses && user.addresses.length > 0;
   const addresses = hasMultipleAddresses ? user.addresses! : [{
-    label: 'Primary Address',
-    addressLine1: user.streetNumber && user.streetName ? `${user.streetNumber} ${user.streetName}` : '',
+    label: 'Address',
+    streetNumber: user.streetNumber,
+    streetName: user.streetName,
     landmark: user.landmark,
     city: user.city,
+    lga: user.lga,
     state: user.state,
     country: user.country,
     latitude: user.latitude,
     longitude: user.longitude,
     status: user.status,
-    isVerified: user.status === 'VERIFIED',
-    verificationData: undefined,
-    streetName: user.streetName,
-    streetNumber: user.streetNumber,
-  }] as AddressData[];
+    verificationData: user.verificationData,
+  }];
 
-  const documents = (user.documents || []) as KYCDocument[];
+  const canUploadDocuments = user.status === 'PENDING';
 
   return (
-    <div className="min-h-screen bg-surface-secondary/5 pb-20">
-      <div className="bg-surface border-b border-border px-4 sm:px-6 py-6 sticky top-0 z-20 backdrop-blur-xl bg-surface/90">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4 min-w-0">
-            <Link href="/kyc" className="p-2.5 hover:bg-surface-secondary rounded-xl transition-all border border-border/40 hover:border-primary/30 group">
-              <ArrowLeft className="w-5 h-5 text-gray-400 group-hover:text-primary" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link href="/kyc" className="p-2 hover:bg-gray-100 rounded-lg transition-colors shrink-0">
+              <ArrowLeft className="w-4 h-4" />
             </Link>
             <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-black text-gray-900 dark:text-gray-100 truncate tracking-tight">
-                  {user.firstName} {user.lastName}
-                </h1>
-                <StatusBadge status={user.status} size="sm" />
-              </div>
-              <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">
-                Ref: <span className="text-primary">{user.loanId || 'UNASSIGNED'}</span> • {user.submittedAt ? format(new Date(user.submittedAt), 'PPP') : 'N/A'}
-              </p>
+              <h1 className="text-lg font-semibold text-gray-900 truncate">
+                {user.firstName} {user.lastName}
+              </h1>
+              <p className="text-sm text-gray-500">Verification Details</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<RefreshCw className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`} />}
-              onClick={refetch}
-              disabled={updating}
-              className="h-11 font-bold rounded-xl border-border/60 hover:bg-surface-secondary"
-            >
-              Sync
-            </Button>
-            {isMelonAdmin && (
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+            {user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
               <Button
                 variant="danger"
                 size="sm"
-                icon={<Trash2 className="w-4 h-4" />}
-                onClick={async () => {
-                  if (confirm('Permanently excision this verification profile?')) {
-                    try {
-                      setUpdating(true);
-                      // In a real app we'd call a delete endpoint here
-                      addToast({ type: 'success', title: 'Purge Complete', message: 'Entity has been excised.' });
-                      router.push('/kyc');
-                    } catch (e) {
-                      addToast({ type: 'error', title: 'Purge Failed', message: 'Access denied or network error.' });
-                    } finally {
-                      setUpdating(false);
-                    }
-                  }
-                }}
-                loading={updating}
-                className="h-11 font-bold rounded-xl shadow-lg shadow-error/10"
+                icon={<ShieldAlert className="w-4 h-4" />}
+                onClick={() => openModal(<RejectKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'lg' })}
+                className="flex-1 sm:flex-none"
               >
-                Delete
+                Reject Request
               </Button>
             )}
             <Button
@@ -405,227 +354,434 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               size="sm"
               icon={<Edit2 className="w-4 h-4" />}
               onClick={() => openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'xl' })}
-              className="h-11 font-bold rounded-xl border-border/60 hover:bg-surface-secondary"
+              className="flex-1 sm:flex-none"
             >
-              Modify
+              Edit Request
             </Button>
+            <StatusBadge status={user.status} size="md" className="shrink-0" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          <div className="lg:col-span-2 space-y-10">
-            {/* Rejection Narrative */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
             {user.status === 'REJECTED' && (
-              <div className="bg-error/5 border-2 border-error/20 rounded-3xl p-8 relative overflow-hidden animate-in slide-in-from-top-4 duration-700 font-sans">
-                <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
-                  <ShieldAlert className="w-32 h-32 text-error" />
-                </div>
-                <div className="flex items-start gap-5 relative z-10">
-                  <div className="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center shrink-0 border border-error/20">
-                    <AlertTriangle className="w-7 h-7 text-error" />
+              <Card className="border-2 border-error-light/50 bg-error-light/10">
+                <CardHeader>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-error-light/30 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-error" />
+                    </div>
+                    <div className="w-full">
+                      <CardTitle className="text-error mb-1">Verification Rejected</CardTitle>
+                      <div className="text-sm text-error/90 space-y-2">
+                        {user.rejectionReason && (
+                          <div className="font-medium text-base">
+                            Reason: {user.rejectionReason}
+                          </div>
+                        )}
+                        {user.rejectionNote && (
+                          <div className="whitespace-pre-wrap text-error/80">
+                            {user.rejectionNote}
+                          </div>
+                        )}
+                        {user.rejectionEvidence && user.rejectionEvidence.length > 0 && (
+                          <div className="mt-4 border-t border-error-light/30 pt-4">
+                            <span className="font-medium block mb-2">Attached Evidence:</span>
+                            <div className="flex gap-4 overflow-x-auto pb-2">
+                              {user.rejectionEvidence.map((ev, i) => (
+                                <a
+                                  key={i}
+                                  href={ev.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="shrink-0 group relative rounded-lg overflow-hidden border border-error-light/50 hover:border-error transition-colors"
+                                >
+                                  <img
+                                    src={ev.url}
+                                    alt={`Evidence ${i + 1}`}
+                                    className="h-24 w-32 object-cover group-hover:scale-105 transition-transform"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+                                    <ExternalLink className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-black text-error uppercase tracking-widest mb-3">Verification Failure Record</h3>
-                    <div className="space-y-4">
-                      {user.rejectionReason && (
-                        <div className="bg-surface/50 rounded-2xl p-5 border border-error/10">
-                          <span className="text-[10px] font-black text-error/60 uppercase tracking-widest block mb-2">Primary Reason for Rejection</span>
-                          <p className="text-sm font-bold text-error leading-relaxed">{user.rejectionReason}</p>
-                        </div>
-                      )}
-                      {user.rejectionNote && (
-                        <div className="bg-surface/50 rounded-2xl p-5 border border-error/10 border-dashed">
-                          <span className="text-[10px] font-black text-error/60 uppercase tracking-widest block mb-2">Officer's Internal Narrative</span>
-                          <p className="text-sm font-medium text-error/80 italic leading-relaxed">"{user.rejectionNote}"</p>
-                        </div>
+                </CardHeader>
+              </Card>
+            )}
+
+            {user.relogReason && (
+              <Card className="border-1 border-primary-light/50 bg-primary-light/5">
+                <CardHeader className="py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-primary-light/20 rounded-md">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-primary uppercase tracking-wider">Re-logged Job Information</div>
+                      <div className="text-sm text-gray-700 mt-1">
+                        <span className="font-medium">Reason for Re-logging:</span> {user.relogReason}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Full Name</div>
+                    <div className="text-sm text-gray-900">{user.firstName} {user.lastName}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Email Address</div>
+                    <div className="text-sm text-gray-900">{user.email}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Loan ID</div>
+                    <div className="text-sm text-gray-900">{user.loanId || <span className="text-gray-400 italic">Not provided</span>}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Request Category</div>
+                    <div className="text-sm text-gray-900">
+                      {user.loanType ? (
+                        <Badge variant="neutral" size="sm" className="bg-gray-100 text-gray-800 border-gray-200">
+                          {user.loanType.toLowerCase()}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 italic">Not specified</span>
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
 
-            {/* Core Entity Profile */}
-            <div className="bg-surface rounded-3xl border border-border shadow-sm overflow-hidden group hover:border-primary/20 transition-all duration-500 font-sans">
-              <div className="px-8 py-5 border-b border-border bg-gradient-to-r from-surface to-surface-secondary/50 flex items-center gap-3">
-                <User className="w-5 h-5 text-primary" />
-                <h3 className="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Entity Identity Matrix</h3>
-              </div>
-              <div className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                  <DataBlock label="Primary Identity" value={`${user.firstName} ${user.lastName}`} icon={<User className="w-4 h-4" />} />
-                  <DataBlock label="Digital Corridor" value={user.email} icon={<Mail className="w-4 h-4" />} />
-                  <DataBlock label="Telemetry" value={user.phone} icon={<Phone className="w-4 h-4" />} />
-                  <DataBlock label="Request Vector" value={user.loanType || 'N/A'} subValue={user.loanId} uppercase />
-                  <DataBlock label="Occupational Domain" value={user.occupation || 'N/A'} />
-                  <DataBlock label="BVN Protocol" value={user.bvn || 'NOT_FOUND'} mono />
-                  <DataBlock label="NIN Protocol" value={user.nin || 'NOT_FOUND'} mono />
-                  <DataBlock label="Pass Context" value={user.submittedAt ? format(new Date(user.submittedAt), 'PPP') : 'N/A'} />
-                </div>
-              </div>
-            </div>
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Occupation</div>
+                    <div className="text-sm text-gray-900">{user.occupation || <span className="text-gray-400 italic">Not provided</span>}</div>
+                  </div>
 
-            {/* Geographical Assets */}
-            <div className="space-y-10">
-              {addresses.map((address, index) => (
-                <div key={index} className="space-y-10">
-                  {address.status === 'VERIFICATION_SUBMITTED' && address.verificationData && isMelonAdmin && (
-                    <div className="bg-primary/5 border-2 border-primary/20 rounded-3xl p-8 animate-in zoom-in-95 duration-500 font-sans">
-                      <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                        <div className="flex items-start gap-5">
-                          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 animate-pulse">
-                            <ShieldCheck className="w-8 h-8 text-primary" />
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Phone Number</div>
+                    <div className="text-sm text-gray-900">{user.phone}</div>
+                  </div>
+
+                  {user.bvn && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">BVN</div>
+                      <div className="text-sm text-gray-900 font-mono">{user.bvn}</div>
+                    </div>
+                  )}
+
+                  {user.nin && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">NIN</div>
+                      <div className="text-sm text-gray-900 font-mono">{user.nin}</div>
+                    </div>
+                  )}
+
+                  {user.passportNumber && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Passport Number</div>
+                      <div className="text-sm text-gray-900 font-mono">{user.passportNumber}</div>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Date Submitted</div>
+                    <div className="text-sm text-gray-900">{format(new Date(user.submittedAt), 'PPP')}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {addresses.map((address, index) => (
+              <div key={index} className="space-y-6">
+                {address.status === 'VERIFICATION_SUBMITTED' && address.verificationData && (
+                  <Card className="border-2 border-blue-200 bg-blue-50">
+                    <CardHeader>
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+                            <AlertTriangle className="w-5 h-5 text-blue-600" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-black text-primary uppercase tracking-widest mb-2">Review Required</h3>
-                            <p className="text-sm text-primary/70 font-bold leading-relaxed max-w-md">
-                              Operational intelligence has been submitted for <span className="text-primary">{address.label || 'Primary Location'}</span>. Perform final validation.
+                            <CardTitle className="text-blue-900 mb-1">
+                              Review Required - {address.label}
+                            </CardTitle>
+                            <p className="text-sm text-blue-700">
+                              Agent has submitted verification results. Review the information below.
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                           <Button
-                            variant="primary"
-                            size="lg"
+                            variant="success"
+                            size="sm"
                             onClick={() => handleVerificationApproval(index)}
                             disabled={updating}
-                            icon={<CheckCircle className="w-5 h-5" />}
-                            className="bg-emerald-600 hover:bg-emerald-700 border-emerald-600 flex-1 md:flex-none py-6 rounded-2xl shadow-xl shadow-emerald-500/10"
+                            icon={<CheckCircle className="w-4 h-4" />}
+                            className="flex-1 sm:flex-none"
                           >
-                            Validate
+                            Approve
                           </Button>
                           <Button
                             variant="danger"
-                            size="lg"
+                            size="sm"
                             onClick={() => setRejectingIndex(index)}
                             disabled={updating}
-                            icon={<XCircle className="w-5 h-5" />}
-                            className="flex-1 md:flex-none py-6 rounded-2xl shadow-xl shadow-error/10"
+                            icon={<XCircle className="w-4 h-4" />}
+                            className="flex-1 sm:flex-none"
                           >
                             Reject
                           </Button>
                         </div>
                       </div>
+                    </CardHeader>
+                  </Card>
+                )}
 
-                      {rejectingIndex === index && (
-                        <div className="mt-8 pt-8 border-t border-primary/10 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                           <textarea
-                             value={rejectionReason}
-                             onChange={(e) => setRejectionReason(e.target.value)}
-                             placeholder="Provide a detailed technical narrative for rejection (min 10 characters)..."
-                             className="w-full bg-surface border border-border p-5 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-error/20 focus:border-error transition-all outline-none resize-none h-32"
-                           />
-                           <div className="flex justify-end gap-3">
-                              <Button variant="ghost" className="font-bold text-xs uppercase" onClick={() => setRejectingIndex(null)}>Cancel</Button>
-                              <Button 
-                                variant="danger" 
-                                className="font-black text-xs uppercase tracking-widest px-8 rounded-xl"
-                                onClick={() => handleVerificationRejection(index)}
-                                disabled={updating || rejectionReason.trim().length < 10}
-                                loading={updating}
-                              >
-                                Commit Rejection
-                              </Button>
-                           </div>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{address.label || `Address ${index + 1}`}</CardTitle>
+                      {address.status && (
+                        <StatusBadge status={address.status} size="sm" />
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4">
+                        {formatAddress(address) && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Full Address</div>
+                            <div className="text-sm text-gray-900">{formatAddress(address)}</div>
+                          </div>
+                        )}
+
+                        {address.latitude && address.longitude && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">GPS Coordinates</div>
+                            <div className="text-sm text-gray-900 font-mono">
+                              {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {address.verificationData && (
+                        <div className="pt-6 border-t border-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-4">Agent Verification</h4>
+
+                          <div className="space-y-4">
+                            {address.verificationData.verifiedLatitude && address.verificationData.verifiedLongitude && (
+                              <>
+                                <div>
+                                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified GPS Coordinates</div>
+                                  <div className="text-sm text-gray-900 font-mono">
+                                    {address.verificationData.verifiedLatitude.toFixed(6)}, {address.verificationData.verifiedLongitude.toFixed(6)}
+                                  </div>
+                                </div>
+
+                                {address.latitude && address.longitude && (
+                                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="text-xs font-medium text-blue-700 uppercase tracking-wider mb-1">Distance from Original</div>
+                                    <div className="text-sm font-semibold text-blue-900">
+                                      {(calculateDistance(
+                                        address.latitude,
+                                        address.longitude,
+                                        address.verificationData.verifiedLatitude,
+                                        address.verificationData.verifiedLongitude
+                                      ) * 1000).toFixed(0)} meters
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+
+                            {address.verificationData.verifiedAddress && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Verified Address</div>
+                                <div className="text-sm text-gray-900">{address.verificationData.verifiedAddress}</div>
+                              </div>
+                            )}
+
+                            {address.verificationData.verificationPhotos && address.verificationData.verificationPhotos.length > 0 && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                                  Verification Photos ({address.verificationData.verificationPhotos.length})
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  {address.verificationData.verificationPhotos.map((photo: any, i: number) => {
+                                    let url = '';
+                                    let tag = null;
+
+                                    if (typeof photo === 'string') {
+                                      url = photo;
+                                    } else if (photo && typeof photo === 'object') {
+                                      if (photo.url) {
+                                        url = photo.url;
+                                        tag = photo.tag;
+                                      } else if (photo['0']) {
+                                        // Reconstruct mangled character-by-character object
+                                        url = Object.keys(photo)
+                                          .sort((a, b) => parseInt(a) - parseInt(b))
+                                          .filter(key => !isNaN(parseInt(key)))
+                                          .map(key => photo[key])
+                                          .join('');
+                                      }
+                                    }
+
+                                    if (!url || typeof url !== 'string') return null;
+
+                                    return (
+                                      <div key={i} className="space-y-1">
+                                        <a
+                                          href={url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all group block"
+                                        >
+                                          <Image
+                                            src={url}
+                                            alt={tag || `Photo ${i + 1}`}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 100vw, 33vw"
+                                          />
+                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                            <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                          </div>
+                                        </a>
+                                        {tag && (
+                                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                                            {tag.replace(/_/g, ' ')}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {address.verificationData.agentNotes && (
+                              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Agent Notes</div>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">{address.verificationData.agentNotes}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Documents</CardTitle>
+                  {canUploadDocuments && (
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        accept="image/*,.pdf"
+                        disabled={uploading}
+                      />
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Upload className="w-4 h-4" />}
+                        loading={uploading}
+                        disabled={uploading}
+                      >
+                        Upload
+                      </Button>
+                    </label>
                   )}
-
-                  <div className="bg-surface rounded-3xl border border-border overflow-hidden shadow-sm group hover:border-primary/20 transition-all duration-500 px-0">
-                    <div className="px-8 py-5 border-b border-border bg-gradient-to-r from-surface to-surface-secondary/50 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <MapPin className="w-5 h-5 text-primary" />
-                        <h3 className="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">{address.label || `Geographic Zone ${index + 1}`}</h3>
-                      </div>
-                      <StatusBadge status={address.status || user.status} size="sm" />
-                    </div>
-                    <div className="p-8">
-                      <div className="flex flex-col md:flex-row gap-10">
-                        <div className="flex-1 space-y-8">
-                          <div>
-                            <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest block mb-1.5 opacity-60">Physical Location Payload</span>
-                            <p className="text-lg font-black text-gray-900 dark:text-gray-100 leading-snug tracking-tight">
-                              {address.streetNumber} {address.streetName} {address.city && `, ${address.city}`}
-                            </p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {user.documents && user.documents.length > 0 ? (
+                  <div className="space-y-3">
+                    {user.documents.map((doc: KYCDocument) => (
+                      <div
+                        key={doc._id || doc.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5 text-gray-400" />
                           </div>
-
-                          <div className="grid grid-cols-2 gap-8 pt-8 border-t border-border/40">
-                            <DataBlock label="Spatial Latitude" value={address.latitude?.toFixed(6) || 'N/A'} mono />
-                            <DataBlock label="Spatial Longitude" value={address.longitude?.toFixed(6) || 'N/A'} mono />
-                          </div>
-
-                          {address.verificationData && (
-                            <div className="pt-8 border-t border-primary/10 bg-primary/5 -mx-8 -mb-8 p-8 relative overflow-hidden group/audit">
-                              <div className="absolute -right-4 -bottom-4 opacity-[0.05] pointer-events-none group-hover/audit:scale-110 transition-transform duration-700">
-                                <FileCheck className="w-24 h-24 text-primary" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="font-medium text-gray-900 text-sm truncate">
+                                {doc.fileName}
                               </div>
-                              <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                <ShieldCheck className="w-4 h-4" />
-                                Filed Audit Intelligence
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                                <DataBlock label="Verified Lat" value={address.verificationData.verifiedLatitude?.toFixed(6)} mono highlight />
-                                <DataBlock label="Verified Lng" value={address.verificationData.verifiedLongitude?.toFixed(6)} mono highlight />
-                              </div>
-
-                              {/* Verification Photos Section */}
-                              {address.verificationData.verificationPhotos && address.verificationData.verificationPhotos.length > 0 && (
-                                <div className="mt-8 space-y-4 relative z-10">
-                                  <div className="flex items-center gap-2 mb-4">
-                                    <Archive className="w-4 h-4 text-primary/60" />
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Verification Evidence Portfolio</span>
-                                  </div>
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                    {address.verificationData.verificationPhotos.map((photo, pIdx) => (
-                                      <div key={pIdx} className="group/photo relative aspect-square rounded-2xl overflow-hidden border border-primary/20 bg-surface shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-500">
-                                        <Image
-                                          src={photo.url}
-                                          alt={photo.tag || 'Verification Evidence'}
-                                          fill
-                                          className="object-cover group-hover/photo:scale-110 transition-transform duration-700"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/photo:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-3">
-                                          <p className="text-[8px] font-black text-white uppercase tracking-widest line-clamp-2">
-                                            {photo.tag?.replace(/__/g, '').replace(/_/g, ' ') || 'Untitled Evidence'}
-                                          </p>
-                                          <a 
-                                            href={photo.url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="mt-2 text-[8px] font-bold text-primary hover:text-white transition-colors uppercase tracking-[0.2em] flex items-center gap-1"
-                                          >
-                                            View Source <ExternalLink className="w-2 h-2" />
-                                          </a>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {address.verificationData.verifiedLatitude && address.latitude && (
-                                <div className="mt-10 p-4 rounded-2xl bg-surface border border-primary/20 flex items-center justify-between group/variance">
-                                  <div className="flex items-center gap-3">
-                                    <Navigation className="w-4 h-4 text-primary/40 group-hover/variance:rotate-45 transition-transform" />
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Spatial Variance</span>
-                                  </div>
-                                  <span className="text-xs font-black text-primary px-3 py-1 rounded-lg bg-primary/5 border border-primary/10">
-                                    {calculateDistance(address.latitude as number, address.longitude as number, address.verificationData.verifiedLatitude as number, address.verificationData.verifiedLongitude as number).toFixed(2)} km Offset
-                                  </span>
-                                </div>
-                              )}
+                              <Badge variant="neutral" size="sm">
+                                {getDocumentTypeDisplayName(doc.documentType)}
+                              </Badge>
                             </div>
+                            <div className="text-xs text-gray-500">
+                              {(doc.fileSize / 1024).toFixed(1)} KB • {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 ml-3">
+                          <a
+                            href={doc.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-gray-400 hover:text-primary hover:bg-white rounded-lg transition-colors"
+                            title="View document"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                          {canUploadDocuments && (
+                            <button
+                              onClick={() => handleDeleteDocument(doc._id || doc.id || '')}
+                              className="p-2 text-gray-400 hover:text-error hover:bg-white rounded-lg transition-colors"
+                              title="Delete document"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           )}
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <FileText className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">No documents yet</p>
+                    <p className="text-xs text-gray-500">Upload documents to get started</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {user.status === 'REJECTED' && user.rejectionReason && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -668,263 +824,198 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
             </Card>
 
             {user.requestMetadata && (
-              <div className="bg-surface rounded-3xl border border-border shadow-sm overflow-hidden group hover:border-primary/20 transition-all duration-500 font-sans">
-                <div className="px-8 py-5 border-b border-border bg-gradient-to-r from-surface to-surface-secondary/50 flex items-center gap-3">
-                  <ShieldAlert className="w-5 h-5 text-primary" />
-                  <h3 className="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Context Intel</h3>
-                </div>
-                <div className="p-8 space-y-4">
-                  <DataBlock label="Transmission IP" value={user.requestMetadata.ipAddress || 'UNKNOWN'} mono />
-                </div>
-              </div>
-            )}
-            {/* Workflow / Action Card */}
-            {user.status !== 'VERIFIED' && user.status !== 'REJECTED' && (
-              <div className="bg-surface rounded-3xl border-2 border-primary/10 shadow-xl shadow-primary/5 overflow-hidden group hover:border-primary/20 transition-all duration-500 font-sans">
-                <div className="p-8">
-                  <div className="flex bg-primary/10 p-4 rounded-2xl items-start gap-4 mb-8 border border-primary/20">
-                    <ShieldCheck className="w-8 h-8 text-primary shrink-0" />
-                    <div>
-                      <h4 className="text-sm font-black text-primary uppercase tracking-widest">Active Pipeline</h4>
-                      <p className="text-[11px] text-primary/70 font-bold mt-1 leading-relaxed">Transition this entity through the validation stage.</p>
-                    </div>
-                  </div>
-
+              <Card>
+                <CardHeader>
+                  <CardTitle>Submission Information</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-4">
-                    {user.status === 'PENDING' && (
-                      <Button
-                        variant="primary"
-                        className="w-full py-4 rounded-xl shadow-lg shadow-primary/20 text-sm font-black uppercase tracking-widest"
-                        onClick={async () => {
-                           try {
-                             setUpdating(true);
-                             await makeVerificationDecision(userId, false, 'ASSIGNED', undefined, undefined);
-                             await refetch();
-                           } catch (e) {
-                             addToast({ type: 'error', title: 'Action Failed', message: 'Failed to claim request.' });
-                           } finally {
-                             setUpdating(false);
-                           }
-                        }}
-                        loading={updating}
-                        icon={<UserCheck className="w-5 h-5" />}
-                      >
-                        Claim for Review
-                      </Button>
-                    )}
-                    {user.status === 'ASSIGNED' && (
-                      <Button
-                        variant="primary"
-                        className="w-full py-4 rounded-xl shadow-lg shadow-primary/20 text-sm font-black uppercase tracking-widest"
-                        onClick={async () => {
-                           try {
-                             setUpdating(true);
-                             await makeVerificationDecision(userId, false, 'IN_REVIEW', undefined, undefined);
-                             await refetch();
-                           } catch (e) {
-                             addToast({ type: 'error', title: 'Action Failed', message: 'Failed to update status.' });
-                           } finally {
-                             setUpdating(false);
-                           }
-                        }}
-                        loading={updating}
-                        icon={<Search className="w-5 h-5" />}
-                      >
-                        Initiate Review
-                      </Button>
-                    )}
-                    {(user.status === 'IN_REVIEW' || user.status === 'VERIFICATION_SUBMITTED') && isMelonAdmin && (
-                      <div className="grid grid-cols-1 gap-4 pt-2">
-                        <Button
-                          variant="primary"
-                          className="w-full py-4 rounded-xl shadow-lg shadow-success/20 bg-emerald-600 hover:bg-emerald-700 border-emerald-600 text-sm font-black uppercase tracking-widest text-white"
-                          onClick={async () => {
-                             try {
-                               setUpdating(true);
-                               await makeVerificationDecision(userId, true, 'VERIFIED', undefined, undefined);
-                               await refetch();
-                               addToast({ type: 'success', title: 'Verified', message: 'Entity has been fully validated.' });
-                             } catch (e) {
-                               addToast({ type: 'error', title: 'Validation Failed', message: 'Technical error during validation.' });
-                             } finally {
-                               setUpdating(false);
-                             }
-                          }}
-                          loading={updating}
-                          icon={<CheckCircle2 className="w-5 h-5" />}
-                        >
-                          Approve Profile
-                        </Button>
-                        <Button
-                          variant="danger"
-                          className="w-full py-4 rounded-xl shadow-lg shadow-error/20 text-sm font-black uppercase tracking-widest"
-                          onClick={() => openModal(<RejectKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'lg' })}
-                          loading={updating}
-                          icon={<XCircle className="w-5 h-5" />}
-                        >
-                          Reject Profile
-                        </Button>
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                        IP Address
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Assigned Intelligence */}
-            {user.assignedAgent && typeof user.assignedAgent !== 'string' && (
-              <div className="bg-surface rounded-3xl border border-border shadow-sm overflow-hidden group hover:border-primary/20 transition-all duration-500 font-sans">
-                <div className="px-8 py-5 border-b border-border bg-gradient-to-r from-surface to-surface-secondary/50 flex items-center gap-3">
-                  <UserCheck className="w-5 h-5 text-primary" />
-                  <h3 className="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Filed Officer</h3>
-                </div>
-                <div className="p-8">
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-surface-secondary/30 border border-border/50">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black border border-primary/20">
-                      {(user.assignedAgent as any).firstName?.[0] || 'A'}
+                      <div className="text-sm text-gray-900 font-mono">
+                        {user.requestMetadata.ipAddress || 'Unknown'}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-black text-gray-900 dark:text-gray-100 truncate">
-                        {(user.assignedAgent as any).firstName} {(user.assignedAgent as any).lastName}
-                      </p>
-                      <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 truncate mt-0.5">{(user.assignedAgent as any).email || 'DIGITAL_OFFICER'}</p>
-                    </div>
-                  </div>
-                  <div className="mt-6 pt-6 border-t border-border/40 space-y-4">
-                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Active Since:</span>
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-200">
-                          {user.assignedAt ? format(new Date(user.assignedAt), 'MMM dd, HH:mm') : 'N/A'}
-                        </span>
-                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Payload Inventory */}
-            <div className="bg-surface rounded-3xl border border-border shadow-sm overflow-hidden group hover:border-primary/20 transition-all duration-500 font-sans">
-              <div className="px-8 py-5 border-b border-border bg-gradient-to-r from-surface to-surface-secondary/50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Archive className="w-5 h-5 text-primary" />
-                  <h3 className="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Payload Blocks ({documents.length})</h3>
-                </div>
-                <div className="relative">
-                  <input
-                    type="file"
-                    id="doc-upload-sidebar"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                    disabled={uploading || (user.status !== 'PENDING' && user.status !== 'ASSIGNED' && user.status !== 'IN_REVIEW')}
-                  />
-                  <label
-                    htmlFor="doc-upload-sidebar"
-                    className={`p-2 rounded-lg border border-border transition-all cursor-pointer ${uploading || (user.status !== 'PENDING' && user.status !== 'ASSIGNED' && user.status !== 'IN_REVIEW') ? 'opacity-30 pointer-events-none' : 'hover:bg-primary/5 hover:border-primary text-primary'}`}
-                  >
-                    <Upload className="w-4 h-4" />
-                  </label>
-                </div>
-              </div>
-              <div className="p-8 space-y-4">
-                {documents && documents.length > 0 ? (
-                  <div className="space-y-3">
-                    {documents.slice(0, 5).map((doc, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-surface-secondary/20 border border-border/60 group/doc">
-                        <div className="flex items-center gap-4 min-w-0">
-                          <FileText className="w-4 h-4 text-gray-400 group-hover/doc:text-primary transition-colors" />
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-wider truncate" title={doc.fileName}>{doc.fileName}</p>
-                          </div>
+                    {user.requestMetadata.location ? (
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                          Approx. Location
                         </div>
-                        <button
-                          onClick={() => window.open(doc.fileUrl, '_blank')}
-                          className="p-2 text-gray-400 hover:text-primary transition-colors"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </button>
+                        <div className="text-sm text-gray-900">
+                          {user.requestMetadata.location.city},{' '}
+                          {user.requestMetadata.location.country}
+                        </div>
+                        {user.requestMetadata.location.isp && (
+                          <div className="text-[10px] text-gray-400 mt-0.5">
+                            {user.requestMetadata.location.isp}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                    {documents.length > 5 && (
-                      <Link href={`/kyc/${userId}/documents`}>
-                        <button className="w-full py-3 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest hover:text-primary transition-colors border-2 border-dashed border-border/60 rounded-2xl hover:border-primary/20 mt-2">
-                          + {documents.length - 5} More Artifacts
-                        </button>
-                      </Link>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-[10px] font-black text-gray-300 dark:text-gray-700 uppercase tracking-widest">No Payload</p>
-                  </div>
-                )}
-              </div>
-            </div>
+                    ) : user.requestMetadata.ipAddress ? (
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                          Approx. Location
+                        </div>
+                        <div className="text-sm text-gray-400 italic">
+                          {user.requestMetadata.ipAddress.includes('127.0.0.1') || user.requestMetadata.ipAddress === '::1'
+                            ? 'Local Network (No Geo Data)'
+                            : 'Location Not Available'}
+                        </div>
+                      </div>
+                    ) : null}
 
-            {/* Officer Audit Section */}
-            {isMelonAdmin && (
-              <div className="bg-error/5 border-2 border-error/20 rounded-3xl p-8 space-y-6 font-sans">
-                <div className="flex items-center gap-3">
-                  <ShieldAlert className="w-6 h-6 text-error" />
-                  <h3 className="text-sm font-black text-error uppercase tracking-[0.2em]">Administrative Purge</h3>
+                    <div className="pt-3 border-t border-gray-100">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                        Device & Platform
+                      </div>
+                      <div className="text-sm text-gray-900 flex items-center gap-2">
+                        <span>
+                          {user.requestMetadata.device || 'Unknown Device'}
+                        </span>
+                        <span className="text-gray-300">•</span>
+                        <span>
+                          {user.requestMetadata.browser || 'Unknown Browser'}
+                        </span>
+                      </div>
+                      {user.requestMetadata.os && (
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          on {user.requestMetadata.os}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 shrink-0"></div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Submitted</div>
+                      <div className="text-xs text-gray-500">
+                        {format(new Date(user.submittedAt), 'PPp')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {user.verificationDate && (
+                    <div className="flex gap-3">
+                      <div className="w-2 h-2 mt-2 rounded-full bg-success shrink-0"></div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Verified</div>
+                        <div className="text-xs text-gray-500">
+                          {format(new Date(user.verificationDate), 'PPp')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <div className="w-2 h-2 mt-2 rounded-full bg-gray-300 shrink-0"></div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Last Updated</div>
+                      <div className="text-xs text-gray-500">
+                        {format(new Date(user.updatedAt), 'PPp')}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-error/70 font-bold leading-relaxed">
-                  Permanent excision of this profile from the ledger.
-                </p>
-                <Button
-                  variant="danger"
-                  size="lg"
-                  onClick={async () => {
-                    if (confirm('Commit destructive purge?')) {
-                      try {
-                        setUpdating(true);
-                        addToast({ type: 'success', title: 'Purge Complete', message: 'Entity has been excised.' });
-                        router.push('/kyc');
-                      } catch (e) {
-                         addToast({ type: 'error', title: 'Purge Failed', message: 'Technical error.' });
-                      } finally {
-                        setUpdating(false);
-                      }
-                    }
-                  }}
-                  loading={updating}
-                  className="w-full py-5 rounded-2xl shadow-xl shadow-error/20 font-black uppercase tracking-widest text-sm"
-                >
-                  Confirm Purge
-                </Button>
-              </div>
+              </CardContent>
+            </Card>
+
+            {user.assignedAgent && typeof user.assignedAgent !== 'string' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Assigned Agent</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-sm text-gray-500">Name</div>
+                      <div className="text-gray-900">
+                        {user.assignedAgent.firstName} {user.assignedAgent.lastName}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Email</div>
+                      <div className="text-gray-900">{user.assignedAgent.email}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function DataBlock({ label, value, subValue, icon, uppercase, mono, highlight }: { 
-  label: string; 
-  value?: string | number | null; 
-  subValue?: string | number | null; 
-  icon?: React.ReactNode;
-  uppercase?: boolean;
-  mono?: boolean;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="space-y-1.5 group/data font-sans">
-      <div className="flex items-center gap-2">
-        {icon && <span className="text-primary/40 group-hover/data:text-primary transition-colors">{icon}</span>}
-        <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest opacity-70">{label}</span>
-      </div>
-      <div className="flex flex-col">
-        <span className={`text-sm font-bold ${highlight ? 'text-primary' : 'text-gray-900 dark:text-gray-100'} ${uppercase ? 'uppercase' : ''} ${mono ? 'font-mono tracking-tighter' : ''}`}>
-          {value || 'DATA_NULL'}
-        </span>
-        {subValue && (
-          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-widest italic opacity-60">
-            {subValue}
-          </span>
-        )}
-      </div>
+      {rejectingIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-error-light rounded-lg">
+                <XCircle className="w-5 h-5 text-error" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Reject {addresses[rejectingIndex]?.label}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Provide a reason for rejecting this address verification.
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Reason <span className="text-error">*</span>
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Explain why this address verification is being rejected..."
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum 10 characters ({rejectionReason.trim().length}/10)
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => {
+                  setRejectingIndex(null);
+                  setRejectionReason('');
+                }}
+                fullWidth
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="md"
+                onClick={() => handleVerificationRejection(rejectingIndex)}
+                loading={updating}
+                disabled={rejectionReason.trim().length < 10 || updating}
+                fullWidth
+              >
+                Confirm Rejection
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

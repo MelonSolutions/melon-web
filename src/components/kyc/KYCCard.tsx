@@ -125,24 +125,26 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   if (view === 'grid') {
     return (
       <Link href={`/kyc/${userId}`}>
-        <div className="bg-surface rounded-2xl border border-border p-6 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 transition-all cursor-pointer group relative overflow-hidden h-full flex flex-col">
-          <div className="flex items-start justify-between mb-5">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group relative">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors pr-8">
+              <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-primary transition-colors">
                 {user.firstName} {user.lastName}
               </h3>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                  {user.loanId || 'UNASSIGNED ID'}
-                </span>
-                {user.loanType && (
-                  <>
-                    <span className="text-border h-3 w-[1px]"></span>
-                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{user.loanType.toLowerCase()}</span>
-                  </>
-                )}
-              </div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-2 truncate italic">{user.email}</p>
+              <p className="text-xs font-medium text-primary mt-0.5 uppercase">
+                {user.loanId && user.loanId}
+                {user.loanId && user.loanType && ' • '}
+                <span className="text-gray-400">{user.loanType?.toLowerCase()}</span>
+              </p>
+              <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{user.phone}</p>
+              {user.organization?.name && (
+                <div className="mt-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                    Source: {user.organization.name}
+                  </span>
+                </div>
+              )}
             </div>
 
             <button
@@ -151,28 +153,28 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                 e.stopPropagation();
                 setShowDropdown(!showDropdown);
               }}
-              className="absolute top-6 right-6 p-2 text-gray-400 hover:text-primary hover:bg-surface-secondary rounded-xl transition-all border border-transparent hover:border-border z-10"
+              className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
               disabled={loading || downloading}
             >
               {loading || downloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
               ) : (
-                <MoreHorizontal className="w-5 h-5" />
+                <MoreHorizontal className="w-4 h-4 text-gray-400" />
               )}
             </button>
 
             {showDropdown && (
               <>
                 <div
-                  className="fixed inset-0 z-30"
+                  className="fixed inset-0 z-10"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     setShowDropdown(false);
                   }}
                 />
-                <div className="absolute right-6 top-16 w-56 bg-surface rounded-2xl border border-border shadow-2xl z-40 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-2 space-y-1">
+                <div className="absolute right-6 top-12 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
+                  <div className="py-1">
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -187,9 +189,9 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         );
                         setShowDropdown(false);
                       }}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary rounded-xl transition-all uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                     >
-                      <Save className="w-4 h-4 text-primary" />
+                      <Save className="w-4 h-4 text-blue-600" />
                       Edit Request
                     </button>
                     {isMelonAdmin && user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
@@ -207,9 +209,9 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                           );
                           setShowDropdown(false);
                         }}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-error hover:bg-error/10 rounded-xl transition-all uppercase tracking-widest"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-error hover:bg-error-light/10 text-left"
                       >
-                        <ShieldAlert className="w-4 h-4" />
+                        <ShieldAlert className="w-4 h-4 text-error" />
                         Reject Request
                       </button>
                     )}
@@ -217,9 +219,9 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                       <Link
                         href={`/map-view?layer=kyc&focus=${userId}&lat=${userLat}&lng=${userLng}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary rounded-xl transition-all uppercase tracking-widest"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                       >
-                        <MapPin className="w-4 h-4 text-emerald-500" />
+                        <MapPin className="w-4 h-4 text-emerald-600" />
                         View on Map
                       </Link>
                     )}
@@ -229,7 +231,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         e.stopPropagation();
                         window.location.href = `/kyc/${userId}`;
                       }}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary rounded-xl transition-all uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                     >
                       <Eye className="w-4 h-4" />
                       View Details
@@ -240,7 +242,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         e.stopPropagation();
                         window.location.href = `/kyc/${userId}/documents`;
                       }}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary rounded-xl transition-all uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                     >
                       <FileText className="w-4 h-4" />
                       Documents
@@ -252,12 +254,12 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                         handleDownloadReport();
                       }}
                       disabled={downloading}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary rounded-xl disabled:opacity-50 transition-all uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left disabled:opacity-50"
                     >
                       <Download className="w-4 h-4" />
-                      Export Report
+                      Download Report
                     </button>
-                    <div className="border-t border-border mx-2 my-2"></div>
+                    <div className="border-t border-gray-100 my-1"></div>
                     {isMelonAdmin && (
                       <button
                         onClick={(e) => {
@@ -266,10 +268,11 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                           handleDelete();
                         }}
                         disabled={loading || !canDelete}
-                        className={`flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold rounded-xl transition-colors uppercase tracking-widest ${canDelete ? 'text-error hover:bg-error/10' : 'text-gray-400 dark:text-gray-600 bg-transparent'}`}
+                        className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'
+                          }`}
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete Request
+                        Delete {!canDelete && '(Pending Only)'}
                       </button>
                     )}
                   </div>
@@ -278,59 +281,50 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
             )}
           </div>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-4">
             <StatusBadge status={user.status} size="sm" />
-            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-              <User className="w-3 h-3" />
-              {user.addresses?.length || 1} Address
-            </div>
           </div>
 
-          <div className="flex-1 space-y-4 pt-5 border-t border-border/50">
+          <div className="space-y-3 pt-4 border-t border-gray-100">
             {user.status === 'REJECTED' && user.rejectionReason && (
-              <div className="bg-error/5 border border-error/20 rounded-xl p-4 mb-2">
-                <span className="text-[10px] font-bold text-error uppercase tracking-wider block mb-1.5 opacity-80">Reason for Failure</span>
-                <p className="text-xs text-error font-bold leading-relaxed line-clamp-2">{user.rejectionReason}</p>
+              <div className="bg-error-light/10 border border-error-light/50 rounded-lg p-3 mb-2">
+                <span className="text-[10px] font-bold text-error uppercase tracking-wider block mb-1">Rejection Reason</span>
+                <p className="text-xs text-error font-medium leading-tight">{user.rejectionReason}</p>
+                {user.rejectionNote && <p className="text-[10px] text-error/70 mt-1 line-clamp-2">{user.rejectionNote}</p>}
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Logged</p>
-                <p className="text-[11px] font-bold text-gray-700 dark:text-gray-200">
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="flex flex-col">
+                <span className="text-gray-400">Logged</span>
+                <span className="text-gray-700 font-medium">
                   {user.submittedAt ? format(new Date(user.submittedAt), 'MM/dd, HH:mm') : '-'}
-                </p>
+                </span>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Assigned</p>
-                <p className={`text-[11px] font-bold ${user.assignedAt ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 italic'}`}>
-                  {user.assignedAt ? format(new Date(user.assignedAt), 'MM/dd, HH:mm') : 'None'}
-                </p>
+              <div className="flex flex-col">
+                <span className="text-gray-400">Assigned</span>
+                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                  {user.assignedAt ? format(new Date(user.assignedAt), 'MM/dd, HH:mm') : 'Not Assigned'}
+                </span>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Submitted</p>
-                <p className={`text-[11px] font-bold ${user.verifiedAt ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 italic'}`}>
+              <div className="flex flex-col">
+                <span className="text-gray-400">Submitted</span>
+                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                   {user.verifiedAt ? format(new Date(user.verifiedAt), 'MM/dd, HH:mm') : 'Pending'}
-                </p>
+                </span>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Validated</p>
-                <p className={`text-[11px] font-bold ${user.verificationDate ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 italic'}`}>
+              <div className="flex flex-col">
+                <span className="text-gray-400">Decision</span>
+                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                   {user.verificationDate ? format(new Date(user.verificationDate), 'MM/dd, HH:mm') : 'Pending'}
-                </p>
+                </span>
               </div>
             </div>
 
-            {user.organization?.name && (
-              <div className="pt-4 mt-auto">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-secondary/50 border border-border/50 w-fit">
-                  <Building2 className="w-3 h-3 text-primary/70" />
-                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest truncate max-w-[120px]">
-                    {user.organization.name}
-                  </span>
-                </div>
-              </div>
-            )}
+            <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-100">
+              <span className="text-gray-500">Addresses:</span>
+              <span className="text-gray-900 font-bold">{user.addresses?.length || 1}</span>
+            </div>
           </div>
         </div>
       </Link>
@@ -338,49 +332,42 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   }
 
   return (
-    <div className="hover:bg-surface-secondary/30 dark:hover:bg-surface-secondary/20 transition-all border-b border-border/60 last:border-0 relative group">
-      <div className="px-8 py-5">
+    <div className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 relative">
+      <div className="px-4 sm:px-6 py-4">
         <div 
-          className="flex lg:grid gap-6 items-center justify-between lg:justify-start"
-          style={{ gridTemplateColumns: 'minmax(220px, 2fr) minmax(140px, 1fr) 130px 90px 90px 90px 90px 60px' }}
+          className="flex lg:grid gap-4 items-center justify-between lg:justify-start"
+          style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
         >
           {/* Main Content Area - Column 1 on Desktop */}
           <div className="flex-1 lg:col-span-1 min-w-0">
-            <Link href={`/kyc/${userId}`} className="block group/link">
-              <div className="font-bold text-gray-900 dark:text-gray-100 group-hover/link:text-primary transition-colors truncate text-sm">
+            <Link href={`/kyc/${userId}`} className="block group">
+              <div className="font-semibold text-gray-900 group-hover:text-primary transition-colors truncate text-sm">
                 {user.firstName} {user.lastName}
               </div>
-              <div className="flex flex-col gap-1 mt-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                    {user.loanId || 'UNASSIGNED'}
-                  </span>
-                  {user.loanType && (
-                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                      • {user.loanType}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate max-w-full italic">{user.email}</div>
+              <div className="flex flex-col gap-0.5 mt-0.5">
+                <span className="text-[10px] font-bold text-primary uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                  {user.loanId || 'N/A'} {user.loanType && `• ${(user.loanType as string).toLowerCase()}`}
+                </span>
+                <div className="text-[11px] text-gray-500 truncate max-w-full">{user.email}</div>
                 
                 {user.organization?.name && (
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest lg:hidden mt-2">
-                    <Building2 className="w-3 h-3 text-primary/50 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium lg:hidden mt-1.5">
+                    <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
                     <span className="truncate">Source: {user.organization?.name}</span>
                   </div>
                 )}
 
                 {/* Mobile-only timestamps */}
-                <div className="grid grid-cols-2 gap-6 mt-4 pt-3 border-t border-border/40 lg:hidden">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold opacity-70">Logged</span>
-                    <span className="text-[11px] text-gray-800 dark:text-gray-200 font-bold">
+                <div className="grid grid-cols-2 gap-6 mt-3 pt-2.5 border-t border-gray-100/50 lg:hidden">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-tight font-bold leading-none">Logged</span>
+                    <span className="text-[11px] text-gray-800 font-bold whitespace-nowrap">
                       {user.submittedAt ? format(new Date(user.submittedAt as string), 'MM/dd, HH:mm') : '-'}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[9px] text-gray-400 uppercase tracking-widest font-bold opacity-70">Claimed</span>
-                    <span className={`text-[11px] font-bold ${user.assignedAt ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 dark:text-gray-600 italic font-medium'}`}>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-tight font-bold leading-none">Assigned</span>
+                    <span className="text-[11px] text-gray-800 font-bold whitespace-nowrap">
                       {user.assignedAt ? format(new Date(user.assignedAt as string), 'MM/dd, HH:mm') : 'None'}
                     </span>
                   </div>
@@ -389,17 +376,91 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
             </Link>
           </div>
 
+          {/* Mobile Actions/Status (Hidden on Desktop) */}
+          <div className="lg:hidden flex flex-col items-end gap-3 shrink-0">
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                disabled={loading || downloading}
+              >
+                {loading || downloading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                ) : (
+                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+              {showDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={onRefetch} />, { size: 'xl' });
+                          setShowDropdown(false);
+                        }}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <Save className="w-4 h-4 text-blue-600" />
+                        Edit Request
+                      </button>
+                      <button
+                        onClick={() => (window.location.href = `/kyc/${userId}`)}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => (window.location.href = `/kyc/${userId}/documents`)}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Documents
+                      </button>
+                      <button
+                        onClick={handleDownloadReport}
+                        disabled={downloading}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left disabled:opacity-50"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download Report
+                      </button>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      {isMelonAdmin && (
+                        <button
+                          onClick={handleDelete}
+                          disabled={loading || !canDelete}
+                          className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete {!canDelete && '(Pending Only)'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <StatusBadge status={user.status} size="sm" />
+            {user.status === 'REJECTED' && user.rejectionReason && (
+              <span className="text-[9px] text-error font-bold leading-tight line-clamp-1 max-w-[80px]" title={user.rejectionReason}>
+                {user.rejectionReason}
+              </span>
+            )}
+          </div>
+
           {/* Column 2: Source (Desktop-only) */}
-          <div className="hidden lg:flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 font-bold uppercase tracking-wide truncate" title={user.organization?.name || ''}>
-            <Building2 className="w-3.5 h-3.5 text-primary/30 shrink-0" />
-            <span className="truncate">{user.organization?.name || 'N/A'}</span>
+          <div className="hidden lg:block text-[11px] text-gray-600 font-medium truncate" title={user.organization?.name || ''}>
+            {user.organization?.name || '-'}
           </div>
 
           {/* Column 3: Status (Desktop-only) */}
-          <div className="hidden lg:flex flex-col items-start gap-1 shrink-0 group-hover:scale-105 transition-transform duration-300">
+          <div className="hidden lg:flex flex-col items-start gap-1 shrink-0">
             <StatusBadge status={user.status} size="sm" />
             {user.status === 'REJECTED' && user.rejectionReason && (
-              <span className="text-[9px] text-error font-bold leading-tight line-clamp-1 max-w-[120px] pl-1 border-l border-error/20 ml-1" title={user.rejectionReason}>
+              <span className="text-[10px] text-error font-semibold leading-tight line-clamp-1" title={user.rejectionReason}>
                 {user.rejectionReason}
               </span>
             )}
@@ -407,28 +468,28 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
 
           {/* Column 4: Logged (Desktop-only) */}
           <div className="hidden lg:block text-center">
-            <div className="text-[11px] text-gray-900 dark:text-gray-100 font-bold">
+            <div className="text-[11px] text-gray-900 font-medium">
               {user.submittedAt ? format(new Date(user.submittedAt as string), 'MM/dd, HH:mm') : '-'}
             </div>
           </div>
 
           {/* Column 5: Assigned (Desktop-only) */}
           <div className="hidden lg:block text-center">
-            <div className={`text-[11px] font-bold ${user.assignedAt ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-600 italic font-medium'}`}>
+            <div className={`text-[11px] font-medium ${user.assignedAt ? 'text-gray-900' : 'text-gray-300 italic'}`}>
               {user.assignedAt ? format(new Date(user.assignedAt as string), 'MM/dd, HH:mm') : 'None'}
             </div>
           </div>
 
           {/* Column 6: Submitted (Desktop-only) */}
           <div className="hidden lg:block text-center">
-            <div className={`text-[11px] font-bold ${user.verifiedAt ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-600 italic font-medium'}`}>
+            <div className={`text-[11px] font-medium ${user.verifiedAt ? 'text-gray-900' : 'text-gray-300 italic'}`}>
               {user.verifiedAt ? format(new Date(user.verifiedAt as string), 'MM/dd, HH:mm') : 'Pending'}
             </div>
           </div>
 
           {/* Column 7: Decision (Desktop-only) */}
           <div className="hidden lg:block text-center">
-            <div className={`text-[11px] font-bold ${(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-600 italic font-medium'}`}>
+            <div className={`text-[11px] font-medium ${(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate ? 'text-gray-900' : 'text-gray-300 italic'}`}>
               {(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate
                 ? format(new Date(user.verificationDate as string), 'MM/dd, HH:mm')
                 : 'Pending'}
@@ -439,24 +500,24 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
           <div className="hidden lg:flex justify-end relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="p-2 text-gray-400 hover:text-primary hover:bg-surface-secondary rounded-xl transition-all border border-transparent hover:border-border"
+              className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
               disabled={loading || downloading}
             >
-              <MoreHorizontal className="w-5 h-5" />
+              <MoreHorizontal className="w-4 h-4 text-gray-400" />
             </button>
             {showDropdown && (
               <>
-                <div className="fixed inset-0 z-30" onClick={() => setShowDropdown(false)} />
-                <div className="absolute right-0 top-full mt-2 w-56 bg-surface rounded-2xl border border-border shadow-2xl z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="p-2 space-y-1">
+                <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
+                  <div className="py-1">
                     <button
                       onClick={() => {
                         openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={onRefetch} />, { size: 'xl' });
                         setShowDropdown(false);
                       }}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary transition-all rounded-xl uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                     >
-                      <Save className="w-4 h-4 text-primary" />
+                      <Save className="w-4 h-4 text-blue-600" />
                       Edit Request
                     </button>
                     {isMelonAdmin && user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
@@ -465,52 +526,52 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
                           openModal(<RejectKYCModal user={user} onClose={closeModal} onSuccess={onRefetch} />, { size: 'lg' });
                           setShowDropdown(false);
                         }}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-error hover:bg-error/10 transition-all rounded-xl uppercase tracking-widest"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-error hover:bg-error-light/10 text-left"
                       >
-                        <ShieldAlert className="w-4 h-4" />
-                        Failure Note
+                        <ShieldAlert className="w-4 h-4 text-error" />
+                        Reject Request
                       </button>
                     )}
                     {userLat && userLng && (
                       <Link
                         href={`/map-view?layer=kyc&focus=${userId}&lat=${userLat}&lng=${userLng}`}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary transition-all rounded-xl uppercase tracking-widest"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                       >
-                        <MapPin className="w-4 h-4 text-emerald-500" />
-                        Location
+                        <MapPin className="w-4 h-4 text-emerald-600" />
+                        View on Map
                       </Link>
                     )}
                     <button
                       onClick={() => (window.location.href = `/kyc/${userId}`)}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary transition-all rounded-xl uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                     >
                       <Eye className="w-4 h-4" />
-                      Details
+                      View Details
                     </button>
                     <button
                       onClick={() => (window.location.href = `/kyc/${userId}/documents`)}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary transition-all rounded-xl uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                     >
                       <FileText className="w-4 h-4" />
-                      Payload
+                      Documents
                     </button>
                     <button
                       onClick={handleDownloadReport}
                       disabled={downloading}
-                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-surface-secondary transition-all rounded-xl disabled:opacity-50 uppercase tracking-widest"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left disabled:opacity-50"
                     >
                       <Download className="w-4 h-4" />
-                      Raw Data
+                      Download Report
                     </button>
-                    <div className="border-t border-border mx-2 my-2"></div>
+                    <div className="border-t border-gray-100 my-1"></div>
                     {isMelonAdmin && (
                       <button
                         onClick={handleDelete}
                         disabled={loading || !canDelete}
-                        className={`flex items-center gap-3 w-full px-4 py-2.5 text-xs font-bold transition-all rounded-xl uppercase tracking-widest ${canDelete ? 'text-error hover:bg-error/10' : 'text-gray-400 dark:text-gray-600 italic opacity-50'}`}
+                        className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-error-light disabled:opacity-50 text-left ${canDelete ? 'text-error' : 'text-gray-400'}`}
                       >
                         <Trash2 className="w-4 h-4" />
-                        Purge Entry
+                        Delete {!canDelete && '(Pending Only)'}
                       </button>
                     )}
                   </div>

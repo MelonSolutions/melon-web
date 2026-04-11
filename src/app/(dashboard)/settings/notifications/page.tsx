@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft,
@@ -13,17 +13,11 @@ import {
   Users,
   BarChart3,
   FileText,
-  AlertTriangle,
-  Check,
-  Zap,
-  Shield,
-  Clock3
+  AlertTriangle
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 
 export default function NotificationSettingsPage() {
   const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [settings, setSettings] = useState({
     email: {
       projectUpdates: true,
@@ -160,11 +154,10 @@ export default function NotificationSettingsPage() {
 
   const handleSave = async () => {
     setLoading(true);
-    setSaved(false);
     try {
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      // Show success message
     } catch (error) {
       console.error('Error saving notification settings:', error);
     } finally {
@@ -185,284 +178,263 @@ export default function NotificationSettingsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto pb-20 font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col gap-10">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div>
+        <Link 
+          href="/settings"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Settings
+        </Link>
+        
+        <div className="flex items-center justify-between">
           <div>
-            <Link 
-              href="/settings"
-              className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 hover:text-primary transition-colors mb-6 group"
-            >
-              <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-1" />
-              Back to Settings
-            </Link>
-            <div className="flex items-center gap-4">
-              <div className="w-2 h-10 bg-primary rounded-full"></div>
-              <div>
-                <h1 className="text-4xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">Notification Settings</h1>
-                <p className="text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.25em] mt-1 opacity-70">Manage how and when you receive notifications</p>
-              </div>
-            </div>
+            <h1 className="text-2xl font-semibold text-gray-900">Notification Settings</h1>
+            <p className="text-gray-600 mt-1">Manage how and when you receive notifications</p>
           </div>
-          <Button
+          <button
             onClick={handleSave}
             disabled={loading}
-            className={`rounded-xl px-12 py-4 shadow-xl font-black uppercase tracking-[0.2em] text-[10px] min-w-[220px] transition-all duration-500 ${saved ? 'bg-emerald-500 hover:bg-emerald-600 border-none' : 'shadow-primary/20 bg-primary'}`}
-            icon={loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
           >
-            {loading ? 'Saving...' : saved ? 'Changes Saved' : 'Save Changes'}
-          </Button>
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Save Changes
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => {
+              toggleAllForChannel('email', true);
+              toggleAllForChannel('push', true);
+              toggleAllForChannel('inApp', true);
+            }}
+            className="px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors cursor-pointer"
+          >
+            Enable All Notifications
+          </button>
+          <button
+            onClick={() => {
+              toggleAllForChannel('email', false);
+              toggleAllForChannel('push', false);
+              toggleAllForChannel('inApp', false);
+            }}
+            className="px-4 py-2 bg-red-100 text-red-800 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors cursor-pointer"
+          >
+            Disable All Notifications
+          </button>
+          <button
+            onClick={() => {
+              toggleAllForChannel('email', false);
+              toggleAllForChannel('push', false);
+              setSettings(prev => ({
+                ...prev,
+                inApp: { ...prev.inApp, securityAlerts: true, metricAlerts: true, deadlineReminders: true }
+              }));
+            }}
+            className="px-4 py-2 bg-blue-100 text-blue-800 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors cursor-pointer"
+          >
+            Essential Only
+          </button>
+        </div>
+      </div>
+
+      {/* Notification Matrix */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-medium text-gray-900">Notification Preferences</h2>
+          <p className="text-sm text-gray-500 mt-1">Choose how you want to be notified for each type of activity</p>
         </div>
 
-        {/* Quick Actions Card */}
-        <div className="bg-surface-secondary/20 dark:bg-white/5 border border-border/60 dark:border-white/10 rounded-[2.5rem] p-8 flex flex-wrap items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20 text-primary">
-              <Zap className="w-5 h-5" />
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Notification Type
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center gap-2">
+                    <Smartphone className="w-4 h-4" />
+                    Push
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center gap-2">
+                    <Bell className="w-4 h-4" />
+                    In-App
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {notificationTypes.map((type) => (
+                <tr key={type.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 rounded-lg mt-1">
+                        <type.icon className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{type.label}</p>
+                        <p className="text-sm text-gray-500 mt-1">{type.description}</p>
+                        <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                          {type.category}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleToggle('email', type.id)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
+                        settings.email[type.id as keyof typeof settings.email] ? 'bg-[#5B94E5]' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          settings.email[type.id as keyof typeof settings.email] ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleToggle('push', type.id)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
+                        settings.push[type.id as keyof typeof settings.push] ? 'bg-[#5B94E5]' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          settings.push[type.id as keyof typeof settings.push] ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleToggle('inApp', type.id)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
+                        settings.inApp[type.id as keyof typeof settings.inApp] ? 'bg-[#5B94E5]' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          settings.inApp[type.id as keyof typeof settings.inApp] ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Timing & Frequency */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-6">Timing & Frequency</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Digest Frequency
+            </label>
+            <select
+              value={settings.frequency.digestFrequency}
+              onChange={(e) => handleFrequencyChange('digestFrequency', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] cursor-pointer"
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="never">Never</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Reminder Timing
+            </label>
+            <select
+              value={settings.frequency.reminderTiming}
+              onChange={(e) => handleFrequencyChange('reminderTiming', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] cursor-pointer"
+            >
+              <option value="1hour">1 hour before</option>
+              <option value="24hours">24 hours before</option>
+              <option value="3days">3 days before</option>
+              <option value="1week">1 week before</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Quiet Hours */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-medium text-gray-900">Quiet Hours</h2>
+            <p className="text-sm text-gray-500 mt-1">Disable push notifications during specified hours</p>
+          </div>
+          <button
+            onClick={() => handleQuietHoursChange('enabled', !settings.frequency.quietHours.enabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
+              settings.frequency.quietHours.enabled ? 'bg-[#5B94E5]' : 'bg-gray-200'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                settings.frequency.quietHours.enabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {settings.frequency.quietHours.enabled && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Time
+              </label>
+              <input
+                type="time"
+                value={settings.frequency.quietHours.start}
+                onChange={(e) => handleQuietHoursChange('start', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5]"
+                />
             </div>
             <div>
-              <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Quick Actions</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold">Manage global notification channels</p>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                End Time
+              </label>
+              <input
+                type="time"
+                value={settings.frequency.quietHours.end}
+                onChange={(e) => handleQuietHoursChange('end', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5]"
+              />
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="rounded-xl px-6 font-black uppercase tracking-widest text-[9px] border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
-              onClick={() => {
-                toggleAllForChannel('email', true);
-                toggleAllForChannel('push', true);
-                toggleAllForChannel('inApp', true);
-              }}
-            >
-              Enable All
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="rounded-xl px-6 font-black uppercase tracking-widest text-[9px] border-error/20 text-error dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-              onClick={() => {
-                toggleAllForChannel('email', false);
-                toggleAllForChannel('push', false);
-                toggleAllForChannel('inApp', false);
-              }}
-            >
-              Disable All
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="rounded-xl px-6 font-black uppercase tracking-widest text-[9px] border-primary/20 text-primary dark:text-primary-light"
-              onClick={() => {
-                toggleAllForChannel('email', false);
-                toggleAllForChannel('push', false);
-                setSettings(prev => ({
-                  ...prev,
-                  inApp: { ...prev.inApp, securityAlerts: true, metricAlerts: true, deadlineReminders: true }
-                }));
-              }}
-            >
-              Essential Only
-            </Button>
-          </div>
-        </div>
-
-        {/* Notification Matrix Card */}
-        <div className="bg-surface dark:bg-black/20 rounded-[3rem] border border-border dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-10 py-8 border-b border-border/60 dark:border-white/10 bg-surface-secondary/30 dark:bg-white/5">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-surface dark:bg-white/10 rounded-2xl border border-border dark:border-white/10 shadow-sm">
-                <Shield className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">Notification Preferences</h2>
-                <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 opacity-80">Choose how you want to be notified for each type of activity</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-surface-secondary/10 dark:bg-white/5">
-                  <th className="px-10 py-6 text-left text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] border-b border-border/40 dark:border-white/10">
-                    Notification Type
-                  </th>
-                  <th className="px-6 py-6 text-center text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] border-b border-border/40 min-w-[120px] dark:border-white/10">
-                    <div className="flex flex-col items-center gap-1">
-                      <Mail className="w-3.5 h-3.5 mb-1" />
-                      Email
-                    </div>
-                  </th>
-                  <th className="px-6 py-6 text-center text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] border-b border-border/40 min-w-[120px] dark:border-white/10">
-                    <div className="flex flex-col items-center gap-1">
-                      <Smartphone className="w-3.5 h-3.5 mb-1" />
-                      Push
-                    </div>
-                  </th>
-                  <th className="px-6 py-6 text-center text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] border-b border-border/40 min-w-[120px] dark:border-white/10">
-                    <div className="flex flex-col items-center gap-1">
-                      <Bell className="w-3.5 h-3.5 mb-1" />
-                      In-App
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30 dark:divide-white/10">
-                {notificationTypes.map((type) => (
-                  <tr key={type.id} className="group hover:bg-primary/[0.02] dark:hover:bg-primary/5 transition-colors">
-                    <td className="px-10 py-8">
-                      <div className="flex items-start gap-5">
-                        <div className="p-3 bg-surface-secondary/50 dark:bg-white/5 rounded-2xl border border-border dark:border-white/10 group-hover:border-primary/20 transition-all">
-                          <type.icon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors" />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">{type.label}</p>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-bold leading-relaxed max-w-md">{type.description}</p>
-                          <div className="flex items-center gap-2 mt-3">
-                            <span className="px-3 py-1 bg-surface-secondary dark:bg-white/5 text-[9px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 rounded-full border border-border/40 dark:border-white/10">
-                              {type.category}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    {(['email', 'push', 'inApp'] as const).map((channel) => (
-                      <td key={channel} className="px-6 py-8 text-center">
-                        <button
-                          onClick={() => handleToggle(channel, type.id)}
-                          className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 outline-none ${
-                            settings[channel][type.id as keyof typeof settings.email] ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-gray-200 dark:bg-gray-800'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-all duration-500 ${
-                              settings[channel][type.id as keyof typeof settings.email] ? 'translate-x-[24px]' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Timing & Quiet Hours Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Scheduling Card */}
-          <div className="bg-surface dark:bg-black/20 rounded-[2.5rem] border border-border dark:border-white/10 p-10 shadow-sm flex flex-col">
-            <div className="flex items-center gap-4 mb-10">
-              <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                <Clock3 className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 tracking-tight uppercase tracking-widest text-sm">Timing & Frequency</h3>
-                <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 opacity-80">Configure how often you receive updates</p>
-              </div>
-            </div>
-
-            <div className="space-y-8">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.22em] flex items-center gap-2">
-                  <div className="w-1 h-1 bg-primary rounded-full"></div>
-                  Digest Frequency
-                </label>
-                <select
-                  value={settings.frequency.digestFrequency}
-                  onChange={(e) => handleFrequencyChange('digestFrequency', e.target.value)}
-                  className="w-full px-6 py-4 bg-surface-secondary/30 dark:bg-white/5 border border-border dark:border-white/10 rounded-xl text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-[11px] font-black uppercase tracking-widest appearance-none cursor-pointer hover:border-primary/20"
-                >
-                  <option value="daily" className="dark:bg-gray-900">Daily</option>
-                  <option value="weekly" className="dark:bg-gray-900">Weekly</option>
-                  <option value="monthly" className="dark:bg-gray-900">Monthly</option>
-                  <option value="never" className="dark:bg-gray-900">Never</option>
-                </select>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.22em] flex items-center gap-2">
-                  <div className="w-1 h-1 bg-primary rounded-full"></div>
-                  Reminder Timing
-                </label>
-                <select
-                  value={settings.frequency.reminderTiming}
-                  onChange={(e) => handleFrequencyChange('reminderTiming', e.target.value)}
-                  className="w-full px-6 py-4 bg-surface-secondary/30 dark:bg-white/5 border border-border dark:border-white/10 rounded-xl text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-[11px] font-black uppercase tracking-widest appearance-none cursor-pointer hover:border-primary/20"
-                >
-                  <option value="1hour" className="dark:bg-gray-900">1 hour before</option>
-                  <option value="24hours" className="dark:bg-gray-900">24 hours before</option>
-                  <option value="3days" className="dark:bg-gray-900">3 days before</option>
-                  <option value="1week" className="dark:bg-gray-900">1 week before</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Quiet Hours Card */}
-          <div className="bg-surface dark:bg-black/20 rounded-[2.5rem] border border-border dark:border-white/10 p-10 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                  <Bell className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 tracking-tight uppercase tracking-widest text-sm">Quiet Hours</h3>
-                  <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1 opacity-80">Disable push notifications during specified hours</p>
-                </div>
-              </div>
-              <button
-                onClick={() => handleQuietHoursChange('enabled', !settings.frequency.quietHours.enabled)}
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 outline-none ${
-                  settings.frequency.quietHours.enabled ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-gray-200 dark:bg-gray-800'
-                }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-all duration-500 ${
-                    settings.frequency.quietHours.enabled ? 'translate-x-[24px]' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className={`space-y-8 transition-all duration-500 ${settings.frequency.quietHours.enabled ? 'opacity-100 translate-y-0' : 'opacity-30 pointer-events-none'}`}>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.22em] flex items-center gap-2">
-                    Start Time
-                  </label>
-                  <input
-                    type="time"
-                    value={settings.frequency.quietHours.start}
-                    onChange={(e) => handleQuietHoursChange('start', e.target.value)}
-                    className="w-full px-6 py-4 bg-surface-secondary/30 dark:bg-white/5 border border-border dark:border-white/10 rounded-xl text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary transition-all outline-none font-black text-xs"
-                    />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.22em] flex items-center gap-2">
-                    End Time
-                  </label>
-                  <input
-                    type="time"
-                    value={settings.frequency.quietHours.end}
-                    onChange={(e) => handleQuietHoursChange('end', e.target.value)}
-                    className="w-full px-6 py-4 bg-surface-secondary/30 dark:bg-white/5 border border-border dark:border-white/10 rounded-xl text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary transition-all outline-none font-black text-xs"
-                  />
-                </div>
-              </div>
-              <div className="p-6 bg-amber-50 dark:bg-amber-900/10 rounded-[1.5rem] border border-amber-200/50 dark:border-amber-900/30">
-                <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 leading-relaxed italic flex items-start gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                  Note: Security alerts and critical threshold breaches bypass quiet hour settings.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

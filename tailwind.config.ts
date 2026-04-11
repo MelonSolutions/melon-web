@@ -1,7 +1,6 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,50 +9,42 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: 'var(--color-background)',
-        border: {
-          DEFAULT: 'var(--color-border)',
-        },
-        surface: {
-          DEFAULT: 'var(--color-surface)',
-          secondary: 'var(--color-surface-secondary)',
-        },
         primary: {
-          DEFAULT: 'var(--color-primary)',
-          hover: 'var(--color-primary-hover)',
-          light: 'var(--color-primary-light)',
+          DEFAULT: '#5B94E5',
+          hover: '#4A7EC9',
+          light: '#EBF4FF',
         },
         gray: {
-          50: 'var(--color-gray-50)',
-          100: 'var(--color-gray-100)',
-          200: 'var(--color-gray-200)',
-          300: 'var(--color-gray-300)',
-          400: 'var(--color-gray-400)',
-          500: 'var(--color-gray-500)',
-          600: 'var(--color-gray-600)',
-          700: 'var(--color-gray-700)',
-          800: 'var(--color-gray-800)',
-          900: 'var(--color-gray-900)',
+          50: '#F9FAFB',
+          100: '#F3F4F6',
+          200: '#E5E7EB',
+          300: '#D1D5DB',
+          400: '#9CA3AF',
+          500: '#6B7280',
+          600: '#4B5563',
+          700: '#374151',
+          800: '#1F2937',
+          900: '#111827',
         },
         success: {
-          DEFAULT: 'var(--color-success)',
-          light: 'var(--color-success-light)',
+          DEFAULT: '#10B981',
+          light: '#D1FAE5',
         },
         warning: {
-          DEFAULT: 'var(--color-warning)',
-          light: 'var(--color-warning-light)',
+          DEFAULT: '#F59E0B',
+          light: '#FEF3C7',
         },
         error: {
-          DEFAULT: 'var(--color-error)',
-          light: 'var(--color-error-light)',
+          DEFAULT: '#EF4444',
+          light: '#FEE2E2',
         },
         info: {
-          DEFAULT: 'var(--color-info)',
-          light: 'var(--color-info-light)',
+          DEFAULT: '#3B82F6',
+          light: '#DBEAFE',
         },
       },
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'], // Direct, like FigoRisk
         heading: ['var(--font-mabry)', 'DM Sans', 'system-ui', 'sans-serif'],
       },
       fontSize: {

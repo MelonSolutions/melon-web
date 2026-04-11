@@ -24,12 +24,12 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       'inline-flex items-center gap-1.5 font-medium rounded-md whitespace-nowrap';
 
     const variants = {
-      success: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20',
-      warning: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
-      error: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20',
-      info: 'bg-info/10 dark:bg-info/20 text-info-hover dark:text-info border border-info/20',
-      neutral: 'bg-surface-secondary text-gray-700 dark:text-gray-300 border border-border',
-      primary: 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-hover border border-primary/20',
+      success: 'bg-success-light text-[#047857] border border-[#A7F3D0]',
+      warning: 'bg-warning-light text-[#92400E] border border-[#FCD34D]',
+      error: 'bg-error-light text-[#991B1B] border border-[#FCA5A5]',
+      info: 'bg-info-light text-[#1E40AF] border border-[#93C5FD]',
+      neutral: 'bg-gray-100 text-gray-700 border border-gray-200',
+      primary: 'bg-primary-light text-[#1E40AF] border border-[#93C5FD]',
     };
 
     const sizes = {

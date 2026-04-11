@@ -34,7 +34,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            className="block text-sm font-medium text-gray-900 mb-1.5"
           >
             {label}
             {props.required && <span className="text-error ml-1">*</span>}
@@ -53,13 +53,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             disabled={disabled}
             className={cn(
-              'w-full h-10 px-3 text-sm text-gray-900 dark:text-gray-100 bg-surface border rounded-lg transition-all duration-200',
-              'placeholder:text-gray-400 dark:placeholder:text-gray-500',
+              'w-full h-10 px-3 text-sm text-gray-900 bg-white border rounded-lg transition-all duration-200',
+              'placeholder:text-gray-400',
               'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-              'disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed',
+              'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
               error
                 ? 'border-error focus:ring-error'
-                : 'border-border hover:border-border-hover',
+                : 'border-gray-200 hover:border-gray-300',
               icon && iconPosition === 'left' && 'pl-10',
               icon && iconPosition === 'right' && 'pr-10',
               className

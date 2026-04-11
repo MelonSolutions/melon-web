@@ -152,9 +152,9 @@ export function ModalProvider({ children }: { children: ReactNode; }) {
   };
 
   const backdropClasses = {
-    blur: 'bg-black/40 backdrop-blur-sm',
-    dark: 'bg-black/70',
-    light: 'bg-black/10'
+    blur: 'bg-black/20 backdrop-blur-sm',
+    dark: 'bg-black/50',
+    light: 'bg-black/30'
   };
 
   return (
@@ -171,11 +171,11 @@ export function ModalProvider({ children }: { children: ReactNode; }) {
 
             <div className={`relative transform transition-all duration-200 ease-out w-full ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
               } ${sizeClasses[options.size || 'md']} ${options.className || ''}`}>
-              <div className="bg-surface rounded-lg shadow-xl max-h-[90vh] overflow-hidden border border-border">
+              <div className="bg-white rounded-lg shadow-xl max-h-[90vh] overflow-hidden">
                 {options.closable !== false && (
                   <button
                     onClick={closeModal}
-                    className="absolute top-4 right-4 z-10 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-surface-secondary rounded transition-colors"
+                    className="absolute top-4 right-4 z-10 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -208,7 +208,7 @@ function StandardModalContent({ config, onClose }: { config: ModalConfig; onClos
       case 'error':
         return <AlertTriangle className={`${iconClass} text-red-600`} />;
       case 'info':
-        return <Info className={`${iconClass} text-blue-500 dark:text-blue-400`} />;
+        return <Info className={`${iconClass} text-blue-600`} />;
       default:
         return null;
     }
@@ -236,20 +236,20 @@ function StandardModalContent({ config, onClose }: { config: ModalConfig; onClos
         return `${base} bg-green-600 text-white hover:bg-green-700`;
       case 'secondary':
       default:
-        return `${base} bg-surface text-gray-700 dark:text-gray-300 border border-border hover:bg-surface-secondary`;
+        return `${base} bg-white text-gray-700 border border-gray-300 hover:bg-gray-50`;
     }
   };
 
   return (
     <div>
       {/* Header */}
-      <div className="p-6 border-b border-border">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-start gap-4">
           {getIcon()}
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{config.title}</h3>
+            <h3 className="text-lg font-medium text-gray-900">{config.title}</h3>
             {config.description && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{config.description}</p>
+              <p className="mt-1 text-sm text-gray-500">{config.description}</p>
             )}
           </div>
         </div>
@@ -264,7 +264,7 @@ function StandardModalContent({ config, onClose }: { config: ModalConfig; onClos
 
       {/* Footer */}
       {(config.footer || config.actions) && (
-        <div className="p-6 border-t border-border bg-surface-secondary">
+        <div className="p-6 border-t border-gray-200 bg-gray-50">
           {config.footer || (
             <div className="flex items-center justify-end gap-3">
               {config.actions?.map((action, index) => (
@@ -336,13 +336,13 @@ function UploadModalContent({ config, onClose }: { config: UploadModalConfig; on
   return (
     <div>
       {/* Header */}
-      <div className="p-6 border-b border-border">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <Upload className="w-6 h-6 text-primary" />
+          <Upload className="w-6 h-6 text-blue-600" />
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{config.title}</h3>
+            <h3 className="text-lg font-medium text-gray-900">{config.title}</h3>
             {config.description && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{config.description}</p>
+              <p className="text-sm text-gray-500 mt-1">{config.description}</p>
             )}
           </div>
         </div>
@@ -355,8 +355,8 @@ function UploadModalContent({ config, onClose }: { config: UploadModalConfig; on
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${isDragOver
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:border-border-hover'
+              ? 'border-blue-400 bg-blue-50'
+              : 'border-gray-300 hover:border-gray-400'
             }`}
           onClick={() => {
             const input = document.createElement('input');
@@ -373,10 +373,10 @@ function UploadModalContent({ config, onClose }: { config: UploadModalConfig; on
           }}
         >
           <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          <h4 className="text-lg font-medium text-gray-900 mb-2">
             {isDragOver ? 'Drop files here' : 'Upload Files'}
           </h4>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-gray-500 mb-4">
             Drag and drop files here, or click to browse
           </p>
           <button
@@ -394,7 +394,7 @@ function UploadModalContent({ config, onClose }: { config: UploadModalConfig; on
       </div>
 
       {/* Footer */}
-      <div className="p-6 border-t border-border bg-surface-secondary">
+      <div className="p-6 border-t border-gray-200 bg-gray-50">
         <div className="flex items-center justify-end gap-3">
           <button
             onClick={() => {
@@ -402,7 +402,7 @@ function UploadModalContent({ config, onClose }: { config: UploadModalConfig; on
               onClose();
             }}
             disabled={isUploading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-surface border border-border rounded-lg hover:bg-surface-secondary transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>

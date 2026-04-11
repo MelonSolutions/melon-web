@@ -87,23 +87,23 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div 
-        className="bg-surface rounded-2xl w-full max-w-md md:max-w-lg md:min-h-[550px] max-h-[90vh] overflow-hidden shadow-2xl border border-border flex flex-col animate-in fade-in zoom-in duration-200"
+        className="bg-white rounded-2xl w-full max-w-md md:max-w-lg md:min-h-[550px] max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <FileText className="w-5 h-5 text-primary" />
+            <div className="p-2 bg-blue-50 rounded-xl">
+              <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Activity Report</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">KYC Fulfillment Summary</p>
+              <h3 className="text-xl font-bold text-gray-900">Activity Report</h3>
+              <p className="text-xs text-gray-500 font-medium">KYC Fulfillment Summary</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-surface-secondary rounded-xl transition-all"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all"
           >
             <X size={20} />
           </button>
@@ -113,14 +113,14 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
           <div className="space-y-5">
             {/* Date Range Section */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <Calendar size={14} className="text-gray-400 dark:text-gray-500" />
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Calendar size={14} className="text-gray-400" />
                 Select Activity Range
               </label>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">Start Date</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Start Date</span>
                   <Input
                     type="date"
                     value={startDate}
@@ -130,7 +130,7 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">End Date</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">End Date</span>
                   <Input
                     type="date"
                     value={endDate}
@@ -143,7 +143,7 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
               </div>
               
               {!isRangeValid && (
-                <p className="text-[10px] text-error font-bold italic ml-1">
+                <p className="text-[10px] text-red-500 font-bold italic ml-1">
                   * End date cannot be before start date.
                 </p>
               )}
@@ -152,8 +152,8 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
             {/* Organization Section for Melon Admins */}
             {isMelonAdmin && (
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                  <Building2 size={14} className="text-gray-400 dark:text-gray-500" />
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Building2 size={14} className="text-gray-400" />
                   Target Organization
                 </label>
                 <CustomSelect
@@ -166,16 +166,16 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
                   placeholder={fetchingOrgs ? 'Loading organizations...' : 'Select organization'}
                   disabled={fetchingOrgs}
                 />
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium italic">
+                <p className="text-[10px] text-gray-400 font-medium italic">
                   * Melon super-admins can pull reports for any active host.
                 </p>
               </div>
             )}
             
-            <div className="p-4 bg-surface-secondary rounded-2xl border border-border">
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
               <div className="flex gap-3">
-                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed font-medium">
+                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5" />
+                <p className="text-xs text-gray-600 leading-relaxed font-medium">
                   Report includes portal entry times, agent pick-up timestamps, and completion metrics for the selected range.
                 </p>
               </div>
@@ -184,7 +184,7 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
         </div>
  
         {/* Footer */}
-        <div className="p-6 border-t border-border bg-surface-secondary/50 flex justify-end gap-3">
+        <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose} disabled={loading} className="!rounded-xl px-6">
             Cancel
           </Button>

@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthContext } from '@/context/AuthContext';
-import {
-  User,
-  Settings,
-  Bell,
-  LogOut,
-  HelpCircle,
+import { 
+  User, 
+  Settings, 
+  Bell, 
+  LogOut, 
+  HelpCircle, 
   Shield,
   ChevronRight
 } from 'lucide-react';
@@ -74,42 +74,42 @@ export function ProfileDropdown() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
-        type="button"
-        className="flex items-center space-x-3 focus:outline-none cursor-pointer group"
+      <button 
+        type="button" 
+        className="flex items-center space-x-3 focus:outline-none cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="bg-primary text-white flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center group-hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/20 group-hover:shadow-primary/40 group-hover:scale-105">
-          <span className="text-sm font-black">{getInitials()}</span>
+        <div className="bg-[#5B94E5] text-white flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center hover:bg-blue-600 transition-colors">
+          <span className="text-sm font-medium">{getInitials()}</span>
         </div>
       </button>
 
       {isOpen && (
-        <div className="origin-top-right absolute right-0 mt-3 w-80 rounded-[1.5rem] shadow-2xl bg-surface border border-border/60 focus:outline-none z-50 flex flex-col max-h-[calc(100vh-100px)] animate-in fade-in zoom-in duration-300 overflow-hidden">
+        <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 flex flex-col max-h-[calc(100vh-100px)]">
           {/* User Info Header - Fixed at top */}
-          <div className="flex-shrink-0 px-6 py-5 border-b border-border/40 bg-surface-secondary/20">
-            <div className="flex items-center space-x-4">
-              <div className="bg-primary text-white flex-shrink-0 rounded-full h-12 w-12 flex items-center justify-center shadow-xl shadow-primary/20">
-                <span className="text-lg font-black">{getInitials()}</span>
+          <div className="flex-shrink-0 px-4 py-4 border-b border-gray-100">
+            <div className="flex items-center space-x-3">
+              <div className="bg-[#5B94E5] text-white flex-shrink-0 rounded-full h-12 w-12 flex items-center justify-center">
+                <span className="text-lg font-medium">{getInitials()}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-gray-900 dark:text-gray-100 truncate tracking-wide">{getFullName()}</p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate font-bold">{user?.email}</p>
-                <div className="flex items-center mt-1.5">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                  <span className="text-[9px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest">Active</span>
+                <p className="text-base font-medium text-gray-900 truncate">{getFullName()}</p>
+                <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+                <div className="flex items-center mt-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  <span className="text-xs text-gray-500">Online</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Menu Items - ONLY THIS SECTION SCROLLS */}
-          <div className="flex-1 overflow-y-auto py-3">
+          <div className="flex-1 overflow-y-auto py-2">
             {menuItems.map((section, sectionIndex) => (
               <div key={section.section}>
-                {sectionIndex > 0 && <div className="border-t border-border/40 my-3 mx-4"></div>}
-                <div className="px-5 py-2">
-                  <p className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">
+                {sectionIndex > 0 && <div className="border-t border-gray-100 my-2"></div>}
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     {section.section}
                   </p>
                 </div>
@@ -117,17 +117,15 @@ export function ProfileDropdown() {
                   <Link
                     key={item.label}
                     href={item.href}
-                    className="flex items-center mx-2 px-4 py-3.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-surface-secondary/50 transition-all duration-300 cursor-pointer group border border-transparent hover:border-border/40"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer group"
                     onClick={() => setIsOpen(false)}
                   >
-                    <div className="mr-3 p-2 bg-surface rounded-lg border border-border/40 group-hover:border-primary/30 transition-all duration-300">
-                      <item.icon className="h-3.5 w-3.5 text-gray-400 group-hover:text-primary transition-colors" />
-                    </div>
+                    <item.icon className="mr-3 h-4 w-4 text-gray-400 group-hover:text-gray-500" />
                     <div className="flex-1">
-                      <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors tracking-wide uppercase">{item.label}</p>
-                      <p className="text-[9px] text-gray-500 dark:text-gray-400 font-bold">{item.description}</p>
+                      <p className="font-medium">{item.label}</p>
+                      <p className="text-xs text-gray-500">{item.description}</p>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-primary transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0" />
+                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-500" />
                   </Link>
                 ))}
               </div>
@@ -135,18 +133,16 @@ export function ProfileDropdown() {
           </div>
 
           {/* Logout - Fixed at bottom, ALWAYS VISIBLE */}
-          <div className="flex-shrink-0 border-t border-border/40">
-            <button
+          <div className="flex-shrink-0 border-t border-gray-100">
+            <button 
               onClick={() => {
                 logout();
                 setIsOpen(false);
               }}
-              className="w-full flex items-center px-6 py-4 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-300 cursor-pointer group"
+              className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
             >
-              <div className="mr-3 p-2 bg-red-50 dark:bg-red-500/5 rounded-lg border border-red-100 dark:border-red-500/20 group-hover:border-red-200 dark:group-hover:border-red-500/30 transition-all duration-300">
-                <LogOut className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-              </div>
-              <span className="text-[11px] font-black uppercase tracking-widest">Logout</span>
+              <LogOut className="mr-3 h-4 w-4" />
+              <span className="font-medium">Sign out</span>
             </button>
           </div>
         </div>

@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart3, Download, Save, Settings2, Eye, Info, Loader2 } from 'lucide-react';
+import { BarChart3, Download, Save } from 'lucide-react';
 import { 
   DataSource, 
   ChartConfig, 
@@ -14,7 +14,6 @@ import {
   AGGREGATION_TYPES
 } from '@/types/visualization';
 import { ChartPreview } from './ChartPreview';
-import { Button } from '@/components/ui/Button';
 
 interface ChartBuilderProps {
   dataSources: DataSource[];
@@ -31,7 +30,7 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
     type: 'bar',
     aggregation: 'count',
     styling: {
-      colors: ['#5B94E5'],
+      colors: ['#4F46E5'],
       showLegend: true,
       showGrid: true,
       height: 400
@@ -62,11 +61,17 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
     const mockData = categories.map((category, index) => {
       const data: any = {};
       data[chartConfig.xAxis!] = category;
+      
       if (chartConfig.yAxis) {
-        data[chartConfig.yAxis] = Math.floor(Math.random() * 100) + 10;
+        data[chartConfig.yAxis] = Math.floor(Math.random() * 100) + 10 + (index * 5);
       } else {
-        data['count'] = Math.floor(Math.random() * 50) + 5;
+        data['count'] = Math.floor(Math.random() * 50) + 5 + (index * 3);
       }
+
+      if (chartConfig.groupBy) {
+        data[chartConfig.groupBy] = ['Group 1', 'Group 2'][index % 2];
+      }
+
       return data;
     });
 
@@ -75,12 +80,19 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
   };
 
   const handleConfigChange = (key: keyof ChartConfig, value: any) => {
-    setChartConfig(prev => ({ ...prev, [key]: value }));
+    setChartConfig(prev => ({
+      ...prev,
+      [key]: value
+    }));
+
+    // Reset dependent fields when changing chart type
     if (key === 'type') {
       const chartType = CHART_TYPES[value as ChartType];
       if (chartType) {
         setChartConfig(prev => ({
           ...prev,
+          [key]: value,
+          // Clear axes if new chart type doesn't support them
           ...(!chartType.requiredAxes.includes('y') && { yAxis: undefined }),
           ...(!chartType.requiredAxes.includes('groupBy') && { groupBy: undefined })
         }));
@@ -89,29 +101,60 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
   };
 
   const handleDataSourceChange = (selectedId: string) => {
+    if (!selectedId) {
+      setSelectedDataSource(null);
+      setPreviewData([]);
+      return;
+    }
+
     const foundDataSource = normalizedDataSources.find(ds => ds.id === selectedId);
     setSelectedDataSource(foundDataSource || null);
+
     if (foundDataSource) {
       setChartConfig(prev => ({
         ...prev,
         dataSourceId: foundDataSource.id,
         xAxis: undefined,
         yAxis: undefined,
+        groupBy: undefined,
       }));
+      setPreviewData([]);
     }
   };
 
   const handleSaveChart = async () => {
     if (!canCreateChart) return;
+
     setIsSaving(true);
     try {
-      const saveConfig = { ...chartConfig, dataSourceId: selectedDataSource?.id };
+      const saveConfig = {
+        ...chartConfig,
+        name: chartConfig.name?.trim() || `Chart - ${selectedDataSource?.name}`,
+        dataSourceId: selectedDataSource?.id,
+      };
+
       const result = await onSave(saveConfig);
+      
       if (result.success) {
-        setChartConfig({ type: 'bar', aggregation: 'count', styling: { colors: ['#5B94E5'], showLegend: true, showGrid: true, height: 400 }, filters: [] });
+        // Reset form after successful save
+        setChartConfig({
+          type: 'bar',
+          aggregation: 'count',
+          styling: {
+            colors: ['#4F46E5'],
+            showLegend: true,
+            showGrid: true,
+            height: 400
+          },
+          filters: []
+        });
         setSelectedDataSource(null);
         setPreviewData([]);
+      } else {
+        alert(`Failed to save chart: ${result.error}`);
       }
+    } catch (error) {
+      alert('Failed to save chart');
     } finally {
       setIsSaving(false);
     }
@@ -119,16 +162,29 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
 
   const handleExportChart = async () => {
     if (!canCreateChart) return;
+
     setIsExporting(true);
     try {
-      const exportData = { chartConfig, dataSource: selectedDataSource?.name, previewData, exportedAt: new Date().toISOString() };
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      // Generate export data
+      const exportData = {
+        chartConfig,
+        dataSource: selectedDataSource?.name,
+        previewData,
+        exportedAt: new Date().toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+        type: 'application/json' 
+      });
+      
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${chartConfig.name || 'visualization-export'}.json`;
+      a.download = `${chartConfig.name || 'chart'}.json`;
       a.click();
       URL.revokeObjectURL(url);
+    } catch (error) {
+      alert('Failed to export chart');
     } finally {
       setIsExporting(false);
     }
@@ -136,135 +192,222 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
 
   const canCreateChart = selectedDataSource && chartConfig.type && chartConfig.xAxis;
 
-  const inputClasses = "w-full px-6 py-4 bg-surface-secondary/30 dark:bg-white/5 border border-border dark:border-white/10 rounded-xl text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary transition-all outline-none text-[11px] font-black uppercase tracking-widest appearance-none cursor-pointer hover:border-primary/20";
-  const labelClasses = "text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.22em] flex items-center gap-2 mb-3";
+  if (normalizedDataSources.length === 0) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-6">Chart Configuration</h3>
+          <p className="text-sm text-gray-500">Import a data source to start building charts</p>
+        </div>
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-      <div className="lg:col-span-4 space-y-8">
-        <div className="bg-surface dark:bg-black/20 rounded-[2.5rem] border border-border dark:border-white/10 p-10 shadow-sm flex flex-col">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="p-3 bg-primary/10 rounded-2xl text-primary border border-primary/20">
-              <Settings2 className="w-5 h-5" />
+        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-6">
+              <BarChart3 className="w-8 h-8 text-gray-400" />
             </div>
-            <div>
-              <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 tracking-tight uppercase tracking-widest text-sm">Chart Settings</h3>
-              <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1 opacity-70">Define chart properties and data mapping</p>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="space-y-2">
-              <label className={labelClasses}>Chart Title</label>
-              <input type="text" value={chartConfig.name || ''} onChange={(e) => handleConfigChange('name', e.target.value)} className={inputClasses} placeholder="Enter title" />
-            </div>
-            <div className="space-y-2">
-              <label className={labelClasses}>Data Source</label>
-              <select value={selectedDataSource?.id || ''} onChange={(e) => handleDataSourceChange(e.target.value)} className={inputClasses}>
-                <option value="" className="dark:bg-gray-900">Select source</option>
-                {normalizedDataSources.map((ds) => (
-                  <option key={ds.id} value={ds.id} className="dark:bg-gray-900">{ds.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className={labelClasses}>Chart Type</label>
-              <select value={chartConfig.type || 'bar'} onChange={(e) => handleConfigChange('type', e.target.value as ChartType)} className={inputClasses}>
-                {Object.entries(CHART_TYPES).map(([type, config]) => (
-                  <option key={type} value={type} className="dark:bg-gray-900">{config.name.toUpperCase()}</option>
-                ))}
-              </select>
-            </div>
-
-            {selectedDataSource && selectedDataSource.columns && (
-              <>
-                <div className="space-y-2">
-                  <label className={labelClasses}>X-Axis Column</label>
-                  <select value={chartConfig.xAxis || ''} onChange={(e) => handleConfigChange('xAxis', e.target.value)} className={inputClasses}>
-                    <option value="" className="dark:bg-gray-900">Select column</option>
-                    {selectedDataSource.columns.map((col) => (
-                      <option key={col.name} value={col.name} className="dark:bg-gray-900">{col.name}</option>
-                    ))}
-                  </select>
-                </div>
-                {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('y') && (
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Y-Axis Column</label>
-                    <select value={chartConfig.yAxis || ''} onChange={(e) => handleConfigChange('yAxis', e.target.value)} className={inputClasses}>
-                      <option value="" className="dark:bg-gray-900">Auto-count</option>
-                      {selectedDataSource.columns.filter(col => col.type === 'number').map((col) => (
-                        <option key={col.name} value={col.name} className="dark:bg-gray-900">{col.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <label className={labelClasses}>Aggregation</label>
-                  <select value={chartConfig.aggregation || 'count'} onChange={(e) => handleConfigChange('aggregation', e.target.value as AggregationType)} className={inputClasses}>
-                    {Object.entries(AGGREGATION_TYPES).map(([type, config]) => (
-                      <option key={type} value={type} className="dark:bg-gray-900">{config.name.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Data Sources Available</h3>
+            <p className="text-gray-500 mb-4">Import CSV data or connect a report to start creating charts</p>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <div className="lg:col-span-8 space-y-8">
-        <div className="bg-surface dark:bg-black/20 rounded-[3rem] border border-border dark:border-white/10 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
-          <div className="px-10 py-8 border-b border-border/60 dark:border-white/10 bg-surface-secondary/30 dark:bg-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-surface dark:bg-white/10 rounded-2xl border border-border dark:border-white/10 shadow-sm">
-                <Eye className="w-5 h-5 text-primary" />
-              </div>
-              <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest text-sm">Preview</h3>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="secondary" onClick={handleExportChart} disabled={!canCreateChart || isExporting} className="rounded-xl px-6 font-black uppercase tracking-widest text-[9px] border-border/60" icon={<Download className="w-3.5 h-3.5" />}>Export</Button>
-              <Button onClick={handleSaveChart} disabled={!canCreateChart || isSaving} className="rounded-xl px-8 shadow-xl font-black uppercase tracking-widest text-[9px] bg-primary shadow-primary/20" icon={isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}>Save Chart</Button>
-            </div>
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-6">Chart Configuration</h3>
+        <p className="text-sm text-gray-500 mb-6">Configure your visualization settings</p>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Chart Name
+            </label>
+            <input
+              type="text"
+              value={chartConfig.name || ''}
+              onChange={(e) => handleConfigChange('name', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter chart name"
+            />
           </div>
 
-          <div className="flex-1 p-10 flex flex-col items-center justify-center">
-             {!canCreateChart ? (
-               <div className="flex flex-col items-center justify-center text-center max-w-sm">
-                 <div className="w-20 h-20 bg-surface-secondary rounded-[2rem] flex items-center justify-center mb-6 border border-border">
-                    <BarChart3 className="w-10 h-10 text-gray-300 animate-pulse" />
-                 </div>
-                 <h4 className="text-[13px] font-black uppercase tracking-widest mb-2">No Data Selected</h4>
-                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">Select a data source and configuration to see the chart preview.</p>
-               </div>
-             ) : (
-               <div className="w-full h-full">
-                  <ChartPreview config={chartConfig as ChartConfig} data={previewData} isEmpty={!canCreateChart} />
-               </div>
-             )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Data Source
+            </label>
+            <select
+              value={selectedDataSource?.id || ''}
+              onChange={(e) => handleDataSourceChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            >
+              <option value="">Select data source</option>
+              {normalizedDataSources.map((ds, index) => (
+                <option key={ds.id || `ds-${index}`} value={ds.id}>
+                  {ds.name} ({ds.rowCount || 0} rows)
+                </option>
+              ))}
+            </select>
           </div>
 
-          {canCreateChart && (
-            <div className="px-10 py-8 border-t border-border/60 dark:border-white/10 bg-surface-secondary/10 dark:bg-white/5">
-              <div className="flex items-center gap-4 mb-6">
-                 <Info className="w-4 h-4 text-primary" />
-                 <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Visualization Summary</h4>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Chart Type
+            </label>
+            <select
+              value={chartConfig.type || 'bar'}
+              onChange={(e) => handleConfigChange('type', e.target.value as ChartType)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            >
+              {Object.entries(CHART_TYPES).map(([type, config]) => (
+                <option key={type} value={type}>
+                  {config.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedDataSource && selectedDataSource.columns && (
+            <>
+              {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('x') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    X-Axis (Categories)
+                  </label>
+                  <select
+                    value={chartConfig.xAxis || ''}
+                    onChange={(e) => handleConfigChange('xAxis', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select column</option>
+                    {selectedDataSource.columns.map((col, index) => (
+                      <option key={col.name || `col-${index}`} value={col.name}>
+                        {col.name} ({col.type})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('y') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Y-Axis (Values) <span className="text-gray-400 text-xs">Optional for count aggregation</span>
+                  </label>
+                  <select
+                    value={chartConfig.yAxis || ''}
+                    onChange={(e) => handleConfigChange('yAxis', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select column (optional)</option>
+                    {selectedDataSource.columns
+                      .filter(col => col.type === 'number')
+                      .map((col, index) => (
+                        <option key={col.name || `num-col-${index}`} value={col.name}>
+                          {col.name} ({col.type})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('groupBy') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Group By <span className="text-gray-400 text-xs">Optional</span>
+                  </label>
+                  <select
+                    value={chartConfig.groupBy || ''}
+                    onChange={(e) => handleConfigChange('groupBy', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select column (optional)</option>
+                    {selectedDataSource.columns.map((col, index) => (
+                      <option key={col.name || `group-col-${index}`} value={col.name}>
+                        {col.name} ({col.type})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Aggregation
+                </label>
+                <select
+                  value={chartConfig.aggregation || 'count'}
+                  onChange={(e) => handleConfigChange('aggregation', e.target.value as AggregationType)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                  {Object.entries(AGGREGATION_TYPES).map(([type, config]) => (
+                    <option key={type} value={type}>
+                      {config.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {[
-                  { label: 'Type', value: CHART_TYPES[chartConfig.type as ChartType]?.name },
-                  { label: 'X-Axis', value: chartConfig.xAxis },
-                  { label: 'Y-Axis', value: chartConfig.yAxis || 'Auto-Count' },
-                  { label: 'Aggregation', value: chartConfig.aggregation },
-                ].map((stat, i) => (
-                  <div key={i} className="space-y-1">
-                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
-                    <p className="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase truncate">{stat.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            </>
           )}
         </div>
+      </div>
+
+      <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">Chart Preview</h3>
+            {selectedDataSource && (
+              <p className="text-sm text-gray-500 mt-1">
+                {selectedDataSource.name} • {selectedDataSource.rowCount || 0} rows
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportChart}
+              disabled={!canCreateChart || isExporting}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              {isExporting ? 'Exporting...' : 'Export'}
+            </button>
+            <button
+              onClick={handleSaveChart}
+              disabled={!canCreateChart || isSaving}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? 'Saving...' : 'Save Chart'}
+            </button>
+          </div>
+        </div>
+
+        <ChartPreview
+          config={chartConfig as ChartConfig}
+          data={previewData} 
+          isEmpty={!canCreateChart}
+        />
+
+        {canCreateChart && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Chart Summary</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+              <div>
+                <span className="font-medium">Type:</span> {CHART_TYPES[chartConfig.type as ChartType]?.name}
+              </div>
+              <div>
+                <span className="font-medium">X-Axis:</span> {chartConfig.xAxis}
+              </div>
+              <div>
+                <span className="font-medium">Y-Axis:</span> {chartConfig.yAxis || 'Count'}
+              </div>
+              <div>
+                <span className="font-medium">Aggregation:</span> {chartConfig.aggregation}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

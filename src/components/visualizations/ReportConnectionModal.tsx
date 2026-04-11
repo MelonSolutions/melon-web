@@ -2,9 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Database, CheckCircle, Info, ChevronRight, Activity } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useReportsIntegration } from '@/hooks/useVisualizations';
-import { Button } from '@/components/ui/Button';
 
 interface ReportConnectionModalProps {
   isOpen: boolean;
@@ -44,6 +43,7 @@ export function ReportConnectionModal({ isOpen, onClose, onConnect }: ReportConn
 
   const handleReportSelect = async (report: any) => {
     setSelectedReport(report);
+    
     const result = await getReportFields(report._id);
     if (result.success) {
       setReportFields(result.data);
@@ -57,12 +57,14 @@ export function ReportConnectionModal({ isOpen, onClose, onConnect }: ReportConn
 
   const handleConnect = async () => {
     if (!selectedReport) return;
+
     setIsConnecting(true);
     try {
       const result = await onConnect({
         ...connectionData,
         reportId: selectedReport._id
       });
+
       if (result.success) {
         resetModal();
         onClose();
@@ -97,8 +99,12 @@ export function ReportConnectionModal({ isOpen, onClose, onConnect }: ReportConn
 
   const handleSelectAllFields = () => {
     if (!reportFields) return;
+    
     const allFieldNames = reportFields.fields.map((field: any) => field.name);
-    const allSelected = allFieldNames.every((name: string) => connectionData.selectedFields.includes(name));
+    const allSelected = allFieldNames.every((name: string) => 
+      connectionData.selectedFields.includes(name)
+    );
+    
     setConnectionData(prev => ({
       ...prev,
       selectedFields: allSelected ? [] : allFieldNames
@@ -112,72 +118,93 @@ export function ReportConnectionModal({ isOpen, onClose, onConnect }: ReportConn
 
   if (!isOpen) return null;
 
-  const inputClasses = "w-full px-6 py-4 bg-surface-secondary/30 dark:bg-white/5 border border-border dark:border-white/10 rounded-xl text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary transition-all outline-none text-[11px] font-black uppercase tracking-widest appearance-none cursor-pointer hover:border-primary/20";
-  const labelClasses = "text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.22em] flex items-center gap-2 mb-3";
-
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={handleClose} />
+      <div 
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
+        onClick={handleClose}
+      />
       
-      <div className="flex min-h-full items-center justify-center p-6">
-        <div className="relative bg-surface dark:bg-gray-900 rounded-[2.5rem] shadow-2xl max-w-xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-border dark:border-white/10 animate-in fade-in zoom-in-95 duration-300">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between px-8 py-6 border-b border-border/60 dark:border-white/10 bg-surface-secondary/30 dark:bg-white/5">
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-primary/10 rounded-xl text-primary border border-primary/20">
-                <Database className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-gray-900 dark:text-gray-100 tracking-tight uppercase tracking-widest text-sm">Connect Report Data</h3>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5 opacity-70">Create a data source from existing reports</p>
-              </div>
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Connect Report Data</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Create a data source from your report responses
+              </p>
             </div>
-            <button onClick={handleClose} className="p-2.5 hover:bg-surface dark:hover:bg-white/10 rounded-xl transition-all">
-              <X className="w-4 h-4 text-gray-400" />
+            <button
+              onClick={handleClose}
+              disabled={isConnecting}
+              className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
+            >
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto p-8 space-y-8">
+          <div className="p-6">
             {step === 'select' && (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div>
-                  <h4 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-1.5">Select a Report</h4>
-                  <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest opacity-80 leading-relaxed">Choose a report to sync data from.</p>
+                  <h4 className="text-base font-medium text-gray-900 mb-2">
+                    Select a Report
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Choose a published report with responses to create a data source.
+                  </p>
                 </div>
 
                 {reportsLoading ? (
-                  <div className="flex flex-col items-center justify-center py-20">
-                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Loading reports...</p>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-sm text-gray-600">Loading reports...</p>
+                    </div>
                   </div>
                 ) : reports.length === 0 ? (
-                  <div className="text-center py-20 bg-surface-secondary/20 dark:bg-white/5 rounded-[2rem] border border-border border-dashed">
-                    <h4 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-2">No Reports Found</h4>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest opacity-60">You haven&apos;t published any reports yet.</p>
+                  <div className="text-center py-12">
+                    <h4 className="text-base font-medium text-gray-900 mb-2">
+                      No Published Reports Found
+                    </h4>
+                    <p className="text-sm text-gray-500 mb-4">
+                      You need to create and publish a report with responses before you can use it as a data source.
+                    </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-4">
                     {reports.map((report, index) => (
                       <div
                         key={report._id || `report-${index}`}
-                        className="group border border-border dark:border-white/10 rounded-[2rem] p-8 hover:border-primary/40 hover:bg-primary/[0.02] dark:hover:bg-primary/5 transition-all cursor-pointer relative overflow-hidden"
+                        className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition-colors"
                         onClick={() => handleReportSelect(report)}
                       >
-                        <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-4 mb-3">
-                              <h5 className="text-[13px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">{report.title}</h5>
-                              <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Published</span>
+                            <div className="flex items-center gap-2 mb-2">
+                              <h5 className="font-medium text-gray-900">{report.title}</h5>
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                                Published
+                              </span>
                             </div>
-                            {report.description && <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest line-clamp-1 mb-4 opacity-70">{report.description}</p>}
-                            <div className="flex items-center gap-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                               <div className="flex items-center gap-2"><Activity className="w-3.5 h-3.5" /> {report.responseCount || 0} Responses</div>
-                               <div className="flex items-center gap-2"><div className="w-1 h-1 bg-primary rounded-full"></div> {report.questions?.length || 0} Fields</div>
+                            
+                            {report.description && (
+                              <p className="text-sm text-gray-600 mb-3">{report.description}</p>
+                            )}
+                            
+                            <div className="flex items-center gap-6 text-sm text-gray-500">
+                              <span>{report.responseCount || 0} responses</span>
+                              <span>{report.questions?.length || 0} fields</span>
                             </div>
                           </div>
-                          <div className="ml-6 p-4 bg-surface-secondary/50 dark:bg-white/5 rounded-2xl border border-border dark:border-white/10 group-hover:border-primary/20 transition-all">
-                             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary" />
+                          
+                          <div className="ml-4 text-right">
+                            <div className="text-lg font-semibold text-green-600">
+                              {report.responseCount || 0}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              responses
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -188,86 +215,154 @@ export function ReportConnectionModal({ isOpen, onClose, onConnect }: ReportConn
             )}
 
             {step === 'configure' && selectedReport && reportFields && (
-              <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-[2rem] p-8 flex items-center gap-6">
-                   <div className="p-3 bg-primary/10 rounded-xl text-primary border border-primary/20">
-                     <CheckCircle className="w-6 h-6" />
-                   </div>
-                   <div>
-                     <h4 className="text-[13px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Connected Report: {selectedReport.title}</h4>
-                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 opacity-70">
-                       {reportFields.responseCount} Responses • {reportFields.fields.length} Fields Available
-                     </p>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Data Source Name</label>
-                    <input type="text" value={connectionData.name} onChange={(e) => setConnectionData(prev => ({ ...prev, name: e.target.value }))} className={inputClasses} placeholder="Enter name" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className={labelClasses}>Date Range</label>
-                    <select value={connectionData.dateRange} onChange={(e) => setConnectionData(prev => ({ ...prev, dateRange: e.target.value }))} className={inputClasses}>
-                      <option value="all" className="dark:bg-gray-900">All responses</option>
-                      <option value="last_week" className="dark:bg-gray-900">Last week</option>
-                      <option value="last_month" className="dark:bg-gray-900">Last month</option>
-                      <option value="last_quarter" className="dark:bg-gray-900">Last quarter</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={labelClasses}>Description (Optional)</label>
-                  <textarea value={connectionData.description} onChange={(e) => setConnectionData(prev => ({ ...prev, description: e.target.value }))} rows={3} className={inputClasses + " h-32 pt-4 px-6"} placeholder="Describe this data source" />
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-900">
+                    Report: {selectedReport.title}
+                  </h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    {reportFields.responseCount} responses • {reportFields.fields.length} fields available
+                  </p>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <label className={labelClasses}>Select Fields to Include</label>
-                    <button onClick={handleSelectAllFields} className="text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-80 transition-opacity">
-                      {reportFields.fields.every((field: any) => connectionData.selectedFields.includes(field.name)) ? 'Deselect All' : 'Select All'}
-                    </button>
-                  </div>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {reportFields.fields.map((field: any, index: number) => (
-                      <label key={field.name || `field-${index}`} className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all cursor-pointer ${connectionData.selectedFields.includes(field.name) ? 'bg-primary/5 border-primary/40 shadow-sm' : 'bg-surface-secondary/20 dark:bg-white/5 border-border dark:border-white/10 opacity-70 hover:opacity-100 hover:border-gray-400'}`}>
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${connectionData.selectedFields.includes(field.name) ? 'bg-primary border-primary' : 'border-gray-300 dark:border-gray-700'}`}>
-                           {connectionData.selectedFields.includes(field.name) && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                        </div>
-                        <input type="checkbox" checked={connectionData.selectedFields.includes(field.name)} onChange={() => handleFieldToggle(field.name)} className="hidden" />
-                        <div className="flex-1">
-                          <span className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">{field.displayName || field.name}</span>
-                          <div className="text-[8px] font-black text-gray-500 uppercase tracking-widest opacity-60 font-mono">TYPE: {field.type.toUpperCase()}</div>
-                        </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Data Source Name
                       </label>
-                    ))}
+                      <input
+                        type="text"
+                        value={connectionData.name}
+                        onChange={(e) => setConnectionData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter a descriptive name"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Date Range
+                      </label>
+                      <select
+                        value={connectionData.dateRange}
+                        onChange={(e) => setConnectionData(prev => ({ ...prev, dateRange: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="all">All responses</option>
+                        <option value="last_week">Last week</option>
+                        <option value="last_month">Last month</option>
+                        <option value="last_quarter">Last quarter</option>
+                        <option value="last_year">Last year</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description (Optional)
+                    </label>
+                    <textarea
+                      value={connectionData.description}
+                      onChange={(e) => setConnectionData(prev => ({ ...prev, description: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Describe what this data source contains"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Select Fields to Include
+                      </label>
+                      <button
+                        onClick={handleSelectAllFields}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        {reportFields.fields.every((field: any) => connectionData.selectedFields.includes(field.name))
+                          ? 'Deselect All'
+                          : 'Select All'}
+                      </button>
+                    </div>
+                    
+                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                      <div className="space-y-2">
+                        {reportFields.fields.map((field: any, index: number) => (
+                          <label 
+                            key={field.name || `field-${index}`} 
+                            className="flex items-center gap-3 p-3 bg-white rounded border hover:border-blue-300 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={connectionData.selectedFields.includes(field.name)}
+                              onChange={() => handleFieldToggle(field.name)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium text-gray-900">
+                                {field.displayName || field.name}
+                              </span>
+                              <div className="text-xs text-gray-500">
+                                {field.type}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-3 text-sm text-gray-600">
+                        {connectionData.selectedFields.length} of {reportFields.fields.length} fields selected
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between px-10 py-8 border-t border-border/60 dark:border-white/10 bg-surface-secondary/30 dark:bg-white/5">
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              {step === 'configure' && <span>{connectionData.selectedFields.length} Fields Selected</span>}
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+            <div className="text-sm text-gray-500">
+              {step === 'select' && (
+                <span>
+                  {reportsLoading ? 'Loading...' : `${reports.length} reports available`}
+                </span>
+              )}
+              {step === 'configure' && (
+                <span>
+                  {connectionData.selectedFields.length} fields selected
+                </span>
+              )}
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {step === 'configure' && (
-                <Button variant="secondary" onClick={() => setStep('select')} disabled={isConnecting} className="rounded-xl px-6 py-4 font-black uppercase tracking-widest text-[10px]">
+                <button
+                  onClick={() => setStep('select')}
+                  disabled={isConnecting}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                >
                   Back
-                </Button>
+                </button>
               )}
-              <Button variant="secondary" onClick={handleClose} disabled={isConnecting} className="rounded-xl px-8 py-4 font-black uppercase tracking-widest text-[10px] border-border/60">
+              
+              <button
+                onClick={handleClose}
+                disabled={isConnecting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
                 Cancel
-              </Button>
+              </button>
+              
               {step === 'configure' && (
-                <Button onClick={handleConnect} disabled={isConnecting || !connectionData.name.trim() || connectionData.selectedFields.length === 0} className="rounded-xl px-10 py-4 shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-[10px]">
+                <button
+                  onClick={handleConnect}
+                  disabled={isConnecting || !connectionData.name.trim() || connectionData.selectedFields.length === 0}
+                  className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {isConnecting ? 'Connecting...' : 'Connect Report'}
-                </Button>
+                </button>
               )}
             </div>
           </div>

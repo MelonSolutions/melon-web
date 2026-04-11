@@ -38,14 +38,15 @@ export function PortfolioHeader({ stats }: PortfolioHeaderProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       {statItems.map((item) => {
+        
         return (
-          <div key={item.label} className="bg-surface rounded-xl border border-border p-6 shadow-sm">
+          <div key={item.label} className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-start justify-between mb-4">
-              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">{item.label}</p>
+              <p className="text-sm font-medium text-gray-600">{item.label}</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.value}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 italic font-medium">{item.subtext}</p>
+              <p className="text-2xl font-semibold text-gray-900">{item.value}</p>
+              <p className="text-sm text-gray-500 mt-1">{item.subtext}</p>
             </div>
           </div>
         );
