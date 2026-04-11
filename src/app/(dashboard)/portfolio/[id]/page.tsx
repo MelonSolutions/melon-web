@@ -62,67 +62,67 @@ export default function ProjectDetailsPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background transition-colors duration-300">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="bg-surface border-b border-border px-6 py-4 sticky top-0 z-10 shadow-sm transition-all duration-300">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <Link href="/portfolio" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <Link href="/portfolio" className="p-2.5 text-gray-400 hover:text-primary hover:bg-surface-secondary rounded-xl transition-all border border-transparent hover:border-border">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-lg font-semibold text-gray-900">{project.title}</h1>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(project.status)}`}>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{project.title}</h1>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${getStatusColor(project.status)}`}>
                   {getStatusDisplayName(project.status)}
                 </span>
               </div>
-              <p className="text-sm text-gray-600">{project.description}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium italic">{project.description}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-300 bg-surface border border-border rounded-lg hover:bg-surface-secondary transition-all shadow-sm">
               <Download className="w-4 h-4" />
               Export
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-700 dark:text-gray-300 bg-surface border border-border rounded-lg hover:bg-surface-secondary transition-all shadow-sm">
               <Share2 className="w-4 h-4" />
               Share
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7BC8] transition-colors">
+            <button className="cursor-pointer inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary-hover transition-all shadow-lg shadow-primary/20">
               <Edit3 className="w-4 h-4" />
-              Edit
+              Edit Project
             </button>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="space-y-6">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="space-y-8">
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <p className="text-sm font-medium text-gray-600 mb-2">Impact Score</p>
-              <p className="text-2xl font-semibold text-gray-900 mb-3">{project.impactScore}%</p>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-surface rounded-xl border border-border p-6 shadow-sm group hover:border-primary/30 transition-all">
+              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Impact Score</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">{project.impactScore}%</p>
+              <div className="w-full bg-surface-secondary rounded-full h-2 border border-border/50">
                 <div 
-                  className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+                  className="bg-success h-2 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                   style={{ width: `${project.impactScore}%` }}
                 />
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <p className="text-sm font-medium text-gray-600 mb-2">Households Reached</p>
-              <p className="text-2xl font-semibold text-gray-900">{(project.actualHouseholds || 0).toLocaleString()}</p>
+            <div className="bg-surface rounded-xl border border-border p-6 shadow-sm group hover:border-primary/30 transition-all">
+              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Households Reached</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{(project.actualHouseholds || 0).toLocaleString()}</p>
               {project.targetHouseholds && (
                 <>
-                  <p className="text-sm text-gray-500 mb-2">of {project.targetHouseholds.toLocaleString()}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 italic font-medium">of {project.targetHouseholds.toLocaleString()} target</p>
+                  <div className="w-full bg-surface-secondary rounded-full h-2 border border-border/50">
                     <div 
-                      className="bg-[#5B94E5] h-1.5 rounded-full transition-all duration-300"
+                      className="bg-primary h-2 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(91,148,229,0.3)]"
                       style={{ width: `${Math.min(householdProgress, 100)}%` }}
                     />
                   </div>
@@ -130,27 +130,27 @@ export default function ProjectDetailsPage() {
               )}
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <p className="text-sm font-medium text-gray-600 mb-2">Budget Utilization</p>
-              <p className="text-2xl font-semibold text-gray-900 mb-1">{budgetUtilization}%</p>
-              <p className="text-sm text-gray-500 mb-2">{formatBudget(project.spentBudget)} of {formatBudget(project.totalBudget)}</p>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div className="bg-surface rounded-xl border border-border p-6 shadow-sm group hover:border-primary/30 transition-all">
+              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Budget Utilization</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{budgetUtilization}%</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 italic font-medium">{formatBudget(project.spentBudget)} used</p>
+              <div className="w-full bg-surface-secondary rounded-full h-2 border border-border/50">
                 <div 
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    budgetUtilization > 90 ? 'bg-red-500' : budgetUtilization > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    budgetUtilization > 90 ? 'bg-error shadow-[0_0_8px_rgba(239,68,68,0.3)]' : budgetUtilization > 75 ? 'bg-warning shadow-[0_0_8px_rgba(245,158,11,0.3)]' : 'bg-success shadow-[0_0_8px_rgba(16,185,129,0.3)]'
                   }`}
                   style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
                 />
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <p className="text-sm font-medium text-gray-600 mb-2">Progress</p>
-              <p className="text-2xl font-semibold text-gray-900 mb-1">{project.progressPercentage}%</p>
-              <p className="text-sm text-gray-500 mb-2">Overall completion</p>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div className="bg-surface rounded-xl border border-border p-6 shadow-sm group hover:border-primary/30 transition-all">
+              <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Overal Progress</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{project.progressPercentage}%</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 italic font-medium">Project completion status</p>
+              <div className="w-full bg-surface-secondary rounded-full h-2 border border-border/50">
                 <div 
-                  className="bg-[#5B94E5] h-1.5 rounded-full transition-all duration-300"
+                  className="bg-primary h-2 rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(91,148,229,0.3)]"
                   style={{ width: `${project.progressPercentage}%` }}
                 />
               </div>
@@ -158,9 +158,9 @@ export default function ProjectDetailsPage() {
           </div>
 
           {/* Tabs */}
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="border-b border-gray-200 px-6">
-              <nav className="-mb-px flex space-x-8">
+          <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden transition-all duration-300">
+            <div className="border-b border-border px-8 bg-surface-secondary/30">
+              <nav className="-mb-px flex space-x-10">
                 {[
                   { id: 'overview', label: 'Overview' },
                   { id: 'metrics', label: 'Metrics' },
@@ -171,10 +171,10 @@ export default function ProjectDetailsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    className={`py-5 px-1 border-b-2 font-bold text-xs uppercase tracking-widest transition-all duration-200 cursor-pointer ${
                       activeTab === tab.id
-                        ? 'border-[#5B94E5] text-[#5B94E5]'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-700'
                     }`}
                   >
                     {tab.label}
@@ -184,44 +184,52 @@ export default function ProjectDetailsPage() {
             </div>
 
             {/* Tab Content */}
-            <div className="p-6">
+            <div className="p-10">
               {activeTab === 'overview' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                   {/* Project Details */}
-                  <div className="lg:col-span-2 space-y-6">
+                  <div className="lg:col-span-2 space-y-10">
                     {/* Basic Info */}
                     <div>
-                      <h3 className="text-base font-semibold text-gray-900 mb-4">Project Details</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-start gap-3">
-                          <Calendar className="w-4 h-4 text-gray-400 mt-1" />
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-6">Project Metadata</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="flex items-start gap-4">
+                          <div className="p-2.5 bg-surface-secondary rounded-xl border border-border">
+                            <Calendar className="w-5 h-5 text-primary" />
+                          </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Timeline</p>
-                            <p className="text-sm text-gray-600">{formatDate(project.startDate)} - {formatDate(project.endDate)}</p>
+                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Timeline</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatDate(project.startDate)} - {formatDate(project.endDate)}</p>
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-3">
-                          <MapPin className="w-4 h-4 text-gray-400 mt-1" />
+                        <div className="flex items-start gap-4">
+                          <div className="p-2.5 bg-surface-secondary rounded-xl border border-border">
+                            <MapPin className="w-5 h-5 text-primary" />
+                          </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Region</p>
-                            <p className="text-sm text-gray-600">{getRegionDisplayName(project.region)}</p>
+                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Region</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{getRegionDisplayName(project.region)}</p>
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-3">
-                          <DollarSign className="w-4 h-4 text-gray-400 mt-1" />
+                        <div className="flex items-start gap-4">
+                          <div className="p-2.5 bg-surface-secondary rounded-xl border border-border">
+                            <DollarSign className="w-5 h-5 text-primary" />
+                          </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Total Budget</p>
-                            <p className="text-sm text-gray-600">{formatBudget(project.totalBudget)}</p>
+                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Total Budget</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatBudget(project.totalBudget)}</p>
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-3">
-                          <Users className="w-4 h-4 text-gray-400 mt-1" />
+                        <div className="flex items-start gap-4">
+                          <div className="p-2.5 bg-surface-secondary rounded-xl border border-border">
+                            <Users className="w-5 h-5 text-primary" />
+                          </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Team Size</p>
-                            <p className="text-sm text-gray-600">{project.teamMembers.length} member{project.teamMembers.length !== 1 ? 's' : ''}</p>
+                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Team Size</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{project.teamMembers.length} Professional{project.teamMembers.length !== 1 ? 's' : ''}</p>
                           </div>
                         </div>
                       </div>
@@ -230,118 +238,126 @@ export default function ProjectDetailsPage() {
                     {/* Objectives */}
                     {project.objectives.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">Objectives</h4>
-                        <ul className="space-y-2">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-4">Strategic Objectives</h4>
+                        <div className="grid grid-cols-1 gap-3">
                           {project.objectives.map((objective, index) => (
-                            <li key={index} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 bg-[#5B94E5] rounded-full mt-2 flex-shrink-0"></div>
-                              <span className="text-sm text-gray-700">{objective}</span>
-                            </li>
+                            <div key={index} className="flex items-start gap-4 p-4 rounded-xl border border-border bg-surface-secondary/20 hover:bg-surface-secondary/40 transition-colors">
+                              <div className="w-2 h-2 bg-primary rounded-full mt-1.5 flex-shrink-0 shadow-[0_0_6px_rgba(91,148,229,0.5)]"></div>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed">{objective}</span>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
                       </div>
                     )}
 
                     {/* Expected Outcomes */}
                     {project.expectedOutcomes.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">Expected Outcomes</h4>
-                        <ul className="space-y-2">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-4">Expected Outcomes</h4>
+                        <div className="grid grid-cols-1 gap-3">
                           {project.expectedOutcomes.map((outcome, index) => (
-                            <li key={index} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                              <span className="text-sm text-gray-700">{outcome}</span>
-                            </li>
+                            <div key={index} className="flex items-start gap-4 p-4 rounded-xl border border-border bg-surface-secondary/20 hover:bg-surface-secondary/40 transition-colors">
+                              <div className="w-2 h-2 bg-success rounded-full mt-1.5 flex-shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.5)]"></div>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed">{outcome}</span>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* Sidebar */}
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-4">Information</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Sector</p>
-                        <p className="text-sm text-gray-900 mt-1">{getSectorDisplayName(project.sector)}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Funding Source</p>
-                        <p className="text-sm text-gray-900 mt-1">{project.fundingSource || 'Not specified'}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Coverage Area</p>
-                        <p className="text-sm text-gray-900 mt-1">{project.coverageArea ? `${project.coverageArea} km²` : 'Not specified'}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Created By</p>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {project.createdBy?.firstName} {project.createdBy?.lastName}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Last Updated</p>
-                        <p className="text-sm text-gray-900 mt-1">{formatDate(project.updatedAt)}</p>
-                      </div>
-
-                      {/* Tags */}
-                      {project.tags.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-600 mb-2">Tags</p>
-                          <div className="flex flex-wrap gap-2">
-                            {project.tags.map((tag, index) => (
-                              <span key={index} className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
-                                {tag.name}
-                              </span>
-                            ))}
-                          </div>
+                  <div className="space-y-10">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-6">Execution Context</h3>
+                      <div className="space-y-6">
+                        <div className="p-5 rounded-2xl border border-border bg-surface-secondary/20 transition-all">
+                          <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Sector</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{getSectorDisplayName(project.sector)}</p>
                         </div>
-                      )}
+
+                        <div className="p-5 rounded-2xl border border-border bg-surface-secondary/20 transition-all">
+                          <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Funding Source</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{project.fundingSource || 'Not specified'}</p>
+                        </div>
+
+                        <div className="p-5 rounded-2xl border border-border bg-surface-secondary/20 transition-all">
+                          <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">Coverage Area</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{project.coverageArea ? `${project.coverageArea} km²` : 'Not specified'}</p>
+                        </div>
+
+                        <div className="flex items-center justify-between py-2 border-b border-border/50">
+                          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Created By</p>
+                          <p className="text-xs font-bold text-gray-900 dark:text-gray-100">
+                            {project.createdBy?.firstName} {project.createdBy?.lastName}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between py-2 border-b border-border/50">
+                          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Last Updated</p>
+                          <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{formatDate(project.updatedAt)}</p>
+                        </div>
+
+                        {/* Tags */}
+                        {project.tags.length > 0 && (
+                          <div className="pt-4">
+                            <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">Classifications</p>
+                            <div className="flex flex-wrap gap-2">
+                              {project.tags.map((tag, index) => (
+                                <span key={index} className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-surface-secondary text-gray-600 dark:text-gray-400 border border-border">
+                                  {tag.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {activeTab === 'team' && (
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-4">Team Members</h3>
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Project Personnel</h3>
+                    <button className="cursor-pointer text-xs font-bold text-primary hover:text-primary-hover uppercase tracking-widest transition-colors">
+                      Manage Team
+                    </button>
+                  </div>
                   
                   {project.teamMembers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {project.teamMembers.map((member, index) => (
-                        <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                          <div className="w-12 h-12 bg-[#5B94E5] rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-white font-medium text-sm">
+                        <div key={index} className="group relative flex items-center gap-5 p-5 bg-surface-secondary/30 rounded-2xl border border-transparent hover:border-primary/30 transition-all">
+                          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
+                            <span className="text-white font-bold text-lg">
                               {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 text-sm">{member.name}</p>
-                            <p className="text-sm text-gray-600">{member.role}</p>
+                            <p className="font-bold text-gray-900 dark:text-gray-100 text-sm group-hover:text-primary transition-colors">{member.name}</p>
+                            <p className="text-xs text-primary font-bold uppercase tracking-widest mt-0.5">{member.role}</p>
                             {member.email && (
-                              <p className="text-sm text-gray-500 truncate">{member.email}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 truncate italic font-medium">{member.email}</p>
                             )}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg">
-                      <Users className="mx-auto h-8 w-8 text-gray-400 mb-3" />
-                      <p className="text-sm text-gray-600">No team members assigned yet</p>
+                    <div className="text-center py-24 bg-surface-secondary/20 rounded-2xl border-2 border-dashed border-border">
+                      <Users className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
+                      <p className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">No team members assigned</p>
                     </div>
                   )}
                 </div>
               )}
 
               {['metrics', 'timeline', 'files'].includes(activeTab) && (
-                <div className="text-center py-12">
-                  <p className="text-sm text-gray-600 mb-4">
+                <div className="text-center py-32 bg-surface-secondary/10 rounded-2xl border-2 border-dashed border-border transition-all">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary/30 mx-auto mb-6" />
+                  <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                     {activeTab === 'metrics' && 'Detailed metrics and analytics coming soon'}
                     {activeTab === 'timeline' && 'Project timeline and milestones coming soon'}
                     {activeTab === 'files' && 'File attachments coming soon'}

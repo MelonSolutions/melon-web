@@ -28,8 +28,8 @@ interface VerificationTrendsProps {
 export const VerificationTrends: React.FC<VerificationTrendsProps> = ({ data }) => {
   if (!data || data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
-        <p className="text-gray-500 text-sm">No trend data available for the last 30 days</p>
+      <div className="h-64 flex items-center justify-center bg-surface-secondary rounded-xl border border-dashed border-border">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">No trend data available for the last 30 days</p>
       </div>
     );
   }
@@ -59,29 +59,31 @@ export const VerificationTrends: React.FC<VerificationTrendsProps> = ({ data }) 
               <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
           <XAxis 
             dataKey="date" 
             tickFormatter={formatDate}
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tick={{ fontSize: 12, fill: 'var(--chart-axis)' }}
             minTickGap={30}
           />
           <YAxis 
             axisLine={false}
             tickLine={false}
-            tick={{ fontSize: 10, fill: '#6B7280' }}
+            tick={{ fontSize: 10, fill: 'var(--chart-axis)' }}
             width={30}
           />
           <Tooltip 
             labelFormatter={formatDate}
             contentStyle={{ 
-              backgroundColor: '#FFF', 
-              border: 'none', 
+              backgroundColor: 'var(--chart-tooltip-bg)', 
+              border: '1px solid var(--color-border)', 
               borderRadius: '8px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+              boxShadow: 'var(--shadow-md)'
             }}
+            itemStyle={{ fontSize: '12px' }}
+            labelStyle={{ fontWeight: '600', color: 'var(--color-text-primary)', marginBottom: '4px' }}
           />
           <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
           <Area

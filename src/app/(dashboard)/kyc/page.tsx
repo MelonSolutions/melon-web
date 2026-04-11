@@ -4,7 +4,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin } from 'lucide-react';
+import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
@@ -180,100 +180,97 @@ function KYCContent() {
   const hasFilters = debouncedSearch || statusFilter;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex-1">
-          <h1 className="text-2xl font-semibold text-gray-900">Address Verification</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage address and business verification requests
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Address Verification</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
+            Manage and oversee platform-wide address and business verification requests
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           {isMelonAdmin && (
-            <div className="w-48 sm:w-64 transition-all">
-              <select
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer hover:border-gray-300 font-medium"
-                value={organizationId}
-                onChange={(e) => setOrganizationId(e.target.value)}
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 0.5rem center',
-                  backgroundSize: '1.25rem'
-                }}
-              >
-                <option value="">All Organizations</option>
-                {organizations.map((org) => (
-                  <option key={org._id || org.id} value={org._id || org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
+            <div className="w-48 sm:w-64 transition-all group">
+              <div className="relative">
+                <select
+                  className="w-full pl-4 pr-10 py-3 text-sm font-bold border border-border rounded-xl bg-surface text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer hover:border-primary/50 transition-all shadow-sm"
+                  value={organizationId}
+                  onChange={(e) => setOrganizationId(e.target.value)}
+                >
+                  <option value="">All Organizations</option>
+                  {organizations.map((org) => (
+                    <option key={org._id || org.id} value={org._id || org.id}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-primary transition-colors">
+                  <RefreshCw className="w-4 h-4" />
+                </div>
+              </div>
             </div>
           )}
           <Link href="/kyc/create" prefetch={false} className="w-full sm:w-auto">
-            <Button variant="primary" icon={<Plus className="w-4 h-4" />} className="w-full sm:w-auto">
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />} className="w-full sm:w-auto py-3 px-6 shadow-lg shadow-primary/20">
               Create New Request
             </Button>
           </Link>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 flex-1">
-          <StatCard
-            label="Total"
-            value={dashboardStats.totalUsers}
-            description="All requests"
-          />
-          <StatCard
-            label="Pending"
-            value={dashboardStats.pending}
-            description="Unassigned"
-          />
-          <StatCard
-            label="Assigned"
-            value={dashboardStats.assigned}
-            description="Claimed"
-          />
-          <StatCard
-            label="In Review"
-            value={dashboardStats.inReview}
-            description="Ongoing"
-          />
-          <StatCard
-            label="Verified"
-            value={dashboardStats.verified}
-            description="Completed"
-          />
-          <StatCard
-            label="Rejected"
-            value={dashboardStats.rejected}
-            description="Failed"
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <StatCard
+          label="Total"
+          value={dashboardStats.totalUsers}
+          description="All platform requests"
+        />
+        <StatCard
+          label="Pending"
+          value={dashboardStats.pending}
+          description="Awaiting assignment"
+        />
+        <StatCard
+          label="Assigned"
+          value={dashboardStats.assigned}
+          description="Claimed by agents"
+        />
+        <StatCard
+          label="In Review"
+          value={dashboardStats.inReview}
+          description="Currently ongoing"
+        />
+        <StatCard
+          label="Verified"
+          value={dashboardStats.verified}
+          description="Passed verification"
+        />
+        <StatCard
+          label="Rejected"
+          value={dashboardStats.rejected}
+          description="Failed verification"
+        />
       </div>
 
       {/* Insights & Analysis Section */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all">
+      <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm transition-all group hover:border-primary/20">
         <div 
-          className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-white to-gray-50/50 gap-4"
+          className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 border-b border-border bg-gradient-to-r from-surface to-surface-secondary/50 gap-4"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-              <BarChart3 className="w-5 h-5 text-indigo-600" />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 shadow-inner group-hover:scale-105 transition-transform duration-300">
+              <BarChart3 className="w-6 h-6 text-primary" />
             </div>
             <div onClick={() => setShowAnalysis(!showAnalysis)} className="cursor-pointer min-w-0">
-              <h2 className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-widest truncate">Insights & Analysis</h2>
-              <p className="text-[10px] sm:text-xs text-gray-500 truncate">Visualizing {organizationId ? 'organization' : 'platform'} performance & trends</p>
+              <h2 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Insights & Analysis</h2>
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate font-bold mt-0.5 opacity-80 uppercase">Visualizing {organizationId ? 'organization' : 'platform'} performance & trends</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
+          <div className="flex items-center gap-3 ml-auto sm:ml-0">
             <Link href="/map-view?layer=kyc" prefetch={false}>
               <Button 
                 variant="secondary" 
                 size="sm" 
-                className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 h-9"
+                className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 h-10 font-bold rounded-xl px-4"
                 icon={<MapPin className="w-4 h-4" />}
               >
                 <span className="hidden xs:inline">Mapping Spread</span>
@@ -283,36 +280,41 @@ function KYCContent() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-gray-400 hover:text-gray-600 h-9"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 h-10 font-bold rounded-xl hover:bg-surface-secondary px-4 transition-all"
               onClick={() => setShowAnalysis(!showAnalysis)}
+              icon={<LayoutGrid className={`w-4 h-4 transition-transform duration-300 ${showAnalysis ? 'rotate-180' : ''}`} />}
             >
-              <span className="hidden xs:inline">{showAnalysis ? 'Hide' : 'Show'} details</span>
+              <span className="hidden xs:inline">{showAnalysis ? 'Collapse Insights' : 'Expand Insights'}</span>
               <span className="xs:hidden">{showAnalysis ? 'Hide' : 'Show'}</span>
             </Button>
           </div>
         </div>
         
         {showAnalysis && (
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-4">
+          <div className="p-8 animate-in slide-in-from-top-4 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-3 uppercase tracking-widest">
                     <TrendingUp className="w-4 h-4 text-emerald-500" />
                     Verification Trends (30d)
                   </h3>
                 </div>
-                <VerificationTrends data={dashboardStats.timeSeries || []} />
+                <div className="bg-surface-secondary/20 rounded-2xl border border-border/50 p-4">
+                  <VerificationTrends data={dashboardStats.timeSeries || []} />
+                </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-gray-600 dark:text-gray-400 flex items-center gap-3 uppercase tracking-widest">
                     <MapPin className="w-4 h-4 text-orange-500" />
                     Geographic Distribution
                   </h3>
                 </div>
-                <GeographicDistribution data={dashboardStats.geographicBreakdown || []} />
+                <div className="bg-surface-secondary/20 rounded-2xl border border-border/50 p-4">
+                  <GeographicDistribution data={dashboardStats.geographicBreakdown || []} />
+                </div>
               </div>
             </div>
           </div>
@@ -322,19 +324,24 @@ function KYCContent() {
       {!hasUsers && !hasFilters ? (
         <KYCEmpty />
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 border-b border-gray-200 gap-4">
-            <h2 className="text-base font-semibold text-gray-900">
-              Verification Requests
-            </h2>
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden transition-all duration-300 hover:border-primary/10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 border-b border-border bg-surface-secondary/10 gap-6">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                Verification Pipeline
+              </h2>
+              <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                {pagination.total} Records
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={refetch}
                 loading={loading}
                 icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
-                className="order-1"
+                className="h-10 text-xs font-bold uppercase tracking-widest px-4 border-border/60 hover:border-primary/40 transition-colors"
               >
                 <span>Refresh</span>
               </Button>
@@ -344,141 +351,104 @@ function KYCContent() {
                 onClick={handleExport}
                 loading={exporting}
                 icon={<Download className="w-4 h-4" />}
-                className="order-2"
+                className="h-10 text-xs font-bold uppercase tracking-widest px-4 border-border/60 hover:border-primary/40 transition-colors"
               >
-                <span>Export</span>
+                <span>Export Data</span>
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setIsDailyReportModalOpen(true)}
                 icon={<FileText className="w-4 h-4" />}
-                className="order-3"
+                className="h-10 text-xs font-bold uppercase tracking-widest px-4 border-border/60 hover:border-primary/40 transition-colors"
               >
-                <span>Daily Report</span>
+                <span>Reports</span>
               </Button>
 
-              <div className="flex items-center border border-gray-200 rounded-lg bg-white order-last sm:order-4">
-                <button
+              <div className="flex items-center border border-border/60 rounded-xl bg-surface group-hover:border-primary/40 overflow-hidden shadow-sm transition-all duration-300">
+                  <button
                   onClick={() => setView('grid')}
-                  className={`px-3 py-2 transition-colors border-r border-gray-100 flex items-center gap-2 ${view === 'grid'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
+                  className={`px-4 py-2.5 transition-all flex items-center gap-2 group/btn ${view === 'grid'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-surface-secondary'
                     }`}
                   title="Grid view"
                 >
-                  <Grid3x3 className="w-4 h-4" />
-                  <span className="text-xs font-medium">Grid</span>
+                  <Grid3x3 className={`w-4 h-4 transition-transform group-hover/btn:scale-110 ${view === 'grid' ? 'scale-110' : ''}`} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Grid</span>
                 </button>
+                <div className="w-[1px] h-4 bg-border/60" />
                 <button
                   onClick={() => setView('list')}
-                  className={`px-3 py-2 transition-colors border-gray-100 flex items-center gap-2 ${view === 'list'
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
+                  className={`px-4 py-2.5 transition-all flex items-center gap-2 group/btn ${view === 'list'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-surface-secondary'
                     }`}
                   title="List view"
                 >
-                  <List className="w-4 h-4" />
-                  <span className="text-xs font-medium">List</span>
+                  <List className={`w-4 h-4 transition-transform group-hover/btn:scale-110 ${view === 'list' ? 'scale-110' : ''}`} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">List</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="p-4 sm:p-6 border-b border-gray-200">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 w-full max-w-md">
-                <Input
-                  placeholder="Search by name, email, loan ID..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  icon={<Search className="w-4 h-4" />}
-                />
-                {searchInput !== debouncedSearch && (
-                  <p className="text-xs text-gray-400 mt-1">Searching...</p>
-                )}
+          <div className="p-6 border-b border-border bg-surface">
+            <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex-1 w-full max-w-lg">
+                <div className="relative group">
+                  <Input
+                    placeholder="Search by name, email, loan ID..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    icon={<Search className="w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors" />}
+                    className="pl-12 py-3 rounded-xl border-border/60 focus:border-primary transition-all text-sm font-medium"
+                  />
+                  {searchInput !== debouncedSearch && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary/50" />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide no-scrollbar">
-                <button
-                  onClick={() => setStatusFilter('')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === ''
-                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setStatusFilter('PENDING')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'PENDING'
-                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  Pending
-                </button>
-                <button
-                  onClick={() => setStatusFilter('ASSIGNED')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'ASSIGNED'
-                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  Assigned
-                </button>
-                <button
-                  onClick={() => setStatusFilter('IN_REVIEW')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'IN_REVIEW'
-                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  In Review
-                </button>
-                <button
-                  onClick={() => setStatusFilter('VERIFICATION_SUBMITTED')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'VERIFICATION_SUBMITTED'
-                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  Pending Approval
-                </button>
-                <button
-                  onClick={() => setStatusFilter('VERIFIED')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'VERIFIED'
-                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  Verified
-                </button>
-                <button
-                  onClick={() => setStatusFilter('REJECTED')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border whitespace-nowrap ${statusFilter === 'REJECTED'
-                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                    }`}
-                >
-                  Rejected
-                </button>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar scroll-smooth">
+                {[
+                  { id: '', label: 'All Status' },
+                  { id: 'PENDING', label: 'Pending' },
+                  { id: 'ASSIGNED', label: 'Assigned' },
+                  { id: 'IN_REVIEW', label: 'In Review' },
+                  { id: 'VERIFICATION_SUBMITTED', label: 'Review' },
+                  { id: 'VERIFIED', label: 'Verified' },
+                  { id: 'REJECTED', label: 'Rejected' },
+                ].map((status) => (
+                  <button
+                    key={status.id}
+                    onClick={() => setStatusFilter(status.id)}
+                    className={`px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.1em] rounded-xl transition-all border whitespace-nowrap shadow-sm ${statusFilter === status.id
+                      ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105'
+                      : 'bg-surface text-gray-500 dark:text-gray-400 border-border/60 hover:bg-surface-secondary hover:border-primary/30 hover:text-primary'
+                      }`}
+                  >
+                    {status.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
           {loading ? (
-            <div className="p-6">
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+            <div className="p-8">
+              <div className="space-y-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-20 bg-surface-secondary/40 rounded-2xl animate-pulse border border-border/20"></div>
                 ))}
               </div>
             </div>
           ) : filteredUsers.length > 0 ? (
             <>
               {view === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-8 bg-surface-secondary/5">
                   {filteredUsers.map((user) => {
                     const userId = getUserId(user);
                     return userId ? (
@@ -494,23 +464,23 @@ function KYCContent() {
               ) : (
                 <div className="overflow-x-auto">
                   <div className="min-w-full inline-block align-middle">
-                    <div className="hidden lg:block px-6 py-3 bg-gray-50 border-b border-gray-200">
+                    <div className="hidden lg:block px-8 py-4 bg-surface-secondary/20 border-b border-border transition-colors">
                       <div 
-                        className="grid gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest"
-                        style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
+                        className="grid gap-6 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em]"
+                        style={{ gridTemplateColumns: 'minmax(220px, 2fr) minmax(140px, 1fr) 130px 90px 90px 90px 90px 60px' }}
                       >
-                        <div>Customer</div>
-                        <div>Source</div>
-                        <div>Status</div>
-                        <div className="text-center">Logged</div>
-                        <div className="text-center">Assigned</div>
+                        <div>Customer Entity</div>
+                        <div>Reporting Source</div>
+                        <div>Workflow Status</div>
+                        <div className="text-center">Logged At</div>
+                        <div className="text-center">Claimed</div>
                         <div className="text-center">Submitted</div>
-                        <div className="text-center">Decision</div>
+                        <div className="text-center">Validated</div>
                         <div className="text-right">Action</div>
                       </div>
                     </div>
 
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-border/60 bg-surface">
                       {filteredUsers.map((user) => {
                         const userId = getUserId(user);
                         return userId ? (
@@ -526,28 +496,35 @@ function KYCContent() {
                   </div>
                 </div>
               )}
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                hasNextPage={pagination.hasNextPage}
-                hasPreviousPage={pagination.hasPreviousPage}
-                totalItems={pagination.total}
-                pageSize={pagination.pageSize}
-                onPageChange={setPage}
-              />
+              <div className="p-6 border-t border-border bg-surface-secondary/10">
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  hasNextPage={pagination.hasNextPage}
+                  hasPreviousPage={pagination.hasPreviousPage}
+                  totalItems={pagination.total}
+                  pageSize={pagination.pageSize}
+                  onPageChange={setPage}
+                />
+              </div>
             </>
           ) : (
-            <div className="text-center py-12 px-6">
-              <p className="text-sm text-gray-500 mb-3">No requests found matching your criteria</p>
+            <div className="text-center py-32 px-10 bg-surface-secondary/5">
+              <div className="w-16 h-16 bg-surface-secondary rounded-full flex items-center justify-center mx-auto mb-6 border border-border/50">
+                <Search className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+              </div>
+              <p className="text-base font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-2">No results found</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto font-medium">We couldn't find any verification requests matching your current filters and search criteria.</p>
               <Button
-                variant="ghost"
+                variant="primary"
                 size="sm"
                 onClick={() => {
                   setSearchInput('');
                   setStatusFilter('');
                 }}
+                className="px-8"
               >
-                Clear filters
+                Reset All Filters
               </Button>
             </div>
           )}

@@ -5,6 +5,7 @@ import './globals.css';
 import { ModalProvider } from '@/components/ui/Modal';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 const mabryPro = localFont({
   variable: '--font-mabry',
@@ -54,20 +55,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico?v=3" />
         <link rel="shortcut icon" href="/favicon.ico?v=3" />
         <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
       </head>
       <body className={`${dmSans.className} ${mabryPro.variable} antialiased`}>
-        <AuthProvider>
-          <ToastProvider>
-            <ModalProvider>
-              {children}
-            </ModalProvider>
-          </ToastProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <ModalProvider>
+                {children}
+              </ModalProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

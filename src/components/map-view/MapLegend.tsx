@@ -23,13 +23,13 @@ export function MapLegend({ layers, selectedMetric }: MapLegendProps) {
   if (legendItems.length === 0) return null;
 
   return (
-    <div className="absolute bottom-6 left-6 z-[1000] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden max-w-xs">
+    <div className="absolute bottom-6 left-6 z-[1000] bg-surface rounded-xl shadow-lg border border-border overflow-hidden max-w-xs transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-        <h3 className="font-semibold text-gray-900">Legend</h3>
+      <div className="flex items-center justify-between p-4 border-b border-border bg-surface-secondary">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Legend</h3>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+          className="cursor-pointer p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
         >
           {isCollapsed ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
@@ -39,36 +39,38 @@ export function MapLegend({ layers, selectedMetric }: MapLegendProps) {
       {!isCollapsed && (
         <div className="p-4">
           {selectedMetric && (
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">
+                <Info className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">
                   {selectedMetric.replace(/_/g, ' ')}
                 </span>
               </div>
             </div>
           )}
 
-          {legendItems.map((item, index) => (
-            <div key={index} className="flex items-center gap-3 py-2">
-              <div
-                className="w-4 h-4 rounded-full flex-shrink-0"
-                style={{ backgroundColor: item.color }}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-gray-900 text-sm">{item.name}</div>
-                <div className="text-xs text-gray-500 truncate">{item.description}</div>
+          <div className="space-y-3">
+            {legendItems.map((item, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <div
+                  className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
+                  style={{ backgroundColor: item.color }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{item.name}</div>
+                  <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{item.description}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
 
           {/* Scale Reference */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-700">Scale</span>
+              <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500">Scale Reference</span>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-0.5 bg-gray-800"></div>
-                <span className="text-xs text-gray-600">50 km</span>
+                <div className="w-8 h-0.5 bg-gray-900 dark:bg-gray-100"></div>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">50 km</span>
               </div>
             </div>
           </div>

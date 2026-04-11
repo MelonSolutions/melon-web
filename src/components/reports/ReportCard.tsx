@@ -14,7 +14,11 @@ import {
   BarChart3,
   Globe,
   Lock,
-  Loader2
+  Loader2,
+  FileText,
+  ChevronRight,
+  ExternalLink,
+  Users
 } from 'lucide-react';
 import { duplicateReport, deleteReport } from '@/lib/api/reports';
 import { EmailSharingModal } from '@/components/reports/EmailSharingModal';
@@ -113,95 +117,112 @@ const handleShare = async () => {
     setShowDropdown(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PUBLISHED':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'DRAFT':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'CLOSED':
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-      case 'ARCHIVED':
-        return 'bg-gray-100 text-gray-600 border-gray-300';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+  const statusConfig = {
+    PUBLISHED: {
+      label: 'Live Protocol',
+      color: 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5',
+      icon: report.isPublic ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />
+    },
+    DRAFT: {
+      label: 'Staging Phase',
+      color: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
+      icon: <Edit3 className="w-3.5 h-3.5" />
+    },
+    CLOSED: {
+      label: 'Protocol Terminated',
+      color: 'text-error border-error/20 bg-error/5',
+      icon: <Lock className="w-3.5 h-3.5" />
+    },
+    ARCHIVED: {
+      label: 'Legacy Record',
+      color: 'text-gray-400 border-border bg-surface-secondary/50',
+      icon: <FileText className="w-3.5 h-3.5" />
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      'Impact Assessment': 'bg-blue-50 text-blue-700',
-      'Feedback': 'bg-purple-50 text-purple-700',
-      'Health': 'bg-red-50 text-red-700',
-      'Education': 'bg-indigo-50 text-indigo-700',
-      'Agriculture': 'bg-green-50 text-green-700',
-      'Community': 'bg-orange-50 text-orange-700',
+  const config = statusConfig[report.status] || statusConfig.DRAFT;
+
+  const getCategoryTheme = (category: string) => {
+    const themes = {
+      'Impact Assessment': 'text-blue-500 bg-blue-500/5 border-blue-500/20',
+      'Feedback': 'text-purple-500 bg-purple-500/5 border-purple-500/20',
+      'Health': 'text-red-500 bg-red-500/5 border-red-500/20',
+      'Education': 'text-indigo-500 bg-indigo-500/5 border-indigo-500/20',
+      'Agriculture': 'text-emerald-500 bg-emerald-500/5 border-emerald-500/20',
+      'Community': 'text-orange-500 bg-orange-500/5 border-orange-500/20',
     };
-    return colors[category as keyof typeof colors] || 'bg-gray-50 text-gray-700';
+    return themes[category as keyof typeof themes] || 'text-gray-500 bg-gray-500/5 border-gray-500/20';
   };
 
-  // Grid View
+  // Grid Matrix View
   if (view === 'grid') {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow relative flex flex-col h-full cursor-pointer group">
-        <Link href={`/reports/${reportId}`} className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6 pb-4 flex-1">
-            <div className="flex items-start justify-between mb-3">
+      <div className="bg-surface rounded-3xl border border-border overflow-hidden shadow-sm group hover:border-primary/30 transition-all duration-500 font-sans flex flex-col h-full relative">
+        <Link href={`/reports/${reportId}`} className="flex flex-col h-full flex-1">
+          {/* Header Identity */}
+          <div className="p-8 pb-6 flex-1 flex flex-col">
+            <div className="flex items-start justify-between mb-6">
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-medium text-gray-900 truncate group-hover:text-[#5B94E5] transition-colors">
+                <div className="flex items-center gap-2 mb-2">
+                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${config.color}`}>
+                     {config.icon}
+                     {config.label}
+                   </span>
+                </div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 truncate group-hover:text-primary transition-colors tracking-tight flex items-center gap-2">
                   {report.title}
+                  <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                 </h3>
                 {report.description && (
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 mt-2 line-clamp-2 leading-relaxed tracking-wide opacity-80">
                     {report.description}
                   </p>
                 )}
               </div>
 
-              <div className="relative ml-2">
+              <div className="relative ml-4 shrink-0">
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     setShowDropdown(!showDropdown);
                   }}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors z-10"
+                  className="p-2.5 hover:bg-primary/5 rounded-xl border border-transparent hover:border-primary/20 text-gray-400 hover:text-primary transition-all z-10"
                   disabled={loading}
                 >
                   {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                    <MoreHorizontal className="w-5 h-5" />
                   )}
                 </button>
 
                 {showDropdown && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
-                    <div className="py-1">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-surface rounded-2xl border border-border shadow-2xl z-20 overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="p-2 space-y-1">
                       <button
                         onClick={(e) => handleNavigate(`/reports/${reportId}`, e)}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left"
                       >
                         <Edit3 className="w-4 h-4" />
-                        Edit
+                        Modify Protocol
                       </button>
                       <button
                         onClick={(e) => handleNavigate(`/reports/${reportId}/responses`, e)}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left"
                       >
                         <BarChart3 className="w-4 h-4" />
-                        Responses
+                        Intelligence Feed
                       </button>
                       <button
                         onClick={(e) => handleNavigate(`/reports/${reportId}/settings`, e)}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left"
                       >
                         <Settings className="w-4 h-4" />
-                        Settings
+                        System Config
                       </button>
                       
-                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="border-t border-border/40 my-1 mx-2"></div>
 
                       {report.status === 'PUBLISHED' && (
                         <>
@@ -212,10 +233,10 @@ const handleShare = async () => {
                               window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
                               setShowDropdown(false);
                             }}
-                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                            className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left"
                           >
                             <Eye className="w-4 h-4" />
-                            Preview
+                            Live Preview
                           </button>
                           <button
                             onClick={(e) => {
@@ -223,10 +244,10 @@ const handleShare = async () => {
                               e.stopPropagation();
                               handleShare();
                             }}
-                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                            className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left"
                           >
                             <Share2 className="w-4 h-4" />
-                            Share
+                            Digital Share
                           </button>
                         </>
                       )}
@@ -238,13 +259,13 @@ const handleShare = async () => {
                           handleDuplicate();
                         }}
                         disabled={loading}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-left"
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left disabled:opacity-30"
                       >
                         <Copy className="w-4 h-4" />
-                        Duplicate
+                        Clone Record
                       </button>
                       
-                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="border-t border-border/40 my-1 mx-2"></div>
                       
                       <button
                         onClick={(e) => {
@@ -253,10 +274,10 @@ const handleShare = async () => {
                           handleDelete();
                         }}
                         disabled={loading}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 text-left"
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/5 transition-all rounded-xl text-left disabled:opacity-30"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete
+                        Excision
                       </button>
                     </div>
                   </div>
@@ -264,29 +285,36 @@ const handleShare = async () => {
               </div>
             </div>
 
-            {/* Status and Category Badges */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(report.status)}`}>
-                {report.status === 'PUBLISHED' && report.isPublic && <Globe className="w-3 h-3" />}
-                {report.status === 'PUBLISHED' && !report.isPublic && <Lock className="w-3 h-3" />}
-                {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-              </span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(report.category)}`}>
-                {report.category}
-              </span>
+            {/* Context Insights */}
+            <div className="mt-auto pt-6 border-t border-border/40 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg border ${getCategoryTheme(report.category)}`}>
+                  {report.category}
+                </span>
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary opacity-40"></span>
+                  SY_VOL: {reportId.substring(reportId.length - 6)}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 mt-auto">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-4">
-                <span className="text-gray-600">
-                  <span className="font-medium">{report.responseCount}</span> responses
+          {/* Audit Footer */}
+          <div className="px-8 py-5 bg-surface-secondary/20 border-t border-border/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-border shadow-sm">
+                   <Users className="w-3 h-3 text-primary" />
+                   <span className="text-[10px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-tighter">
+                     {report.responseCount} Nodes
+                   </span>
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
+                   {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
                 </span>
-                <span className="text-gray-400">
-                  Updated {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
-                </span>
+              </div>
+              <div className="w-8 h-8 rounded-xl bg-surface border border-border flex items-center justify-center group-hover:bg-primary/5 group-hover:border-primary/30 transition-all">
+                <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-primary transition-colors" />
               </div>
             </div>
           </div>
@@ -296,143 +324,124 @@ const handleShare = async () => {
         {showDropdown && (
           <div 
             className="fixed inset-0 z-10"
-            onClick={() => setShowDropdown(false)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowDropdown(false);
+            }}
           />
         )}
       </div>
     );
   }
 
+  // Audit List Item View
   return (
-    <div className="hover:bg-gray-50 transition-colors">
-      <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
-        {/* Name */}
-        <div className="col-span-4">
+    <div className="group font-sans hover:bg-surface-secondary/30 transition-all cursor-pointer border-l-4 border-transparent hover:border-primary">
+      <div className="grid grid-cols-12 gap-6 px-8 py-6 items-center relative">
+        {/* Entity Identity */}
+        <div className="col-span-4 min-w-0">
           <Link 
             href={`/reports/${reportId}`}
-            className="block"
+            className="block group/title"
           >
-            <div className="font-medium text-gray-900 hover:text-[#5B94E5] transition-colors truncate">
+            <div className="text-sm font-black text-gray-900 dark:text-gray-100 group-hover/title:text-primary transition-colors truncate tracking-tight flex items-center gap-2">
               {report.title}
+              <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/title:opacity-100 group-hover/title:translate-x-0 transition-all" />
             </div>
             {report.description && (
-              <div className="text-sm text-gray-500 truncate mt-1">
+              <div className="text-[11px] font-bold text-gray-400 dark:text-gray-600 truncate mt-1 tracking-wide">
                 {report.description}
               </div>
             )}
           </Link>
         </div>
 
-        {/* Status */}
-        <div className="col-span-2">
-          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(report.status)}`}>
-            {report.status === 'PUBLISHED' && report.isPublic && <Globe className="w-3 h-3" />}
-            {report.status === 'PUBLISHED' && !report.isPublic && <Lock className="w-3 h-3" />}
-            {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+        {/* Protocol Status */}
+        <div className="col-span-2 flex justify-center">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${config.color}`}>
+            {config.icon}
+            {config.label}
           </span>
         </div>
 
-        {/* Category */}
-        <div className="col-span-2">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(report.category)}`}>
+        {/* Context Domain */}
+        <div className="col-span-2 flex justify-center">
+          <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg border ${getCategoryTheme(report.category)}`}>
             {report.category}
           </span>
         </div>
 
-        {/* Responses */}
-        <div className="col-span-2">
-          <span className="text-sm text-gray-900 font-medium">{report.responseCount}</span>
+        {/* Payload Matrix */}
+        <div className="col-span-2 flex justify-center items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-secondary/50 border border-border">
+             <Users className="w-3 h-3 text-primary" />
+             <span className="text-[10px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-tighter">{report.responseCount} Nodes</span>
+          </div>
         </div>
 
-        {/* Updated */}
-        <div className="col-span-1">
-          <span className="text-sm text-gray-500">
+        {/* Temporal Sync */}
+        <div className="col-span-1 text-right">
+          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
             {formatDistanceToNow(new Date(report.updatedAt), { addSuffix: true })}
           </span>
         </div>
 
-        {/* Actions */}
-        <div className="col-span-1 flex justify-end">
+        {/* Command Matrix */}
+        <div className="col-span-1 flex justify-end relative z-20">
           <div className="relative">
             <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowDropdown(!showDropdown);
+              }}
+              className="p-2 hover:bg-primary/5 rounded-lg border border-transparent hover:border-primary/20 transition-all"
               disabled={loading}
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                <MoreHorizontal className="w-4 h-4 text-gray-400 group-hover:text-primary" />
               )}
             </button>
 
             {showDropdown && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-10">
-                <div className="py-1">
+              <div className="absolute right-0 top-full mt-2 w-56 bg-surface rounded-2xl border border-border shadow-2xl z-30 overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-2 space-y-1">
                   <button
                     onClick={() => handleNavigate(`/reports/${reportId}`)}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left"
                   >
                     <Edit3 className="w-4 h-4" />
-                    Edit
+                    Modify
                   </button>
                   <button
                     onClick={() => handleNavigate(`/reports/${reportId}/responses`)}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left"
                   >
                     <BarChart3 className="w-4 h-4" />
-                    Responses
-                  </button>
-                  <button
-                    onClick={() => handleNavigate(`/reports/${reportId}/settings`)}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
-                  >
-                    <Settings className="w-4 h-4" />
-                    Settings
+                    Intelligence
                   </button>
                   
-                  <div className="border-t border-gray-100 my-1"></div>
+                  <div className="border-t border-border/40 my-1 mx-2"></div>
 
-                  {report.status === 'PUBLISHED' && (
-                    <>
-                      <button
-                        onClick={() => {
-                          window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
-                          setShowDropdown(false);
-                        }}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Preview
-                      </button>
-                      <button
-                        onClick={handleShare}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
-                      >
-                        <Share2 className="w-4 h-4" />
-                        Share
-                      </button>
-                    </>
-                  )}
-                  
                   <button
                     onClick={handleDuplicate}
                     disabled={loading}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-left"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary transition-all rounded-xl text-left disabled:opacity-30"
                   >
                     <Copy className="w-4 h-4" />
-                    Duplicate
+                    Clone
                   </button>
-                  
-                  <div className="border-t border-gray-100 my-1"></div>
                   
                   <button
                     onClick={handleDelete}
                     disabled={loading}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 text-left"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/5 transition-all rounded-xl text-left disabled:opacity-30"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    Excision
                   </button>
                 </div>
               </div>
@@ -440,13 +449,18 @@ const handleShare = async () => {
           </div>
         </div>
 
-        {/* Click overlay to close dropdown */}
+        {/* Global Click Shield */}
         {showDropdown && (
           <div 
             className="fixed inset-0 z-10"
-            onClick={() => setShowDropdown(false)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowDropdown(false);
+            }}
           />
         )}
+        
         {showEmailModal && (
           <EmailSharingModal
             isOpen={showEmailModal}

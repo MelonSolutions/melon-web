@@ -66,6 +66,12 @@ export interface ImpactMetricsStats {
   activeMetrics: number;
   achieved: number;
   failed: number;
+  achievedMetrics: number;
+  onTrackMetrics: number;
+  failingMetrics: number;
+  avgProgress: number;
+  totalScoringWeight: number;
+  overallScore: number;
   avgPerformance: number;
   onTrackPercentage: string;
   achievedPercentage: string;

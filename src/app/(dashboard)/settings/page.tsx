@@ -1,26 +1,47 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState } from 'react';
-import { 
-  Bell, 
-  Shield, 
-  Palette, 
-  Globe, 
-  Database, 
+import React, { useState } from 'react';
+import { useTheme } from 'next-themes';
+import {
+  Bell,
+  Shield,
+  Palette,
+  Globe,
+  Database,
   CreditCard,
   Users,
   Download,
   Key,
   Eye,
   EyeOff,
-  Save
+  Save,
+  Check,
+  Zap,
+  Lock,
+  MessageSquare,
+  Clock,
+  Info,
+  Activity,
+  Layers,
+  FileText,
+  Settings,
+  ChevronRight
 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('notifications');
   const [loading, setLoading] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const { theme: currentTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid hydration mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Settings state
   const [notifications, setNotifications] = useState({
@@ -44,24 +65,33 @@ export default function SettingsPage() {
     timezone: 'Africa/Lagos',
     dateFormat: 'DD/MM/YYYY',
     currency: 'NGN',
-    theme: 'light'
+    theme: currentTheme || 'light'
   });
+
+  // Sync preferences theme with current system theme when mounted
+  React.useEffect(() => {
+    if (mounted && currentTheme) {
+      setPreferences(prev => ({ ...prev, theme: currentTheme }));
+    }
+  }, [mounted, currentTheme]);
 
   const settingsTabs = [
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'privacy', label: 'Privacy & Security', icon: Shield },
     { id: 'preferences', label: 'Preferences', icon: Palette },
-    { id: 'integrations', label: 'Integrations', icon: Database },
+    { id: 'integrations', label: 'Integrations', icon: Zap },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'team', label: 'Team Management', icon: Users }
   ];
 
   const handleSave = async () => {
     setLoading(true);
+    setSaved(false);
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      // Show success message
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
     } finally {
@@ -70,33 +100,44 @@ export default function SettingsPage() {
   };
 
   const renderNotifications = () => (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Email Notifications</h3>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Email Notifications</h3>
+        </div>
         <div className="space-y-4">
           {[
-            { key: 'emailReports', label: 'Report submissions', description: 'Get notified when new report responses are submitted' },
-            { key: 'metricAlerts', label: 'Metric alerts', description: 'Receive alerts when metrics fall below target thresholds' },
-            { key: 'deadlineReminders', label: 'Deadline reminders', description: 'Reminders for upcoming report deadlines' },
-            { key: 'projectUpdates', label: 'Project updates', description: 'Updates on project milestones and progress' },
-            { key: 'weeklyDigest', label: 'Weekly digest', description: 'Weekly summary of your program performance' },
-            { key: 'systemMaintenance', label: 'System maintenance', description: 'Notifications about system updates and maintenance' }
+            { key: 'emailReports', label: 'Report submissions', icon: Database, description: 'Get notified when new report responses are submitted' },
+            { key: 'metricAlerts', label: 'Metric alerts', icon: Activity, description: 'Receive alerts when metrics fall below target thresholds' },
+            { key: 'deadlineReminders', label: 'Deadline reminders', icon: Clock, description: 'Reminders for upcoming report deadlines' },
+            { key: 'projectUpdates', label: 'Project updates', icon: Layers, description: 'Updates on project milestones and progress' },
+            { key: 'weeklyDigest', label: 'Weekly digest', icon: FileText, description: 'Weekly summary of your program performance' },
+            { key: 'systemMaintenance', label: 'System maintenance', icon: Settings, description: 'Notifications about system updates and maintenance' }
           ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                <p className="text-sm text-gray-500">{item.description}</p>
+            <div key={item.key} className="flex items-center justify-between p-6 rounded-[1.5rem] bg-surface-secondary/30 border border-border/40 hover:border-primary/20 transition-all group font-sans">
+              <div className="flex items-center gap-5 flex-1 pr-6">
+                <div className="p-3 bg-surface rounded-2xl border border-border group-hover:text-primary transition-colors">
+                  {/* @ts-ignore */}
+                  {item.icon && <item.icon className="w-4 h-4" />}
+                </div>
+                <div>
+                  <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">{item.label}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-300 mt-1 font-bold">{item.description}</p>
+                </div>
               </div>
               <button
                 onClick={() => setNotifications(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
-                  notifications[item.key as keyof typeof notifications] ? 'bg-[#5B94E5]' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 outline-none ${
+                  // @ts-ignore
+                  notifications[item.key as keyof typeof notifications] ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-800'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    notifications[item.key as keyof typeof notifications] ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition-all duration-500 ${
+                    // @ts-ignore
+                    notifications[item.key as keyof typeof notifications] ? 'translate-x-[24px]' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
@@ -107,85 +148,99 @@ export default function SettingsPage() {
   );
 
   const renderPrivacy = () => (
-    <div className="space-y-6">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Privacy Settings</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Privacy Settings</h3>
+        </div>
+        <div className="space-y-6">
+          <div className="p-8 rounded-[2rem] bg-surface-secondary/30 border border-border/40 font-sans">
+            <label className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-[0.2em] mb-4 block">
               Profile Visibility
             </label>
-            <select
-              value={privacy.profileVisibility}
-              onChange={(e) => setPrivacy(prev => ({ ...prev, profileVisibility: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] cursor-pointer"
-            >
-              <option value="public">Public</option>
-              <option value="organization">Organization Only</option>
-              <option value="private">Private</option>
-            </select>
+            <div className="grid grid-cols-3 gap-3">
+              {['public', 'organization', 'private'].map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setPrivacy(prev => ({ ...prev, profileVisibility: v }))}
+                  className={`px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all duration-300 ${privacy.profileVisibility === v
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-border bg-surface text-gray-500 hover:border-gray-300 dark:hover:border-gray-700'
+                    }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-900">Data Sharing</p>
-              <p className="text-sm text-gray-500">Allow anonymized data to be used for research</p>
+          {[
+            { key: 'dataSharing', label: 'Data Sharing', icon: Info, description: 'Allow anonymized data to be used for research' },
+            { key: 'twoFactorAuth', label: 'Two-Factor Authentication', icon: Shield, description: 'Add an extra layer of security to your account' }
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between p-6 rounded-[1.5rem] bg-surface-secondary/30 border border-border/40 hover:border-primary/20 transition-all group font-sans">
+              <div className="flex items-center gap-5 flex-1 pr-6">
+                <div className="p-3 bg-surface rounded-2xl border border-border group-hover:text-primary transition-colors">
+                  <item.icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">{item.label}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-600 mt-1 font-bold">{item.description}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPrivacy(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-500 outline-none ${
+                  // @ts-ignore
+                  privacy[item.key as keyof typeof privacy] ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-800'
+                  }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xl transition-all duration-500 ${
+                    // @ts-ignore
+                    privacy[item.key as keyof typeof privacy] ? 'translate-x-[24px]' : 'translate-x-1'
+                    }`}
+                />
+              </button>
             </div>
-            <button
-              onClick={() => setPrivacy(prev => ({ ...prev, dataSharing: !prev.dataSharing }))}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
-                privacy.dataSharing ? 'bg-[#5B94E5]' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  privacy.dataSharing ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-900">Two-Factor Authentication</p>
-              <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
-            </div>
-            <button
-              onClick={() => setPrivacy(prev => ({ ...prev, twoFactorAuth: !prev.twoFactorAuth }))}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
-                privacy.twoFactorAuth ? 'bg-[#5B94E5]' : 'bg-gray-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  privacy.twoFactorAuth ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
+          ))}
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Password & Security</h3>
+        <div className="flex items-center gap-3 mt-12 mb-8">
+          <div className="w-1.5 h-6 bg-error rounded-full"></div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Password & Security</h3>
+        </div>
         <div className="space-y-4">
-          <button className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+          <button className="w-full p-6 bg-surface border border-border rounded-[1.8rem] hover:border-primary/30 transition-all duration-300 group font-sans text-left">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Change Password</p>
-                <p className="text-sm text-gray-500">Last changed 3 months ago</p>
+              <div className="flex items-center gap-5">
+                <div className="p-3 bg-surface-secondary rounded-2xl border border-border group-hover:text-primary transition-colors">
+                  <Key className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Change Password</p>
+                  <p className="text-[10px] text-gray-400 mt-1 font-bold">Last changed 3 months ago</p>
+                </div>
               </div>
-              <Key className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-all group-hover:translate-x-1" />
             </div>
           </button>
 
-          <button className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+          <button className="w-full p-6 bg-surface border border-border rounded-[1.8rem] hover:border-primary/30 transition-all duration-300 group font-sans text-left">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Download Account Data</p>
-                <p className="text-sm text-gray-500">Export all your data</p>
+              <div className="flex items-center gap-5">
+                <div className="p-3 bg-surface-secondary rounded-2xl border border-border group-hover:text-primary transition-colors">
+                  <Download className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Download Account Data</p>
+                  <p className="text-[10px] text-gray-400 mt-1 font-bold">Export all your data</p>
+                </div>
               </div>
-              <Download className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-all group-hover:translate-x-1" />
             </div>
           </button>
         </div>
@@ -194,150 +249,127 @@ export default function SettingsPage() {
   );
 
   const renderPreferences = () => (
-    <div className="space-y-6">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 font-sans">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Regional Settings</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Language
-            </label>
-            <select
-              value={preferences.language}
-              onChange={(e) => setPreferences(prev => ({ ...prev, language: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] cursor-pointer"
-            >
-              <option value="en">English</option>
-              <option value="fr">Français</option>
-              <option value="es">Español</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Timezone
-            </label>
-            <select
-              value={preferences.timezone}
-              onChange={(e) => setPreferences(prev => ({ ...prev, timezone: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] cursor-pointer"
-            >
-              <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">America/New_York (EST)</option>
-              <option value="Europe/London">Europe/London (GMT)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date Format
-            </label>
-            <select
-              value={preferences.dateFormat}
-              onChange={(e) => setPreferences(prev => ({ ...prev, dateFormat: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] cursor-pointer"
-            >
-              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Currency
-            </label>
-            <select
-              value={preferences.currency}
-              onChange={(e) => setPreferences(prev => ({ ...prev, currency: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] cursor-pointer"
-            >
-              <option value="NGN">Nigerian Naira (₦)</option>
-              <option value="USD">US Dollar ($)</option>
-              <option value="EUR">Euro (€)</option>
-              <option value="GBP">British Pound (£)</option>
-            </select>
-          </div>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Regional Settings</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-surface-secondary/30 border border-border/40 p-10 rounded-[2.5rem]">
+          {[
+            { key: 'language', label: 'Language', options: [{ v: 'en', l: 'English' }, { v: 'fr', l: 'Français' }, { v: 'es', l: 'Español' }] },
+            { key: 'timezone', label: 'Timezone', options: [{ v: 'Africa/Lagos', l: 'Africa/Lagos (WAT)' }, { v: 'UTC', l: 'UTC' }, { v: 'America/New_York', l: 'America/New_York (EST)' }] },
+            { key: 'dateFormat', label: 'Date Format', options: [{ v: 'DD/MM/YYYY', l: 'DD/MM/YYYY' }, { v: 'MM/DD/YYYY', l: 'MM/DD/YYYY' }, { v: 'YYYY-MM-DD', l: 'YYYY-MM-DD' }] },
+            { key: 'currency', label: 'Currency', options: [{ v: 'NGN', l: 'Nigerian Naira (₦)' }, { v: 'USD', l: 'US Dollar ($)' }, { v: 'EUR', l: 'Euro (€)' }] }
+          ].map((field) => (
+            <div key={field.key} className="space-y-3">
+              <label className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-[0.22em] flex items-center gap-2">
+                <div className="w-1 h-1 bg-primary rounded-full"></div>
+                {field.label}
+              </label>
+              <select
+                // @ts-ignore
+                value={preferences[field.key as keyof typeof preferences]}
+                onChange={(e) => setPreferences(prev => ({ ...prev, [field.key]: e.target.value }))}
+                className="w-full px-6 py-4 bg-surface border border-border rounded-xl text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-[11px] font-black uppercase tracking-widest appearance-none cursor-pointer hover:border-primary/20"
+              >
+                {field.options.map(o => (
+                  <option key={o.v} value={o.v} className="font-bold">{o.l}</option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Display Settings</h3>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Theme
-          </label>
-          <div className="flex gap-3">
-            {['light', 'dark', 'auto'].map((theme) => (
-              <button
-                key={theme}
-                onClick={() => setPreferences(prev => ({ ...prev, theme }))}
-                className={`px-4 py-2 rounded-lg border transition-colors cursor-pointer ${
-                  preferences.theme === theme
-                    ? 'border-[#5B94E5] bg-blue-50 text-[#5B94E5]'
-                    : 'border-gray-300 hover:border-gray-400'
+        <div className="flex items-center gap-3 mt-12 mb-8">
+          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Display Settings</h3>
+        </div>
+        <div className="p-8 bg-surface-secondary/30 border border-border/40 rounded-[2rem] flex flex-wrap gap-4">
+          {['light', 'dark', 'system'].map((t) => (
+            <button
+              key={t}
+              onClick={() => {
+                const newTheme = t === 'system' ? 'system' : t;
+                setPreferences(prev => ({ ...prev, theme: newTheme }));
+                setTheme(newTheme);
+              }}
+              className={`px-8 py-4 rounded-xl border-2 font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-500 ${preferences.theme === t
+                ? 'border-primary bg-primary/10 text-primary shadow-xl shadow-primary/10 scale-[1.05]'
+                : 'border-border bg-surface text-gray-400 hover:border-gray-400 hover:bg-surface-secondary'
                 }`}
-              >
-                {theme.charAt(0).toUpperCase() + theme.slice(1)}
-              </button>
-            ))}
-          </div>
+            >
+              {t === 'system' ? 'Auto' : t}
+            </button>
+          ))}
         </div>
       </div>
     </div>
   );
 
   const renderIntegrations = () => (
-    <div className="space-y-6">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 font-sans">
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">API Access</h3>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-900">API Key</p>
-            <button
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="text-sm text-[#5B94E5] hover:text-blue-600 cursor-pointer"
-            >
-              {showApiKey ? 'Hide' : 'Show'}
-            </button>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">API Access</h3>
+        </div>
+        <div className="bg-surface rounded-[2.5rem] border border-border p-8 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12 group-hover:rotate-0 transition-transform duration-1000">
+            <Key className="w-32 h-32" />
           </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 px-3 py-2 bg-white border rounded text-sm font-mono">
-              {showApiKey ? 'mel_sk_1a2b3c4d5e6f7g8h9i0j' : '••••••••••••••••••••••••'}
-            </code>
-            <button className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 cursor-pointer">
-              Copy
-            </button>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">API Key</p>
+              <button
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="text-[10px] font-black text-primary hover:text-primary/70 uppercase tracking-widest transition-all"
+              >
+                {showApiKey ? <EyeOff className="w-4 h-4 inline mr-2" /> : <Eye className="w-4 h-4 inline mr-2" />}
+                {showApiKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1 px-6 py-4 bg-surface-secondary/50 border border-border rounded-xl font-mono text-xs text-gray-900 dark:text-gray-100 shadow-inner flex items-center overflow-hidden">
+                {showApiKey ? 'mel_sk_1a2b3c4d5e6f7g8h9i0j' : '••••••••••••••••••••••••••••••••'}
+              </div>
+              <Button variant="secondary" className="rounded-xl px-8 font-black uppercase tracking-widest text-[10px]">
+                Copy
+              </Button>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-4 font-bold flex items-center gap-2">
+              <Info className="w-3.5 h-3.5" />
+              Use this API key to integrate with external systems
+            </p>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Use this API key to integrate with external systems
-          </p>
         </div>
       </div>
 
       <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Connected Services</h3>
-        <div className="space-y-3">
+        <div className="flex items-center gap-3 mt-12 mb-8">
+          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.2em]">Connected Services</h3>
+        </div>
+        <div className="space-y-4">
           {[
             { name: 'Google Sheets', status: 'connected', description: 'Export data automatically' },
             { name: 'Slack', status: 'disconnected', description: 'Get notifications in Slack' },
             { name: 'Zapier', status: 'connected', description: 'Automate workflows' }
           ].map((service, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{service.name}</p>
-                <p className="text-sm text-gray-500">{service.description}</p>
+            <div key={index} className="flex items-center justify-between p-6 bg-surface border border-border rounded-[1.8rem] hover:border-primary/20 transition-all group shadow-sm">
+              <div className="pr-6">
+                <p className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest group-hover:text-primary transition-colors">{service.name}</p>
+                <p className="text-[10px] text-gray-400 mt-1 font-bold italic">{service.description}</p>
               </div>
-              <button
-                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer ${
-                  service.status === 'connected'
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'bg-[#5B94E5] text-white hover:bg-blue-600'
-                }`}
+              <Button
+                variant={service.status === 'connected' ? 'secondary' : 'primary'}
+                className={`rounded-xl px-10 font-black uppercase tracking-widest text-[9px] border-border/60 ${service.status === 'connected' ? 'text-error border-error/10 hover:bg-error/5 hover:text-error' : ''
+                  }`}
               >
                 {service.status === 'connected' ? 'Disconnect' : 'Connect'}
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -356,65 +388,102 @@ export default function SettingsPage() {
       case 'integrations':
         return renderIntegrations();
       case 'billing':
-        return <div className="text-center py-12 text-gray-500">Billing settings coming soon</div>;
+        return (
+          <div className="flex flex-col items-center justify-center py-32 font-sans opacity-40">
+            <CreditCard className="w-12 h-12 mb-6" />
+            <h3 className="text-xl font-black uppercase tracking-tighter text-center">Billing settings coming soon</h3>
+          </div>
+        );
       case 'team':
-        return <div className="text-center py-12 text-gray-500">Team management coming soon</div>;
+        return (
+          <div className="flex flex-col items-center justify-center py-32 font-sans opacity-40">
+            <Users className="w-12 h-12 mb-6" />
+            <h3 className="text-xl font-black uppercase tracking-tighter text-center">Team management coming soon</h3>
+          </div>
+        );
       default:
         return renderNotifications();
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <div className="w-64 flex-shrink-0">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Settings</h2>
-            <nav className="space-y-1">
+    <div className="max-w-7xl mx-auto pb-20 font-sans">
+      <div className="flex flex-col lg:flex-row gap-12">
+        {/* Authoritative Sidebar */}
+        <div className="w-full lg:w-80 flex-shrink-0">
+          <div className="sticky top-10 space-y-10">
+            <div>
+              <div className="flex items-center gap-3 mb-2 px-3">
+                <div className="w-2 h-8 bg-primary rounded-full"></div>
+                <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">Settings</h1>
+              </div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] px-4 opacity-70">Manage your account and preferences</p>
+            </div>
+
+            <nav className="bg-surface rounded-[2.5rem] border border-border p-6 shadow-sm space-y-2">
               {settingsTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
-                    activeTab === tab.id
-                      ? 'bg-blue-50 text-[#5B94E5] font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`w-full group flex items-center gap-5 px-6 py-4 rounded-2xl transition-all duration-500 outline-none ${activeTab === tab.id
+                    ? 'bg-primary text-white shadow-2xl shadow-primary/30 scale-[1.05]'
+                    : 'text-gray-500 hover:bg-surface-secondary hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
+                  <tab.icon className={`w-4 h-4 transition-transform duration-500 ${activeTab === tab.id ? 'scale-110' : 'group-hover:scale-110'}`} />
+                  <span className="text-[11px] font-black uppercase tracking-[0.1em]">{tab.label}</span>
                 </button>
               ))}
             </nav>
+
+
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-medium text-gray-900">
-                  {settingsTabs.find(tab => tab.id === activeTab)?.label}
-                </h2>
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Save Changes
-                </button>
+        {/* Global Configuration Panel */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-surface rounded-[3rem] border border-border shadow-sm overflow-hidden min-h-[800px] flex flex-col">
+            <div className="px-10 py-8 border-b border-border/60 bg-surface-secondary/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 bg-surface rounded-2xl border border-border shadow-sm">
+                  {/* @ts-ignore */}
+                  {settingsTabs.find(tab => tab.id === activeTab)?.icon && React.createElement(settingsTabs.find(tab => tab.id === activeTab).icon, { className: "w-5 h-5 text-primary" })}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-3">
+                    {settingsTabs.find(tab => tab.id === activeTab)?.label}
+                  </h2>
+                </div>
+              </div>
+              <Button
+                onClick={handleSave}
+                disabled={loading}
+                className={`rounded-xl px-12 py-4 shadow-xl font-black uppercase tracking-[0.2em] text-[10px] min-w-[200px] transition-all duration-500 ${saved ? 'bg-emerald-500 hover:bg-emerald-600 border-none' : 'shadow-primary/20 bg-primary'
+                  } disabled:opacity-50`}
+                icon={loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              >
+                {loading ? 'Processing...' : saved ? 'Saved' : 'Save Changes'}
+              </Button>
+            </div>
+
+            <div className="p-12 flex-1 relative overflow-hidden">
+              {/* Watermark accent */}
+              <div className="absolute -bottom-20 -right-20 opacity-[0.02] pointer-events-none select-none">
+                {/* @ts-ignore */}
+                {settingsTabs.find(tab => tab.id === activeTab)?.icon && React.createElement(settingsTabs.find(tab => tab.id === activeTab).icon, { className: "w-[500px] h-[500px]" })}
+              </div>
+
+              <div className="relative z-10 max-w-4xl">
+                {renderContent()}
               </div>
             </div>
-            
-            <div className="p-6">
-              {renderContent()}
+
+            <div className="px-10 py-6 border-t border-border/60 bg-surface-secondary/10 flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-gray-400">
+              <div>Core OS v4.2.0-STABLE</div>
+              <div className="flex items-center gap-6">
+                <span className="hover:text-primary transition-colors cursor-pointer">Support Channel</span>
+                <span className="hover:text-primary transition-colors cursor-pointer">Documentation Matrix</span>
+              </div>
             </div>
           </div>
         </div>

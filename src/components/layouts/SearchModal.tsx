@@ -301,12 +301,12 @@ export function SearchModal() {
         onClick={() => setIsOpen(false)}
       >
         <div 
-          className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+          className="relative w-full max-w-lg bg-surface rounded-xl shadow-2xl border border-border overflow-hidden transition-all duration-300"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Search Input */}
-          <div className="flex items-center px-4 border-b border-gray-200">
-            <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <div className="flex items-center px-4 border-b border-border">
+            <Search className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -314,14 +314,14 @@ export function SearchModal() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Search pages, actions..."
-              className="w-full px-3 py-4 text-sm text-gray-900 placeholder-gray-400 bg-transparent border-0 focus:outline-none focus:ring-0"
+              className="w-full px-3 py-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent border-0 focus:outline-none focus:ring-0"
             />
-            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded">
+            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-surface-secondary border border-border rounded">
               ESC
             </kbd>
             <button
               onClick={() => setIsOpen(false)}
-              className="ml-2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+              className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-surface-secondary rounded-md transition-colors"
               title="Close search"
             >
               <X className="w-4 h-4" />
@@ -338,7 +338,7 @@ export function SearchModal() {
               Object.entries(grouped).map(([category, items]) => (
                 <div key={category}>
                   <div className="px-4 py-1.5">
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                    <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       {category}
                     </p>
                   </div>
@@ -353,23 +353,23 @@ export function SearchModal() {
                         onMouseEnter={() => setSelectedIndex(globalIndex)}
                         className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors cursor-pointer ${
                           isSelected
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-surface-secondary/50'
                         }`}
                       >
                         <span
                           className={`flex-shrink-0 ${
-                            isSelected ? 'text-blue-500' : 'text-gray-400'
+                            isSelected ? 'text-primary' : 'text-gray-400 dark:text-gray-500'
                           }`}
                         >
                           {item.icon}
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{item.name}</p>
-                          <p className="text-xs text-gray-400 truncate">{item.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.description}</p>
                         </div>
                         {isSelected && (
-                          <ArrowRight className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                          <ArrowRight className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                         )}
                       </button>
                     );
@@ -380,15 +380,15 @@ export function SearchModal() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-100 bg-gray-50/80">
-            <div className="flex items-center gap-3 text-[11px] text-gray-400">
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-surface-secondary/50">
+            <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400">
               <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 bg-gray-200/80 text-gray-500 rounded text-[10px] font-medium">↑</kbd>
-                <kbd className="px-1 py-0.5 bg-gray-200/80 text-gray-500 rounded text-[10px] font-medium">↓</kbd>
+                <kbd className="px-1 py-0.5 bg-surface-secondary text-gray-500 dark:text-gray-400 border border-border rounded text-[10px] font-medium transition-colors">↑</kbd>
+                <kbd className="px-1 py-0.5 bg-surface-secondary text-gray-500 dark:text-gray-400 border border-border rounded text-[10px] font-medium transition-colors">↓</kbd>
                 navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-gray-200/80 text-gray-500 rounded text-[10px] font-medium">↵</kbd>
+                <kbd className="px-1.5 py-0.5 bg-surface-secondary text-gray-500 dark:text-gray-400 border border-border rounded text-[10px] font-medium transition-colors">↵</kbd>
                 open
               </span>
             </div>

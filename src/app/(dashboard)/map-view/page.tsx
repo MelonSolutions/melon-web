@@ -13,25 +13,31 @@ import {
   RefreshCw,
   Maximize2,
   Trash2,
-  Plus
+  Plus,
+  MapPin,
+  Activity,
+  Layers,
+  Database,
+  Navigation
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { LayerManager } from '@/components/map-view/LayerManager';
 import { ImportDataModal } from '@/components/ImportDataModal';
 import { ProjectLocation, MapFilters } from '@/types/geospatial';
 import { DataService, Layer, SAMPLE_MALARIA_DATA } from '@/utils/dataService';
+import { Button } from '@/components/ui/Button';
 
-// Dynamically import map components
+// Dynamically import map components with premium loading state
 const InteractiveMap = dynamic(
   () => import('@/components/map-view/InteractiveMap'),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="w-full h-full bg-gradient-to-br from-surface to-surface-secondary flex items-center justify-center font-sans">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Loading interactive map...</p>
-          <p className="text-sm text-gray-500 mt-1">Preparing your geospatial data</p>
+          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-2xl animate-spin mx-auto mb-6 shadow-xl shadow-primary/10" />
+          <h3 className="text-lg font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Initializing Spatial Matrix</h3>
+          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mt-2 opacity-60">Preparing high-precision geospatial nodes...</p>
         </div>
       </div>
     )
@@ -101,8 +107,8 @@ export default function MapViewPage() {
 
             addToast({
               type: 'success',
-              title: 'KYC Layer Loaded',
-              message: `Showing spread of ${kycPoints.length} recent verification activities.`,
+              title: 'KYC Layer Activated',
+              message: `Spatial distribution of ${kycPoints.length} verification nodes loaded.`,
             });
 
             // If a focus ID was provided, select it
@@ -166,8 +172,8 @@ export default function MapViewPage() {
       if (!importData.data || importData.data.length === 0) {
         addToast({
           type: 'error',
-          title: 'Import Failed',
-          message: 'No valid data points found in the imported file.',
+          title: 'Import Conflict',
+          message: 'Zero valid nodes detected in the provided source.',
         });
         return;
       }
@@ -177,8 +183,8 @@ export default function MapViewPage() {
       if (processedData.length === 0) {
         addToast({
           type: 'error',
-          title: 'Import Failed',
-          message: 'No valid coordinates found. Please check your CSV format.',
+          title: 'Spatial Failure',
+          message: 'No valid coordinates recovered. Validate CSV telemetry format.',
         });
         return;
       }
@@ -197,15 +203,15 @@ export default function MapViewPage() {
 
       addToast({
         type: 'success',
-        title: 'Data Import Successful',
-        message: `${importData.name} has been imported with ${processedData.length} data points.`,
+        title: 'Source Integrated',
+        message: `${importData.name} layer synthesized with ${processedData.length} nodes.`,
       });
     } catch (error) {
       console.error('Import error:', error);
       addToast({
         type: 'error',
-        title: 'Import Failed',
-        message: 'An error occurred while importing the data.',
+        title: 'Integration Error',
+        message: 'A critical error occurred during spatial synthesis.',
       });
     }
   };
@@ -224,21 +230,21 @@ export default function MapViewPage() {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `geospatial-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `geospatial-intel-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
 
     addToast({
       type: 'success',
-      title: 'Export Complete',
-      message: 'Your geospatial data has been exported successfully.',
+      title: 'Archives Exported',
+      message: 'Geospatial intelligence successfully archived to system storage.',
     });
   };
 
   const handleShare = async () => {
     const shareData = {
       title: 'Geospatial Intelligence Dashboard',
-      text: `Interactive map with ${visibleProjects.length} data points`,
+      text: `Tactical interface with ${visibleProjects.length} active nodes`,
       url: window.location.href,
     };
 
@@ -248,7 +254,7 @@ export default function MapViewPage() {
         addToast({
           type: 'success',
           title: 'Shared Successfully',
-          message: 'Map link has been shared.',
+          message: 'Link transmission complete.',
         });
       } catch (err) {
       }
@@ -256,8 +262,8 @@ export default function MapViewPage() {
       await navigator.clipboard.writeText(window.location.href);
       addToast({
         type: 'success',
-        title: 'Link Copied',
-        message: 'Map link has been copied to clipboard.',
+        title: 'Pulse Link Copied',
+        message: 'Mission link secured to clipboard buffer.',
       });
     }
   };
@@ -270,8 +276,8 @@ export default function MapViewPage() {
     ));
     addToast({
       type: 'info',
-      title: 'Data Refreshed',
-      message: 'Latest data has been loaded from all sources.',
+      title: 'Sync Re-established',
+      message: 'Spatial data refreshed from active intelligence nodes.',
     });
   };
 
@@ -282,8 +288,8 @@ export default function MapViewPage() {
     setSidebarView('analytics');
     addToast({
       type: 'info',
-      title: 'Map Cleared',
-      message: 'All data has been removed from the map.',
+      title: 'Map Purged',
+      message: 'All tactical layers have been cleared from the interface.',
     });
   };
 
@@ -297,74 +303,85 @@ export default function MapViewPage() {
 
     addToast({
       type: 'success',
-      title: 'Sample Data Loaded',
-      message: `Sample malaria surveillance data has been loaded (${SAMPLE_MALARIA_DATA.length} locations).`,
+      title: 'Sample Core Loaded',
+      message: `Simulated geospatial data engaged (${SAMPLE_MALARIA_DATA.length} nodes).`,
     });
   };
 
   return (
-    <div className="h-full flex flex-col bg-white overflow-hidden">
-      <div className="bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Geospatial Intelligence
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {layers.length} layers • {visibleProjects.length} points
-            </p>
+    <div className="h-full flex flex-col bg-surface font-sans overflow-hidden">
+      <div className="bg-surface border-b border-border px-8 py-5 flex-shrink-0 shadow-sm relative z-20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+             <div className="w-2 h-8 bg-primary rounded-full shadow-lg shadow-primary/20"></div>
+             <div>
+                <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">Geospatial Intelligence</h1>
+                <div className="flex items-center gap-4 mt-1">
+                   <p className="text-[10px] font-black text-gray-400 dark:text-gray-400 uppercase tracking-widest opacity-70">
+                      {layers.length} Layers engagement • {visibleProjects.length} active nodes
+                   </p>
+                   <div className="h-1 w-1 rounded-full bg-border"></div>
+                   <p className="text-[10px] font-black text-primary uppercase tracking-widest animate-pulse">Live Tracking Enabled</p>
+                </div>
+             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 border-r border-gray-300 pr-3">
-              <button
+            <div className="flex items-center gap-2 border-r border-border pr-3">
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowImportModal(true)}
-                className="cursor-pointer px-3 py-2 text-sm font-medium text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors flex items-center gap-1"
+                className="rounded-xl font-black uppercase tracking-widest text-[9px] border-emerald-500/20 text-emerald-600 dark:text-emerald-400 py-3"
+                icon={<Plus className="w-3 h-3" />}
               >
-                <Plus className="w-4 h-4" />
-                Import
-              </button>
-              <button
+                Incorporate Data
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={loadSampleData}
-                className="cursor-pointer px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                className="rounded-xl font-black uppercase tracking-widest text-[9px] border-border/60 py-3"
               >
-                Load Sample
-              </button>
-              <button
+                Simulate Nodes
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={clearAllData}
-                className="cursor-pointer px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
+                className="rounded-xl font-black uppercase tracking-widest text-[9px] border-error/20 text-error hover:bg-error/5 py-3"
+                icon={<Trash2 className="w-3 h-3" />}
               >
-                <Trash2 className="w-4 h-4" />
-                Clear All
-              </button>
+                Purge Matrix
+              </Button>
             </div>
 
             <div className="flex items-center gap-2 pl-3">
               <button
                 onClick={refreshData}
-                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Refresh Data"
+                className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-primary/5 border border-border/40 rounded-xl transition-all"
+                title="Resync Data"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Toggle Fullscreen"
+                className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-primary/5 border border-border/40 rounded-xl transition-all"
+                title="Fullscreen Interface"
               >
                 <Maximize2 className="w-4 h-4" />
               </button>
               <button
                 onClick={handleShare}
-                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Share Map"
+                className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-primary/5 border border-border/40 rounded-xl transition-all"
+                title="Transmit Link"
               >
                 <Share2 className="w-4 h-4" />
               </button>
               <button
                 onClick={handleExport}
-                className="cursor-pointer p-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Export Data"
+                className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-primary/5 border border-border/40 rounded-xl transition-all"
+                title="Archive Data"
               >
                 <Download className="w-4 h-4" />
               </button>
@@ -376,23 +393,33 @@ export default function MapViewPage() {
       <div className="flex-1 flex relative overflow-hidden">
         <div className="flex-1 relative overflow-hidden">
           {loading ? (
-            <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-gray-600 font-medium">Loading geographic data...</p>
+            <div className="w-full h-full bg-surface-secondary/40 flex items-center justify-center">
+              <div className="text-center animate-pulse">
+                <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-2xl animate-spin mx-auto mb-6" />
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest">Synthesizing Spatial Core</h3>
               </div>
             </div>
           ) : (
-            <InteractiveMap
-              projects={visibleProjects}
-              selectedProject={selectedProject}
-              onProjectSelect={handleProjectSelect}
-              showCoverage={showCoverage}
-              showHeatmap={showHeatmap}
-              onLoadSampleData={loadSampleData}
-              onOpenImportModal={() => setShowImportModal(true)}
-              focalPoint={focalLat && focalLng ? { lat: parseFloat(focalLat), lng: parseFloat(focalLng) } : undefined}
-            />
+            <div className="w-full h-full relative group/map">
+              <InteractiveMap
+                projects={visibleProjects}
+                selectedProject={selectedProject}
+                onProjectSelect={handleProjectSelect}
+                showCoverage={showCoverage}
+                showHeatmap={showHeatmap}
+                onLoadSampleData={loadSampleData}
+                onOpenImportModal={() => setShowImportModal(true)}
+                focalPoint={focalLat && focalLng ? { lat: parseFloat(focalLat), lng: parseFloat(focalLng) } : undefined}
+              />
+              
+              {/* Specialized Map Overlay Accents */}
+              <div className="absolute top-8 left-8 p-4 bg-surface/80 backdrop-blur-md border border-border rounded-2xl shadow-2xl pointer-events-none opacity-0 group-hover/map:opacity-100 transition-opacity duration-500">
+                 <div className="flex items-center gap-3">
+                    <Navigation className="w-3 h-3 text-primary animate-pulse" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-900 pointer-events-none">Vector Sync Active</span>
+                 </div>
+              </div>
+            </div>
           )}
 
           <LayerManager
@@ -402,20 +429,19 @@ export default function MapViewPage() {
             onLayerUpdate={handleLayerUpdate}
             onImportClick={() => setShowImportModal(true)}
             onLayerSelect={(layer) => {
-              console.log('Layer selected for editing:', layer);
+              console.log('Layer selected for analysis:', layer);
             }}
           />
 
           {loading && (
-            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-[2000]">
+            <div className="absolute inset-0 bg-surface/60 flex items-center justify-center z-[2000] backdrop-blur-sm transition-all duration-700">
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-gray-600">Loading map data...</p>
+                <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-xl animate-spin mx-auto mb-4" />
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Calibrating Coordinates...</p>
               </div>
             </div>
           )}
         </div>
-
       </div>
 
       <ImportDataModal

@@ -47,26 +47,28 @@ export default function DemoRequestModal() {
     };
 
     return (
-        <div className="p-6">
-            <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-4">
+        <div className="p-8">
+            <div className="text-center mb-10">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary mb-5 shadow-lg shadow-primary/10 border border-primary/20">
                     <Send className="w-6 h-6" />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">Request a Demo</h2>
-                <p className="text-sm text-gray-500 mt-2">
+                <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">Request Demo</h2>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 font-bold max-w-md mx-auto leading-relaxed">
                     Experience how Melon transforms data into measurable impact.
                     Tell us about your organization and we&apos;ll set up a personalized tour.
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid grid-cols-2 gap-5">
                     <div>
-                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label htmlFor="firstName" className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-2">
                             First Name
                         </label>
                         <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-surface-secondary rounded-lg border border-border/40">
+                                <User className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                            </div>
                             <input
                                 type="text"
                                 id="firstName"
@@ -75,16 +77,18 @@ export default function DemoRequestModal() {
                                 onChange={handleInputChange}
                                 required
                                 placeholder="e.g. John"
-                                className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                className="w-full pl-12 pr-4 py-3.5 text-[11px] font-bold border border-border/60 rounded-xl bg-surface text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all duration-300 placeholder:text-gray-400 dark:placeholder:text-gray-600 hover:border-primary/30"
                             />
                         </div>
                     </div>
                     <div>
-                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label htmlFor="lastName" className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-2">
                             Last Name
                         </label>
                         <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-surface-secondary rounded-lg border border-border/40">
+                                <User className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                            </div>
                             <input
                                 type="text"
                                 id="lastName"
@@ -93,18 +97,20 @@ export default function DemoRequestModal() {
                                 onChange={handleInputChange}
                                 required
                                 placeholder="e.g. Doe"
-                                className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                className="w-full pl-12 pr-4 py-3.5 text-[11px] font-bold border border-border/60 rounded-xl bg-surface text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all duration-300 placeholder:text-gray-400 dark:placeholder:text-gray-600 hover:border-primary/30"
                             />
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="email" className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-2">
                         Work Email
                     </label>
                     <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-surface-secondary rounded-lg border border-border/40">
+                            <Mail className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                        </div>
                         <input
                             type="email"
                             id="email"
@@ -113,17 +119,19 @@ export default function DemoRequestModal() {
                             onChange={handleInputChange}
                             required
                             placeholder="e.g. name@company.com"
-                            className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                            className="w-full pl-12 pr-4 py-3.5 text-[11px] font-bold border border-border/60 rounded-xl bg-surface text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all duration-300 placeholder:text-gray-400 dark:placeholder:text-gray-600 hover:border-primary/30"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="organizationName" className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-2">
                         Organization Name
                     </label>
                     <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 bg-surface-secondary rounded-lg border border-border/40">
+                            <Building2 className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                        </div>
                         <input
                             type="text"
                             id="organizationName"
@@ -132,14 +140,14 @@ export default function DemoRequestModal() {
                             onChange={handleInputChange}
                             required
                             placeholder="e.g. Acme Corp"
-                            className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                            className="w-full pl-12 pr-4 py-3.5 text-[11px] font-bold border border-border/60 rounded-xl bg-surface text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all duration-300 placeholder:text-gray-400 dark:placeholder:text-gray-600 hover:border-primary/30"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1.5">
-                        How can we help? <span className="text-gray-400 font-normal">(Optional)</span>
+                    <label htmlFor="message" className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-2">
+                        How can we help? <span className="text-gray-500 dark:text-gray-600 font-bold normal-case tracking-normal">(Optional)</span>
                     </label>
                     <textarea
                         id="message"
@@ -148,21 +156,21 @@ export default function DemoRequestModal() {
                         onChange={handleInputChange}
                         rows={3}
                         placeholder="Tell us about your goals..."
-                        className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
+                        className="w-full px-4 py-3.5 text-[11px] font-bold border border-border/60 rounded-xl bg-surface text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all duration-300 resize-none placeholder:text-gray-400 dark:placeholder:text-gray-600 hover:border-primary/30"
                     />
                 </div>
 
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                    className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-black text-[11px] uppercase tracking-[0.15em] transition-all duration-300 flex items-center justify-center gap-2.5 group disabled:opacity-50 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 disabled:shadow-none mt-8"
                 >
                     {isLoading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
                         <>
                             Send Request
-                            <Send className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            <Send className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
                         </>
                     )}
                 </button>
