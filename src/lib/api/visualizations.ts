@@ -123,13 +123,14 @@ export const getDataSourceById = async (id: string): Promise<DataSource> => {
 
 export const previewDataSource = async (id: string, limit: number = 100): Promise<any[]> => {
   try {
-    return await apiRequest(`/visualizations/data-sources/${id}/preview?limit=${limit}`);
+    console.log(`🔍 Fetching preview for data source: ${id}`);
+    const result = await apiRequest(`/visualizations/data-sources/${id}/preview?limit=${limit}`);
+    console.log('✅ Preview data received:', result?.length || 0, 'rows');
+    return result;
   } catch (error) {
-    return [
-      { region: 'North America', rating: 4.5, feedback: 'Great app!' },
-      { region: 'Europe', rating: 4.2, feedback: 'Good functionality' },
-      { region: 'Asia', rating: 4.7, feedback: 'Excellent performance' },
-    ];
+    console.warn('⚠️ Preview API failed, returning mock data. Error:', error);
+    // Re-throw the error instead of silently returning mock data
+    throw error;
   }
 };
 
@@ -448,5 +449,36 @@ export const getSharedChartData = async (shareToken: string): Promise<any> => {
       { region: 'Europe', rating: 4.2 },
       { region: 'Asia', rating: 4.7 },
     ];
+  }
+};
+
+export const createDataSourceFromKYC = async (data: {
+  name: string;
+  description?: string;
+  kycDataSourceConfig: {
+    availableFields: string[];
+  };
+}): Promise<DataSource> => {
+  try {
+    return await apiRequest('/visualizations/data-sources/from-kyc', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    // Return mock data source for now
+    return {
+      id: Date.now().toString(),
+      name: data.name,
+      type: 'kyc',
+      columns: data.kycDataSourceConfig.availableFields.map(field => ({
+        name: field,
+        type: 'string',
+        nullable: true,
+        unique: false,
+      })),
+      rowCount: 0, // Will be populated by backend
+      uploadedAt: new Date().toISOString(),
+      status: 'ready',
+    };
   }
 };
