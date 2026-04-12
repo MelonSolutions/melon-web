@@ -48,7 +48,8 @@ import { RejectKYCModal } from '@/components/kyc/RejectKYCModal';
 import { useAuthContext } from '@/context/AuthContext';
 import {
   KYCDocument,
-  getDocumentTypeDisplayName
+  getDocumentTypeDisplayName,
+  AddressData
 } from '@/types/kyc';
 import {
   uploadDocument,
@@ -327,7 +328,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const hasMultipleAddresses = user.addresses && user.addresses.length > 0;
   const addresses = hasMultipleAddresses ? user.addresses! : [{
     label: 'Primary Address',
-    addressLine1: user.streetNumber && user.streetName ? `${user.streetNumber} ${user.streetName}` : '',
     landmark: user.landmark,
     city: user.city,
     state: user.state,
@@ -335,7 +335,6 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     latitude: user.latitude,
     longitude: user.longitude,
     status: user.status,
-    isVerified: user.status === 'VERIFIED',
     verificationData: undefined,
     streetName: user.streetName,
     streetNumber: user.streetNumber,
@@ -582,17 +581,17 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                                     {address.verificationData.verificationPhotos.map((photo, pIdx) => (
                                       <div key={pIdx} className="group/photo relative aspect-square rounded-2xl overflow-hidden border border-primary/20 bg-surface shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-500">
                                         <Image
-                                          src={photo.url}
-                                          alt={photo.tag || 'Verification Evidence'}
+                                          src={photo}
+                                          alt={'Verification Evidence'}
                                           fill
                                           className="object-cover group-hover/photo:scale-110 transition-transform duration-700"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/photo:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-3">
                                           <p className="text-[8px] font-black text-white uppercase tracking-widest line-clamp-2">
-                                            {photo.tag?.replace(/__/g, '').replace(/_/g, ' ') || 'Untitled Evidence'}
+                                            {'Verification Evidence'}
                                           </p>
                                           <a 
-                                            href={photo.url} 
+                                            href={photo} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="mt-2 text-[8px] font-bold text-primary hover:text-white transition-colors uppercase tracking-[0.2em] flex items-center gap-1"
