@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, Suspense, useMemo } from 'react';
-import { Upload, Database, BarChart3, Share2 } from 'lucide-react';
+import { Upload, Database, BarChart3, Share2, Users } from 'lucide-react';
 import { VisualizationLoading } from '@/components/visualizations/VisualizationLoading';
 import { VisualizationEmpty } from '@/components/visualizations/VisualizationEmpty';
 import { ChartBuilder } from '@/components/visualizations/ChartBuilder';
@@ -11,12 +11,14 @@ import { DataSourceManager } from '@/components/visualizations/DataSourceManager
 import { SavedCharts } from '@/components/visualizations/SavedCharts';
 import { CSVImportModal } from '@/components/visualizations/CSVImportModal';
 import { ReportConnectionModal } from '@/components/visualizations/ReportConnectionModal';
-import { 
+import { KYCConnectionModal } from '@/components/visualizations/KYCConnectionModal';
+import {
   useVisualizationStats,
   useDataSources,
   useCharts,
   useCsvImport,
-  useReportsIntegration 
+  useReportsIntegration,
+  useKYCIntegration
 } from '@/hooks/useVisualizations';
 
 function StatsCard({ icon: Icon, title, value }: {
@@ -41,32 +43,34 @@ function VisualizationContent() {
   const [activeTab, setActiveTab] = useState<'data-sources' | 'chart-builder' | 'saved-charts'>('data-sources');
   const [showImportModal, setShowImportModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showKYCModal, setShowKYCModal] = useState(false);
 
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useVisualizationStats();
-  const { 
-    dataSources, 
-    loading: dataSourcesLoading, 
+  const {
+    dataSources,
+    loading: dataSourcesLoading,
     error: dataSourcesError,
-    deleteDataSource, 
+    deleteDataSource,
     previewDataSource,
-    refetch: refetchDataSources 
+    refetch: refetchDataSources
   } = useDataSources();
-  
+
   const chartFilters = useMemo(() => ({}), []);
-  
-  const { 
-    charts, 
-    loading: chartsLoading, 
+
+  const {
+    charts,
+    loading: chartsLoading,
     error: chartsError,
-    createChart, 
-    duplicateChart, 
-    deleteChart, 
+    createChart,
+    duplicateChart,
+    deleteChart,
     shareChart,
-    refetch: refetchCharts 
+    refetch: refetchCharts
   } = useCharts(chartFilters);
-  
+
   const { importCsv, uploading } = useCsvImport();
   const { createDataSourceFromReport } = useReportsIntegration();
+  const { createDataSourceFromKYC } = useKYCIntegration();
 
   const isLoading = statsLoading || dataSourcesLoading || chartsLoading;
   const hasError = statsError || dataSourcesError || chartsError;
@@ -123,11 +127,24 @@ function VisualizationContent() {
     }
   };
 
+  const handleConnectKYC = async (kycData: any) => {
+    try {
+      const result = await createDataSourceFromKYC(kycData);
+      if (result.success) {
+        setShowKYCModal(false);
+        await Promise.all([refetchDataSources(), refetchStats()]);
+      }
+      return result;
+    } catch (error) {
+      return { success: false, error: 'Failed to connect KYC data' };
+    }
+  };
+
   const handleSaveChart = async (config: any) => {
     if (!config.name?.trim()) {
       config.name = `Chart ${new Date().toLocaleString()}`;
     }
-    
+
     try {
       const result = await createChart(config);
       if (result.success) {
@@ -155,7 +172,12 @@ function VisualizationContent() {
 
   const handlePreviewDataSource = async (dataSource: any) => {
     try {
-      return await previewDataSource(dataSource.id);
+      // Extract ID properly - support both 'id' and '_id' fields
+      const dataSourceId = dataSource.id || dataSource._id;
+      if (!dataSourceId) {
+        return { success: false, error: 'Data source ID is missing' };
+      }
+      return await previewDataSource(dataSourceId);
     } catch (error) {
       return { success: false, error: 'Failed to preview data source' };
     }
@@ -215,6 +237,13 @@ function VisualizationContent() {
         </div>
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowKYCModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Users className="w-4 h-4" />
+            Connect KYC Data
+          </button>
+          <button
             onClick={() => setShowImportModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
@@ -260,31 +289,28 @@ function VisualizationContent() {
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('data-sources')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'data-sources'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'data-sources'
+              ? 'border-gray-900 text-gray-900'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Data Sources
           </button>
           <button
             onClick={() => setActiveTab('chart-builder')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'chart-builder'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'chart-builder'
+              ? 'border-gray-900 text-gray-900'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Chart Builder
           </button>
           <button
             onClick={() => setActiveTab('saved-charts')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'saved-charts'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'saved-charts'
+              ? 'border-gray-900 text-gray-900'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             Saved Charts
           </button>
@@ -321,7 +347,7 @@ function VisualizationContent() {
             <ChartBuilder
               dataSources={dataSources}
               onSave={handleSaveChart}
-              onPreview={() => {}}
+              onPreview={() => { }}
             />
           )
         )}
@@ -355,6 +381,12 @@ function VisualizationContent() {
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
         onConnect={handleConnectReport}
+      />
+
+      <KYCConnectionModal
+        isOpen={showKYCModal}
+        onClose={() => setShowKYCModal(false)}
+        onConnect={handleConnectKYC}
       />
     </div>
   );

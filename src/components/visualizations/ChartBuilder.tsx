@@ -65,7 +65,7 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
       if (chartConfig.yAxis) {
         data[chartConfig.yAxis] = Math.floor(Math.random() * 100) + 10 + (index * 5);
       } else {
-        data['count'] = Math.floor(Math.random() * 50) + 5 + (index * 3);
+        data['value'] = Math.floor(Math.random() * 50) + 5 + (index * 3);
       }
 
       if (chartConfig.groupBy) {

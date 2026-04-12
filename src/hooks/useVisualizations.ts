@@ -447,3 +447,29 @@ export const useReportsIntegration = () => {
     createDataSourceFromReport,
   };
 };
+
+export const useKYCIntegration = () => {
+  const [error, setError] = useState<string | null>(null);
+
+  const createDataSourceFromKYC = useCallback(async (data: {
+    name: string;
+    description?: string;
+    kycDataSourceConfig: {
+      availableFields: string[];
+    };
+  }) => {
+    try {
+      const result = await visualizationsAPI.createDataSourceFromKYC(data);
+      return { success: true, data: result };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create data source from KYC';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  return {
+    error,
+    createDataSourceFromKYC,
+  };
+};

@@ -2,7 +2,7 @@
 export interface DataSource {
   id: string;
   name: string;
-  type: 'csv' | 'report' | 'api';
+  type: 'csv' | 'report' | 'api' | 'kyc';
   fileName?: string;
   reportId?: string;
   columns: DataColumn[];
