@@ -4,15 +4,21 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  getProjects, 
-  getPortfolioStats, 
+import {
+  getProjects,
+  getPortfolioStats,
   getProject,
   createProject,
   updateProject,
   deleteProject,
-  duplicateProject 
+  duplicateProject
 } from '@/lib/api/portfolio';
+import {
+  getReportsByProject,
+  getUnlinkedReports,
+  linkReportToProject,
+  unlinkReportFromProject,
+} from '@/lib/api/reports';
 import { 
   Project, 
   PortfolioStats, 
@@ -205,5 +211,123 @@ export function useProjectActions() {
     updateProject: updateExistingProject,
     duplicateProject: duplicateExistingProject,
     deleteProject: deleteExistingProject,
+  };
+}
+
+// Project reports hook
+export function useProjectReports(projectId: string) {
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReports = useCallback(async () => {
+    if (!projectId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const reportsData = await getReportsByProject(projectId);
+      setReports(reportsData);
+    } catch (err) {
+      console.error('Error fetching project reports:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load reports');
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  const refetch = useCallback(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  return {
+    reports,
+    loading,
+    error,
+    refetch,
+  };
+}
+
+// Unlinked reports hook
+export function useUnlinkedReports() {
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchUnlinkedReports = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const reportsData = await getUnlinkedReports();
+      setReports(reportsData);
+    } catch (err) {
+      console.error('Error fetching unlinked reports:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load unlinked reports');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refetch = useCallback(() => {
+    fetchUnlinkedReports();
+  }, [fetchUnlinkedReports]);
+
+  return {
+    reports,
+    loading,
+    error,
+    fetch: fetchUnlinkedReports,
+    refetch,
+  };
+}
+
+// Project report actions hook
+export function useProjectReportActions() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const linkReport = useCallback(async (reportId: string, projectId: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await linkReportToProject(reportId, projectId);
+      return true;
+    } catch (err) {
+      console.error('Error linking report to project:', err);
+      setError(err instanceof Error ? err.message : 'Failed to link report');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const unlinkReport = useCallback(async (reportId: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await unlinkReportFromProject(reportId);
+      return true;
+    } catch (err) {
+      console.error('Error unlinking report from project:', err);
+      setError(err instanceof Error ? err.message : 'Failed to unlink report');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    error,
+    linkReport,
+    unlinkReport,
   };
 }

@@ -6,13 +6,14 @@ import { ArrowLeft, Download, Share2, Edit3, Calendar, DollarSign, Users, MapPin
 import Link from 'next/link';
 import { useProject } from '@/hooks/usePortfolio';
 import { getStatusColor, getStatusDisplayName, getSectorDisplayName, getRegionDisplayName } from '@/types/portfolio';
+import { ProjectReports } from '@/components/portfolio/ProjectReports';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
   const projectId = params.id as string;
   
   const { project, loading, error } = useProject(projectId);
-  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'team' | 'timeline' | 'files'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'team' | 'reports' | 'timeline' | 'files'>('overview');
 
   if (loading) {
     return (
@@ -165,6 +166,7 @@ export default function ProjectDetailsPage() {
                   { id: 'overview', label: 'Overview' },
                   { id: 'metrics', label: 'Metrics' },
                   { id: 'team', label: 'Team' },
+                  { id: 'reports', label: 'Reports' },
                   { id: 'timeline', label: 'Timeline' },
                   { id: 'files', label: 'Files' },
                 ].map((tab) => (
@@ -310,7 +312,7 @@ export default function ProjectDetailsPage() {
               {activeTab === 'team' && (
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 mb-4">Team Members</h3>
-                  
+
                   {project.teamMembers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {project.teamMembers.map((member, index) => (
@@ -337,6 +339,10 @@ export default function ProjectDetailsPage() {
                     </div>
                   )}
                 </div>
+              )}
+
+              {activeTab === 'reports' && (
+                <ProjectReports projectId={projectId} />
               )}
 
               {['metrics', 'timeline', 'files'].includes(activeTab) && (

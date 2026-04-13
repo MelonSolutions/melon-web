@@ -19,6 +19,7 @@ export interface CreateReportRequest {
   title: string;
   description?: string;
   category?: string;
+  projectId?: string;
   status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   allowMultipleResponses?: boolean;
   collectEmail?: boolean;
@@ -30,6 +31,7 @@ export interface UpdateReportRequest {
   title?: string;
   description?: string;
   category?: string;
+  projectId?: string;
   status?: 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'ARCHIVED';
   allowMultipleResponses?: boolean;
   collectEmail?: boolean;
@@ -227,13 +229,56 @@ export const updateReportStatus = async (id: string, status: string): Promise<an
 
 // Share report via email
 export const shareReportViaEmail = async (
-  reportId: string, 
+  reportId: string,
   data: ShareReportEmailRequest
 ): Promise<ShareReportEmailResponse> => {
   const response = await fetch(`${API_BASE_URL}/reports/${reportId}/share-email`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Get reports by project ID
+export const getReportsByProject = async (projectId: string): Promise<any[]> => {
+  const response = await fetch(`${API_BASE_URL}/reports/by-project/${projectId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Get unlinked reports (reports not attached to any project)
+export const getUnlinkedReports = async (): Promise<any[]> => {
+  const response = await fetch(`${API_BASE_URL}/reports/unlinked`, {
+    headers: getAuthHeaders(),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Link report to project
+export const linkReportToProject = async (reportId: string, projectId: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/link-project`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ projectId }),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Unlink report from project
+export const unlinkReportFromProject = async (reportId: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/unlink-project`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
   });
 
   await handleApiError(response);
