@@ -53,18 +53,161 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
     }
   }, [selectedDataSource, chartConfig]);
 
-  const generatePreviewData = () => {
-    if (!selectedDataSource || !chartConfig.xAxis) return;
+  // Helper function to aggregate preview data
+  const aggregatePreviewData = (
+    rawData: any[],
+    xAxisField: string,
+    yAxisField: string | undefined,
+    aggregationType: string
+  ) => {
+    // Group data by X-axis field
+    const grouped = new Map<string, any[]>();
 
-    // Generate meaningful mock data based on chart configuration
-    const categories = ['Category A', 'Category B', 'Category C', 'Category D', 'Category E'];
+    rawData.forEach((row) => {
+      const xValue = row[xAxisField] || 'Unknown';
+      const key = String(xValue);
+
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(row);
+    });
+
+    // Apply aggregation
+    const chartData: any[] = [];
+
+    grouped.forEach((rows, xValue) => {
+      const dataPoint: any = { [xAxisField]: xValue };
+
+      if (yAxisField) {
+        const yValues = rows
+          .map((row) => row[yAxisField])
+          .filter((val) => val !== null && val !== undefined && val !== '');
+
+        switch (aggregationType.toLowerCase()) {
+          case 'count':
+            dataPoint[yAxisField] = yValues.length;
+            break;
+          case 'sum':
+            dataPoint[yAxisField] = yValues.reduce(
+              (sum, val) => sum + (Number(val) || 0),
+              0
+            );
+            break;
+          case 'average':
+            const numericValues = yValues.filter((val) => !isNaN(Number(val)));
+            dataPoint[yAxisField] =
+              numericValues.length > 0
+                ? numericValues.reduce((sum, val) => sum + Number(val), 0) /
+                  numericValues.length
+                : 0;
+            break;
+          case 'min':
+            const minValues = yValues.filter((val) => !isNaN(Number(val)));
+            dataPoint[yAxisField] =
+              minValues.length > 0 ? Math.min(...minValues.map(Number)) : 0;
+            break;
+          case 'max':
+            const maxValues = yValues.filter((val) => !isNaN(Number(val)));
+            dataPoint[yAxisField] =
+              maxValues.length > 0 ? Math.max(...maxValues.map(Number)) : 0;
+            break;
+          default:
+            dataPoint[yAxisField] = rows.length;
+        }
+      } else {
+        // No Y-axis specified, just count occurrences
+        dataPoint['value'] = rows.length;
+      }
+
+      chartData.push(dataPoint);
+    });
+
+    // Sort by X-axis value
+    chartData.sort((a, b) => {
+      const aVal = a[xAxisField];
+      const bVal = b[xAxisField];
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return aVal.localeCompare(bVal);
+      }
+      return 0;
+    });
+
+    return chartData;
+  };
+
+  const generatePreviewData = () => {
+    if (!selectedDataSource || !chartConfig.xAxis) {
+      return;
+    }
+
+    // Use preview data from data source if available, otherwise generate meaningful mock data
+    if (selectedDataSource.preview && selectedDataSource.preview.length > 0) {
+      // Aggregate the raw preview data by X-axis field for instant preview feedback
+      // Note: This is preview-only. Saved charts use backend aggregation on full dataset.
+      const aggregatedData = aggregatePreviewData(
+        selectedDataSource.preview,
+        chartConfig.xAxis,
+        chartConfig.yAxis,
+        chartConfig.aggregation || 'count'
+      );
+
+      setPreviewData(aggregatedData);
+      onPreview(aggregatedData);
+      return;
+    }
+
+    // Generate meaningful mock data based on the selected X-axis field
+    // Use field-specific sample data instead of generic categories
+    const getSampleValuesForField = (fieldName: string): string[] => {
+      const lowerFieldName = fieldName.toLowerCase();
+
+      // KYC-specific fields
+      if (lowerFieldName.includes('status')) {
+        return ['PENDING', 'VERIFIED', 'IN_REVIEW', 'REJECTED', 'ASSIGNED'];
+      }
+      if (lowerFieldName.includes('state') || lowerFieldName === 'state') {
+        return ['Lagos', 'Abuja', 'Kano', 'Rivers', 'Oyo'];
+      }
+      if (lowerFieldName.includes('lga')) {
+        return ['Ikeja', 'AMAC', 'Kano Municipal', 'Port Harcourt', 'Ibadan North'];
+      }
+      if (lowerFieldName.includes('country')) {
+        return ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Uganda'];
+      }
+      if (lowerFieldName.includes('browser')) {
+        return ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera'];
+      }
+      if (lowerFieldName.includes('operatingsystem') || lowerFieldName.includes('os')) {
+        return ['Windows', 'macOS', 'Android', 'iOS', 'Linux'];
+      }
+      if (lowerFieldName.includes('device')) {
+        return ['Desktop', 'Mobile', 'Tablet', 'Mobile', 'Desktop'];
+      }
+      if (lowerFieldName.includes('loan') && lowerFieldName.includes('type')) {
+        return ['PERSONAL', 'BUSINESS', 'PERSONAL', 'BUSINESS', 'PERSONAL'];
+      }
+
+      // Generic categories as fallback
+      return ['Value A', 'Value B', 'Value C', 'Value D', 'Value E'];
+    };
+
+    const categories = getSampleValuesForField(chartConfig.xAxis);
     const mockData = categories.map((category, index) => {
       const data: any = {};
       data[chartConfig.xAxis!] = category;
-      
+
       if (chartConfig.yAxis) {
-        data[chartConfig.yAxis] = Math.floor(Math.random() * 100) + 10 + (index * 5);
+        // Get sample value based on the Y-axis field type
+        const yAxisColumn = selectedDataSource.columns.find(col => col.name === chartConfig.yAxis);
+        if (yAxisColumn?.type === 'number') {
+          data[chartConfig.yAxis] = Math.floor(Math.random() * 100) + 10 + (index * 5);
+        } else {
+          // For non-numeric Y-axis (when using count aggregation), use sample text
+          data[chartConfig.yAxis] = `Sample ${chartConfig.yAxis} ${index + 1}`;
+        }
       } else {
+        // When no Y-axis is selected (count aggregation)
         data['value'] = Math.floor(Math.random() * 50) + 5 + (index * 3);
       }
 
@@ -268,7 +411,7 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
             </select>
           </div>
 
-          {selectedDataSource && selectedDataSource.columns && (
+          {selectedDataSource && Array.isArray(selectedDataSource.columns) && selectedDataSource.columns.length > 0 && (
             <>
               {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('x') && (
                 <div>
@@ -281,36 +424,71 @@ export function ChartBuilder({ dataSources, onSave, onPreview }: ChartBuilderPro
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   >
                     <option value="">Select column</option>
-                    {selectedDataSource.columns.map((col, index) => (
-                      <option key={col.name || `col-${index}`} value={col.name}>
-                        {col.name} ({col.type})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('y') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Y-Axis (Values) <span className="text-gray-400 text-xs">Optional for count aggregation</span>
-                  </label>
-                  <select
-                    value={chartConfig.yAxis || ''}
-                    onChange={(e) => handleConfigChange('yAxis', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  >
-                    <option value="">Select column (optional)</option>
                     {selectedDataSource.columns
-                      .filter(col => col.type === 'number')
+                      .filter(col => col && col.name) // Filter out invalid columns
                       .map((col, index) => (
-                        <option key={col.name || `num-col-${index}`} value={col.name}>
+                        <option key={col.name || `col-${index}`} value={col.name}>
                           {col.name} ({col.type})
                         </option>
                       ))}
                   </select>
                 </div>
               )}
+
+              {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('y') && (() => {
+                // Always show all columns except the X-axis column
+                const filteredColumns = selectedDataSource.columns.filter(col => {
+                  // Filter out invalid columns first
+                  if (!col || !col.name) return false;
+
+                  // Exclude the X-axis column from Y-axis options to avoid confusion
+                  if (chartConfig.xAxis && col.name === chartConfig.xAxis) {
+                    return false;
+                  }
+
+                  return true;
+                });
+
+                // Get helper text based on aggregation type
+                const getHelperText = () => {
+                  switch (chartConfig.aggregation) {
+                    case 'count':
+                      return 'Count occurrences of this field per category';
+                    case 'sum':
+                      return 'Sum numeric values (non-numeric treated as 0)';
+                    case 'average':
+                      return 'Average numeric values (non-numeric ignored)';
+                    case 'min':
+                      return 'Minimum numeric value (non-numeric ignored)';
+                    case 'max':
+                      return 'Maximum numeric value (non-numeric ignored)';
+                    default:
+                      return 'Optional - select field to aggregate';
+                  }
+                };
+
+                return (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Y-Axis (Values) <span className="text-gray-400 text-xs">
+                        {getHelperText()}
+                      </span>
+                    </label>
+                    <select
+                      value={chartConfig.yAxis || ''}
+                      onChange={(e) => handleConfigChange('yAxis', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">Select column (optional)</option>
+                      {filteredColumns.map((col, index) => (
+                        <option key={col.name || `col-${index}`} value={col.name}>
+                          {col.name} ({col.type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })()}
 
               {CHART_TYPES[chartConfig.type as ChartType]?.requiredAxes.includes('groupBy') && (
                 <div>
