@@ -123,13 +123,9 @@ export const getDataSourceById = async (id: string): Promise<DataSource> => {
 
 export const previewDataSource = async (id: string, limit: number = 100): Promise<any[]> => {
   try {
-    console.log(`🔍 Fetching preview for data source: ${id}`);
     const result = await apiRequest(`/visualizations/data-sources/${id}/preview?limit=${limit}`);
-    console.log('✅ Preview data received:', result?.length || 0, 'rows');
     return result;
   } catch (error) {
-    console.warn('⚠️ Preview API failed, returning mock data. Error:', error);
-    // Re-throw the error instead of silently returning mock data
     throw error;
   }
 };
