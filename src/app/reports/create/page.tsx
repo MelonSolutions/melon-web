@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   ArrowLeft, 
   Save, 
@@ -31,12 +31,13 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormField } from '@/components/ui/FormField';
 import { useFormValidation } from '@/hooks/useFormValidation';
 
-export default function CreateReportPage() {
+function CreateReportContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToast();
   const { openModal, closeModal } = useModal();
   const [showQuickSettings, setShowQuickSettings] = useState(false);
-  
+
   const [formData, setFormData] = useState<CreateReportRequest>({
     title: '',
     description: '',
@@ -56,6 +57,17 @@ export default function CreateReportPage() {
       }
     ],
   });
+
+  // Pre-fill projectId if creating report from project page
+  useEffect(() => {
+    const projectId = searchParams.get('projectId');
+    if (projectId) {
+      setFormData(prev => ({
+        ...prev,
+        projectId: projectId
+      }));
+    }
+  }, [searchParams]);
 
   const questionTypes: { value: QuestionType; label: string; icon: string }[] = [
     { value: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: '🔘' },
@@ -649,5 +661,20 @@ export default function CreateReportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateReportPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-4 border-[#5B94E5] border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CreateReportContent />
+    </Suspense>
   );
 }
