@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Download, FileText, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { bulkUploadKYC, downloadKYCTemplate, BulkUploadResult } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
+import { useAuthContext } from '@/context/AuthContext';
+import { apiClient } from '@/lib/api/auth';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export function BulkUploadCSV() {
   const [uploading, setUploading] = useState(false);
@@ -11,6 +14,35 @@ export function BulkUploadCSV() {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
+  const { user } = useAuthContext();
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string>('');
+
+  const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
+
+  useEffect(() => {
+    if (!isMelonAdmin) return;
+
+    const fetchOrgs = async () => {
+      try {
+        setLoadingOrgs(true);
+        const data = await apiClient.getOrganizations();
+        const orgList = Array.isArray(data) ? data : (data as any)?.data || [];
+        setOrganizations(orgList);
+        
+        const chotaOrg = orgList.find((org: any) => org.name.toLowerCase().includes('chota'));
+        if (chotaOrg) {
+          setOrganizationId(chotaOrg._id || chotaOrg.id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch organizations:', error);
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+    fetchOrgs();
+  }, [isMelonAdmin]);
 
   const handleFileSelect = async (file: File) => {
     if (!file) return;
@@ -28,7 +60,7 @@ export function BulkUploadCSV() {
     setResult(null);
 
     try {
-      const uploadResult = await bulkUploadKYC(file);
+      const uploadResult = await bulkUploadKYC(file, organizationId);
       setResult(uploadResult);
 
       if (uploadResult.failed === 0) {
@@ -105,6 +137,20 @@ export function BulkUploadCSV() {
           Download Template
         </button>
       </div>
+
+      {isMelonAdmin && organizations.length > 0 && (
+        <div className="bg-white p-4 border border-gray-200 rounded-lg">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Source Organization <span className="text-red-500">*</span>
+          </label>
+          <CustomSelect
+            value={organizationId}
+            onChange={setOrganizationId}
+            options={organizations.map(org => ({ value: org._id || org.id, label: org.name }))}
+            placeholder="Select organization for this bulk upload"
+          />
+        </div>
+      )}
 
       {/* Upload Area */}
       <div
