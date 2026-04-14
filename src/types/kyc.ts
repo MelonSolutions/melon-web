@@ -184,7 +184,7 @@ export interface CreateKYCUserRequest {
   lastName: string;
   email?: string;
   phone: string;
-  occupation: string;
+  occupation?: string;
   bvn?: string;
   nin?: string;
   relogReason?: string;

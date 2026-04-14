@@ -47,7 +47,7 @@ export function VisualizationEmpty({
             className="inline-flex items-center gap-2 px-4 py-2 text-[#5B94E5] bg-blue-50 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
           >
             <Database className="w-4 h-4" />
-            Connect Reports
+            Connect Survey Data
           </button>
         </div>
       </div>
@@ -108,7 +108,7 @@ export function VisualizationEmpty({
           className="inline-flex items-center gap-2 px-4 py-2 text-[#5B94E5] bg-blue-50 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors"
         >
           <Database className="w-4 h-4" />
-          Use Report Data
+          Use Survey Data
         </button>
       </div>
     </div>
