@@ -359,11 +359,14 @@ export interface BulkUploadResult {
   }>;
 }
 
-export async function bulkUploadKYC(file: File): Promise<BulkUploadResult> {
+export async function bulkUploadKYC(file: File, organizationId?: string): Promise<BulkUploadResult> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
   const formData = new FormData();
   formData.append('file', file);
+  if (organizationId) {
+    formData.append('organizationId', organizationId);
+  }
 
   const response = await fetch(`${API_BASE_URL}/kyc/bulk-upload`, {
     method: 'POST',
