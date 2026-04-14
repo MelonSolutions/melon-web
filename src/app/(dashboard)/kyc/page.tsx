@@ -4,7 +4,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin } from 'lucide-react';
+import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
@@ -190,9 +190,9 @@ function KYCContent() {
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {isMelonAdmin && (
-            <div className="w-48 sm:w-64 transition-all">
+            <div className="w-full sm:w-72 lg:w-80 transition-all">
               <select
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer hover:border-gray-300 font-medium"
+                className="w-full truncate px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer hover:border-gray-300 font-medium pr-8"
                 value={organizationId}
                 onChange={(e) => setOrganizationId(e.target.value)}
                 style={{
@@ -211,6 +211,11 @@ function KYCContent() {
               </select>
             </div>
           )}
+          <Link href="/kyc/bulk-upload" prefetch={false} className="w-full sm:w-auto">
+            <Button variant="secondary" icon={<Upload className="w-4 h-4" />} className="w-full sm:w-auto">
+              Bulk Upload CSV
+            </Button>
+          </Link>
           <Link href="/kyc/create" prefetch={false} className="w-full sm:w-auto">
             <Button variant="primary" icon={<Plus className="w-4 h-4" />} className="w-full sm:w-auto">
               Create New Request
