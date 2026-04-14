@@ -100,7 +100,13 @@ export const getDashboardStats = async (): Promise<VisualizationStats> => {
   try {
     return await apiRequest('/visualizations/dashboard');
   } catch (error) {
-    return getMockStats();
+    // Return empty stats instead of mock data to avoid confusion
+    return {
+      totalDataSources: 0,
+      totalRecords: 0,
+      activeCharts: 0,
+      sharedCharts: 0,
+    };
   }
 };
 
@@ -109,7 +115,8 @@ export const getDataSources = async (type?: string): Promise<DataSource[]> => {
     const queryParam = type ? `?type=${type}` : '';
     return await apiRequest(`/visualizations/data-sources/all${queryParam}`);
   } catch (error) {
-    return getMockDataSources();
+    // Return empty array instead of mock data - let the UI handle empty state
+    return [];
   }
 };
 
@@ -117,7 +124,7 @@ export const getDataSourceById = async (id: string): Promise<DataSource> => {
   try {
     return await apiRequest(`/visualizations/data-sources/${id}`);
   } catch (error) {
-    return getMockDataSources().find(ds => ds.id === id) || getMockDataSources()[0];
+    throw error; // Let the caller handle the error
   }
 };
 
@@ -147,7 +154,7 @@ export const getCharts = async (params: {
 } = {}): Promise<{ data: ChartConfig[]; pagination: any }> => {
   try {
     const queryParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value) queryParams.append(key, value.toString());
     });
@@ -155,9 +162,10 @@ export const getCharts = async (params: {
     const queryString = queryParams.toString();
     return await apiRequest(`/visualizations/charts/all${queryString ? `?${queryString}` : ''}`);
   } catch (error) {
+    // Return empty data instead of mock charts
     return {
-      data: getMockCharts(),
-      pagination: { page: 1, total: 1, pages: 1 },
+      data: [],
+      pagination: { page: 1, total: 0, pages: 0 },
     };
   }
 };
@@ -305,19 +313,8 @@ export const getAvailableReports = async (): Promise<any[]> => {
   try {
     return await apiRequest('/visualizations/reports/available');
   } catch (error) {
-    return [
-      {
-        _id: '1',
-        title: 'App Rating Survey',
-        description: 'Quarterly app rating and feedback collection',
-        responseCount: 150,
-        questions: [
-          { name: 'region', type: 'text' },
-          { name: 'rating', type: 'number' },
-          { name: 'feedback', type: 'text' },
-        ],
-      },
-    ];
+    // Return empty array instead of mock "App Rating Survey" data
+    return [];
   }
 };
 
