@@ -159,7 +159,7 @@ export default function AddKYCUserPage() {
         pattern: formData.email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/ : undefined
       },
       occupation: {
-        required: true,
+        required: false,
         minLength: 2,
       },
     },
@@ -270,7 +270,7 @@ export default function AddKYCUserPage() {
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        occupation: formData.occupation,
+        occupation: formData.occupation || undefined,
         bvn: formData.bvn || undefined,
         nin: formData.nin || undefined,
         passportNumber: formData.passportNumber || undefined,
@@ -513,8 +513,7 @@ export default function AddKYCUserPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <Input
-                label="Occupation or Business Type"
-                required
+                label="Occupation or Business Type (Optional)"
                 value={formData.occupation}
                 onChange={(e) => handleFieldUpdate('occupation', e.target.value)}
                 onBlur={(e) => handleFieldBlur('occupation', e.target.value)}
