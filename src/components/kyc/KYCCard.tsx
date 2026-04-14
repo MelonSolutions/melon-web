@@ -18,9 +18,12 @@ interface KYCCardProps {
   user: KYCUser;
   view: 'grid' | 'list';
   onRefetch: () => void;
+  selectable?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (userId: string) => void;
 }
 
-export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
+export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggleSelect }: KYCCardProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -29,7 +32,7 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
   const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
-  const userId = user._id || user.id;
+  const userId = getUserId(user);
   const userLat = user.latitude || (user.addresses && user.addresses[0]?.latitude);
   const userLng = user.longitude || (user.addresses && user.addresses[0]?.longitude);
   const canDelete = user.status === 'PENDING';
@@ -124,28 +127,43 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
 
   if (view === 'grid') {
     return (
-      <Link href={`/kyc/${userId}`}>
-        <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group relative">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-primary transition-colors">
-                {user.firstName} {user.lastName}
-              </h3>
-              <p className="text-xs font-medium text-primary mt-0.5 uppercase">
-                {user.loanId && user.loanId}
-                {user.loanId && user.loanType && ' • '}
-                <span className="text-gray-400">{user.loanType?.toLowerCase()}</span>
-              </p>
-              <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
-              <p className="text-sm text-gray-500 mt-0.5">{user.phone}</p>
-              {user.organization?.name && (
-                <div className="mt-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                    Source: {user.organization.name}
-                  </span>
-                </div>
-              )}
-            </div>
+      <div className="relative">
+        {selectable && onToggleSelect && (
+          <div className="absolute top-4 right-14 z-10">
+            <input 
+              type="checkbox" 
+              checked={isSelected || false} 
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleSelect(userId);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-5 h-5 text-primary rounded border border-gray-300 focus:ring-primary cursor-pointer hover:border-primary shadow-sm" 
+            />
+          </div>
+        )}
+        <Link href={`/kyc/${userId}`}>
+          <div className={`bg-white rounded-lg border ${isSelected ? 'border-primary ring-1 ring-primary bg-primary/5 shadow-md' : 'border-gray-200'} p-6 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group relative`}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1 min-w-0 pr-12">
+                <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-primary transition-colors">
+                  {user.firstName} {user.lastName}
+                </h3>
+                <p className="text-xs font-medium text-primary mt-0.5 uppercase">
+                  {user.loanId && user.loanId}
+                  {user.loanId && user.loanType && ' • '}
+                  <span className="text-gray-400">{user.loanType?.toLowerCase()}</span>
+                </p>
+                <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
+                <p className="text-sm text-gray-500 mt-0.5">{user.phone}</p>
+                {user.organization?.name && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                      Source: {user.organization.name}
+                    </span>
+                  </div>
+                )}
+              </div>
 
             <button
               onClick={(e) => {
@@ -327,17 +345,32 @@ export function KYCCard({ user, view, onRefetch }: KYCCardProps) {
             </div>
           </div>
         </div>
-      </Link>
+        </Link>
+      </div>
     );
   }
 
   return (
-    <div className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 relative">
+    <div className={`hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 relative ${isSelected ? 'bg-primary/5' : ''}`}>
       <div className="px-4 sm:px-6 py-4">
         <div 
           className="flex lg:grid gap-4 items-center justify-between lg:justify-start"
-          style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
+          style={{ gridTemplateColumns: selectable ? '40px minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' : 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
         >
+          {selectable && onToggleSelect && (
+            <div className="hidden lg:flex items-center justify-center">
+              <input 
+                type="checkbox" 
+                checked={isSelected || false} 
+                onChange={(e) => {
+                  e.stopPropagation();
+                  onToggleSelect(userId);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-5 h-5 text-primary rounded border border-gray-300 focus:ring-primary cursor-pointer hover:border-primary shadow-sm" 
+              />
+            </div>
+          )}
           {/* Main Content Area - Column 1 on Desktop */}
           <div className="flex-1 lg:col-span-1 min-w-0">
             <Link href={`/kyc/${userId}`} className="block group">
