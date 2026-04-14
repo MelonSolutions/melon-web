@@ -284,3 +284,105 @@ export const unlinkReportFromProject = async (reportId: string): Promise<any> =>
   await handleApiError(response);
   return response.json();
 };
+
+// ============================================
+// Analytics Types & Functions
+// ============================================
+
+export interface OptionBreakdown {
+  option: string;
+  count: number;
+  percentage: number;
+}
+
+export interface NumericStats {
+  min: number;
+  max: number;
+  average: number;
+  median: number;
+  distribution: Array<{ range: string; count: number }>;
+}
+
+export interface TextStats {
+  avgWordCount: number;
+  totalWords: number;
+  commonKeywords: Array<{ word: string; count: number }>;
+}
+
+export interface TimeDistribution {
+  period: string;
+  count: number;
+}
+
+export interface QuestionAnalytics {
+  questionId: string;
+  questionTitle: string;
+  questionType: string;
+  totalResponses: number;
+  optionBreakdown?: OptionBreakdown[];
+  numericStats?: NumericStats;
+  textStats?: TextStats;
+  timeDistribution?: TimeDistribution[];
+}
+
+export interface ResponseOverTime {
+  date: string;
+  count: number;
+}
+
+export interface PeakResponseTime {
+  hour: number;
+  count: number;
+}
+
+export interface GeographicDistribution {
+  country: string;
+  count: number;
+}
+
+export interface ReportAnalytics {
+  totalResponses: number;
+  completedResponses: number;
+  partialResponses: number;
+  completionRate: number;
+  responsesOverTime: ResponseOverTime[];
+  avgCompletionTimeSeconds?: number;
+  peakResponseTimes?: PeakResponseTime[];
+  geographicDistribution?: GeographicDistribution[];
+}
+
+// Get report-level analytics (aggregate statistics)
+export const getReportAnalytics = async (reportId: string): Promise<ReportAnalytics> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/analytics/overview`, {
+    headers: getAuthHeaders(),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Get analytics for all questions in a report
+export const getAllQuestionsAnalytics = async (reportId: string): Promise<QuestionAnalytics[]> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/analytics/questions`, {
+    headers: getAuthHeaders(),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Get analytics for a specific question
+export const getQuestionAnalytics = async (
+  reportId: string,
+  questionId: string
+): Promise<QuestionAnalytics> => {
+  const response = await fetch(
+    `${API_BASE_URL}/reports/${reportId}/analytics/questions/${questionId}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  await handleApiError(response);
+  return response.json();
+};

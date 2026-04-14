@@ -20,6 +20,9 @@ import { useReport } from '@/hooks/useReports';
 import { useReportResponses, useResponseAnalytics, useImpactMetricsProgress } from '@/hooks/useResponses';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
+import OverviewStats from '@/components/reports/analytics/OverviewStats';
+import ResponseTrends from '@/components/reports/analytics/ResponseTrends';
+import QuestionBreakdown from '@/components/reports/analytics/QuestionBreakdown';
 
 interface ResponsesPageProps {}
 
@@ -364,40 +367,9 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
 
         {activeTab === 'analytics' && (
           <div className="space-y-6">
-            {!analyticsLoading && analytics && analytics.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {analytics.map((analytic) => {
-                  const question = report.questions?.find(q => q.id === analytic._id);
-                  return (
-                    <div key={analytic._id} className="bg-white rounded-lg border border-gray-200 p-6">
-                      <h3 className="font-medium text-gray-900 mb-4">
-                        {question?.title || `Question ${analytic._id}`}
-                      </h3>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Total Responses</span>
-                          <span className="font-medium">{analytic.totalResponses}</span>
-                        </div>
-                        {analytic.avgActualValue && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Average Value</span>
-                            <span className="font-medium">{analytic.avgActualValue.toFixed(2)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                <BarChart3 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No analytics data</h3>
-                <p className="text-sm text-gray-500">
-                  Analytics will appear here once you have enough response data.
-                </p>
-              </div>
-            )}
+            <OverviewStats reportId={reportId} />
+            <ResponseTrends reportId={reportId} />
+            <QuestionBreakdown reportId={reportId} />
           </div>
         )}
 
