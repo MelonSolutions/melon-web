@@ -4,7 +4,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin, Upload } from 'lucide-react';
+import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin, Upload, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
@@ -13,8 +13,9 @@ import { DailyReportModal } from '@/components/kyc/DailyReportModal';
 import { VerificationTrends } from '@/components/kyc/analysis/VerificationTrends';
 import { OrgBreakdown } from '@/components/kyc/analysis/OrgBreakdown';
 import { GeographicDistribution } from '@/components/kyc/analysis/GeographicDistribution';
-import { exportKYCData, getKYCUsers, getOrganizations } from '@/lib/api/kyc';
+import { exportKYCData, getKYCUsers, getOrganizations, bulkDeleteKYCUsers } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
+import { useModal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/components/ui/StatCard';
 import { useAuthContext } from '@/context/AuthContext';
@@ -56,6 +57,9 @@ function KYCContent() {
   const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [showAnalysis, setShowAnalysis] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+  const { openConfirmModal } = useModal();
 
   // Load saved organization selection on mount
   useEffect(() => {
@@ -157,6 +161,61 @@ function KYCContent() {
     if (!statusFilter) return true;
     return user.status === statusFilter;
   }) || [];
+
+  const handleToggleSelect = (userId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = filteredUsers.map(u => getUserId(u)).filter(Boolean) as string[];
+      setSelectedIds(new Set(allIds));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const allSelected = filteredUsers.length > 0 && selectedIds.size === filteredUsers.length;
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+
+    openConfirmModal({
+      title: 'Bulk Delete Requests',
+      description: `Are you sure you want to delete ${selectedIds.size} verification request(s)? Only pending requests can be deleted. This action cannot be undone.`,
+      confirmText: 'Delete Selected',
+      cancelText: 'Cancel',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setIsDeletingBulk(true);
+          const response = await bulkDeleteKYCUsers(Array.from(selectedIds));
+          
+          addToast({
+            type: 'success',
+            title: 'Bulk Delete Successful',
+            message: response.message || `Successfully deleted ${response.deletedCount} requests.`,
+          });
+
+          setSelectedIds(new Set());
+          refetch();
+        } catch (error: any) {
+          addToast({
+            type: 'error',
+            title: 'Bulk Delete Failed',
+            message: error.message || 'Failed to delete selected requests. Please try again.',
+          });
+        } finally {
+          setIsDeletingBulk(false);
+        }
+      }
+    });
+  };
 
   // Initial load - show full skeleton
   if (loading && (!users || users.length === 0) && !dashboardStats.totalUsers) {
@@ -390,6 +449,28 @@ function KYCContent() {
             </div>
           </div>
 
+          {selectedIds.size > 0 && isMelonAdmin && (
+            <div className="bg-primary/5 px-4 sm:px-6 py-3 border-b border-primary/10 flex items-center justify-between">
+              <div className="text-sm font-medium text-primary">
+                {selectedIds.size} request(s) selected
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+                  Cancel
+                </Button>
+                <Button 
+                  variant="danger" 
+                  size="sm" 
+                  onClick={handleBulkDelete}
+                  loading={isDeletingBulk}
+                  icon={<Trash2 className="w-4 h-4" />}
+                >
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="p-4 sm:p-6 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1 w-full max-w-md">
@@ -492,6 +573,9 @@ function KYCContent() {
                         user={user}
                         view="grid"
                         onRefetch={refetch}
+                        selectable={isMelonAdmin}
+                        isSelected={selectedIds.has(userId)}
+                        onToggleSelect={handleToggleSelect}
                       />
                     ) : null;
                   })}
@@ -501,9 +585,19 @@ function KYCContent() {
                   <div className="min-w-full inline-block align-middle">
                     <div className="hidden lg:block px-6 py-3 bg-gray-50 border-b border-gray-200">
                       <div 
-                        className="grid gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest"
-                        style={{ gridTemplateColumns: 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
+                        className="grid gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest items-center"
+                        style={{ gridTemplateColumns: isMelonAdmin ? '40px minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' : 'minmax(200px, 2fr) minmax(120px, 1fr) 120px 80px 80px 80px 80px 60px' }}
                       >
+                        {isMelonAdmin && (
+                          <div className="flex items-center justify-center">
+                            <input 
+                              type="checkbox" 
+                              checked={allSelected}
+                              onChange={(e) => handleSelectAll(e.target.checked)}
+                              className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+                            />
+                          </div>
+                        )}
                         <div>Customer</div>
                         <div>Source</div>
                         <div>Status</div>
@@ -524,6 +618,9 @@ function KYCContent() {
                             user={user}
                             view="list"
                             onRefetch={refetch}
+                            selectable={isMelonAdmin}
+                            isSelected={selectedIds.has(userId)}
+                            onToggleSelect={handleToggleSelect}
                           />
                         ) : null;
                       })}

@@ -145,6 +145,13 @@ export async function deleteKYCUser(id: string): Promise<void> {
   });
 }
 
+export async function bulkDeleteKYCUsers(userIds: string[]): Promise<any> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/bulk-delete`, {
+    method: 'DELETE',
+    body: JSON.stringify({ userIds }),
+  });
+}
+
 export async function uploadDocument(
   userId: string,
   file: File,
