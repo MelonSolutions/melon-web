@@ -4,9 +4,9 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
-async function verifyEmailToken(token: string): Promise<{ message: string }> {
+async function verifyEmailToken(token: string): Promise<{ message: string; }> {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
-  
+
   const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
     method: 'POST',
     headers: {
@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
-        
+
     if (!token) {
       setStatus('error');
       setMessage('Invalid verification link. Please check your email for the correct link.');
@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
         const response = await verifyEmailToken(token);
         setStatus('success');
         setMessage(response.message || 'Email verified successfully!');
-                
+
         setTimeout(() => {
           window.location.href = '/login?verified=true';
         }, 3000);
@@ -89,12 +89,6 @@ export default function VerifyEmailPage() {
               className="w-full bg-[#5B94E5] hover:bg-[#4A7EC9] text-white py-2.5 px-4 rounded-lg font-medium text-sm transition-colors"
             >
               Go to Login
-            </button>
-            <button
-              onClick={() => window.location.href = '/signup'}
-              className="w-full border border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors"
-            >
-              Sign Up Again
             </button>
           </div>
         )}
