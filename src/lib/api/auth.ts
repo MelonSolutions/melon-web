@@ -208,6 +208,13 @@ private async request<T>(
     });
   }
 
+  async updateProfile(data: any): Promise<User> {
+    return this.request<User>('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getCurrentUser(): Promise<User> {
     return this.request<User>('/auth/me');
   }
