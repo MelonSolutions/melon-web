@@ -1,7 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Bell, 
   Shield, 
@@ -16,8 +13,13 @@ import {
   EyeOff,
   Save
 } from 'lucide-react';
+import { useAuthContext } from '@/context/AuthContext';
+import { apiClient } from '@/lib/api/auth';
+import { useToast } from '@/components/ui/Toast';
 
 export default function SettingsPage() {
+  const { user, refreshUser } = useAuthContext();
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('notifications');
   const [loading, setLoading] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -47,6 +49,39 @@ export default function SettingsPage() {
     theme: 'light'
   });
 
+  // Sync state with user context on load
+  useEffect(() => {
+    if (user) {
+      if (user.notifications) {
+        setNotifications({
+          emailReports: user.notifications.emailReports ?? true,
+          metricAlerts: user.notifications.metricAlerts ?? true,
+          deadlineReminders: user.notifications.deadlineReminders ?? true,
+          weeklyDigest: user.notifications.weeklyDigest ?? false,
+          projectUpdates: user.notifications.projectUpdates ?? true,
+          systemMaintenance: user.notifications.systemMaintenance ?? true,
+        });
+      }
+      if (user.privacy) {
+        setPrivacy({
+          profileVisibility: user.privacy.profileVisibility || 'organization',
+          dataSharing: user.privacy.dataSharing ?? false,
+          analyticsOptOut: user.privacy.analyticsOptOut ?? false,
+          twoFactorAuth: user.privacy.twoFactorAuth ?? false,
+        });
+      }
+      if (user.preferences) {
+        setPreferences({
+          language: user.preferences.language || 'en',
+          timezone: user.preferences.timezone || 'Africa/Lagos',
+          dateFormat: user.preferences.dateFormat || 'DD/MM/YYYY',
+          currency: user.preferences.currency || 'NGN',
+          theme: user.preferences.theme || 'light',
+        });
+      }
+    }
+  }, [user]);
+
   const settingsTabs = [
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'privacy', label: 'Privacy & Security', icon: Shield },
@@ -59,11 +94,26 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // Show success message
-    } catch (error) {
+      await apiClient.updateProfile({
+        notifications,
+        privacy,
+        preferences
+      });
+      
+      await refreshUser();
+      
+      addToast({
+        type: 'success',
+        title: 'Settings saved',
+        message: 'Your preferences have been updated successfully.'
+      });
+    } catch (error: any) {
       console.error('Error saving settings:', error);
+      addToast({
+        type: 'error',
+        title: 'Save failed',
+        message: error.message || 'An error occurred while saving your settings.'
+      });
     } finally {
       setLoading(false);
     }

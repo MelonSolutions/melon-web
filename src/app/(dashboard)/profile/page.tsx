@@ -1,43 +1,113 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-'use client';
-
-import { useState } from 'react';
-import { Camera, Save, X, Upload } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Camera, Save, X, Upload, Plus, CheckCircle } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
+import { apiClient } from '@/lib/api/auth';
+import { useToast } from '@/components/ui/Toast';
 
 export default function ProfilePage() {
-  const { user, getInitials, getFullName } = useAuthContext();
+  const { user, getInitials, getFullName, refreshUser } = useAuthContext();
+  const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [newSkill, setNewSkill] = useState('');
+  const [showSkillInput, setShowSkillInput] = useState(false);
+  
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || 'Victor',
-    lastName: user?.lastName || 'Omoniyi',
-    email: user?.email || 'vicodev@google.com',
-    title: 'Program Director',
-    organization: 'Melon Impact Solutions',
-    phone: '+234 806 123 4567',
-    location: 'Lagos, Nigeria',
+    firstName: '',
+    lastName: '',
+    email: '',
+    title: '',
+    organization: '',
+    phone: '',
+    location: '',
     timezone: 'Africa/Lagos',
-    bio: 'Experienced program director with 8+ years in impact measurement and development programs across West Africa.',
-    skills: ['Impact Measurement', 'Program Management', 'Data Analysis', 'Strategic Planning'],
+    bio: '',
+    skills: [] as string[],
   });
+
+  // Sync form data with user context
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        title: user.title || '',
+        organization: user.organization?.name || '',
+        phone: user.phoneNumber || '',
+        location: user.location || '',
+        timezone: user.preferences?.timezone || 'Africa/Lagos',
+        bio: user.bio || '',
+        skills: user.skills || [],
+      });
+    }
+  }, [user]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await apiClient.updateProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        title: formData.title,
+        phoneNumber: formData.phone,
+        location: formData.location,
+        bio: formData.bio,
+        skills: formData.skills,
+        preferences: {
+          ...user?.preferences,
+          timezone: formData.timezone
+        }
+      });
+      
+      await refreshUser();
+      
+      addToast({
+        type: 'success',
+        title: 'Profile updated',
+        message: 'Your profile information has been saved successfully.'
+      });
+      
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving profile:', error);
+      addToast({
+        type: 'error',
+        title: 'Update failed',
+        message: error.message || 'An error occurred while saving your profile.'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        title: user.title || '',
+        organization: user.organization?.name || '',
+        phone: user.phoneNumber || '',
+        location: user.location || '',
+        timezone: user.preferences?.timezone || 'Africa/Lagos',
+        bio: user.bio || '',
+        skills: user.skills || [],
+      });
+    }
     setIsEditing(false);
-    // Reset form data if needed
+  };
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()]
+      }));
+      setNewSkill('');
+      setShowSkillInput(false);
+    }
   };
 
   return (
@@ -298,9 +368,44 @@ export default function ProfilePage() {
                 </span>
               ))}
               {isEditing && (
-                <button className="inline-flex items-center px-3 py-1 border border-dashed border-gray-300 rounded-full text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer">
-                  + Add skill
-                </button>
+                <div className="flex items-center gap-2">
+                  {showSkillInput ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddSkill()}
+                        className="px-3 py-1 border border-gray-300 rounded-full text-sm focus:ring-1 focus:ring-[#5B94E5] outline-none"
+                        placeholder="Type skill..."
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleAddSkill}
+                        className="p-1 text-green-600 hover:text-green-700 transition-colors"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowSkillInput(false);
+                          setNewSkill('');
+                        }}
+                        className="p-1 text-red-600 hover:text-red-700 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setShowSkillInput(true)}
+                      className="inline-flex items-center gap-1 px-3 py-1 border border-dashed border-gray-300 rounded-full text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add skill
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
