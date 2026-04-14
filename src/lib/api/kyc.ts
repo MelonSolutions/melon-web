@@ -339,3 +339,134 @@ export async function downloadDailyOrganizationReport(
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
+// Bulk upload KYC users from CSV
+export interface BulkUploadResult {
+  total: number;
+  successful: number;
+  failed: number;
+  successfulRecords: Array<{
+    row: number;
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+  }>;
+  failedRecords: Array<{
+    row: number;
+    data: Record<string, any>;
+    errors: string[];
+  }>;
+}
+
+export async function bulkUploadKYC(file: File): Promise<BulkUploadResult> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/kyc/bulk-upload`, {
+    method: 'POST',
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new ApiError(
+      errorData.message || 'Failed to upload CSV file',
+      response.status,
+      errorData.code
+    );
+  }
+
+  return response.json();
+}
+
+// Download CSV template for KYC bulk upload
+export function downloadKYCTemplate(): void {
+  // Required fields first, then optional fields
+  const headers = [
+    'firstName',
+    'lastName',
+    'phone',
+    'email',
+    'occupation',
+    'loanId',
+    'loanType',
+    'bvn',
+    'nin',
+    'passportNumber',
+    'streetNumber',
+    'streetName',
+    'landmark',
+    'city',
+    'lga',
+    'state',
+    'country',
+    'notes',
+    'relogReason',
+  ];
+
+  const commentRow = [
+    'REQUIRED',
+    'REQUIRED',
+    'REQUIRED',
+    'optional',
+    'optional',
+    'optional',
+    'optional (PERSONAL/BUSINESS)',
+    'optional',
+    'optional',
+    'optional',
+    'optional',
+    'optional',
+    'optional',
+    'optional',
+    'optional',
+    'optional',
+    'optional (Nigeria)',
+    'optional',
+    'optional',
+  ];
+
+  const exampleRow = [
+    'John',
+    'Doe',
+    '+2348012345678',
+    'john.doe@example.com',
+    'Software Engineer',
+    'LOAN123',
+    'PERSONAL',
+    '12345678901',
+    '12345678901',
+    '',
+    '10',
+    'Main Street',
+    'Near Park',
+    'Lagos',
+    'Lagos Mainland',
+    'Lagos',
+    'Nigeria',
+    'Example notes',
+    '',
+  ];
+
+  const csvContent = [
+    headers.join(','),
+    commentRow.join(','),
+    exampleRow.join(','),
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'kyc-bulk-upload-template.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
