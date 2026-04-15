@@ -51,6 +51,8 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
+  username?: string;
+  phoneNumber?: string;
   role: 'OWNER' | 'ADMIN' | 'MEMBER';
   status: string;
   emailVerified: boolean;
@@ -62,6 +64,31 @@ export interface User {
     userCount: number;
     userLimit: number;
     trialEndsAt?: string;
+  };
+  title?: string;
+  bio?: string;
+  location?: string;
+  skills?: string[];
+  preferences?: {
+    language: string;
+    timezone: string;
+    dateFormat: string;
+    currency: string;
+    theme: string;
+  };
+  notifications?: {
+    emailReports: boolean;
+    metricAlerts: boolean;
+    deadlineReminders: boolean;
+    weeklyDigest: boolean;
+    projectUpdates: boolean;
+    systemMaintenance: boolean;
+  };
+  privacy?: {
+    profileVisibility: string;
+    dataSharing: boolean;
+    analyticsOptOut: boolean;
+    twoFactorAuth: boolean;
   };
   createdAt: string;
   updatedAt: string;

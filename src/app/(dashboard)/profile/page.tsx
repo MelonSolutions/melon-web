@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from 'react';
 import { Camera, Save, X, Upload, Plus, CheckCircle } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
@@ -215,16 +216,9 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
-              {isEditing ? (
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
-                />
-              ) : (
-                <p className="text-gray-900">{formData.email}</p>
-              )}
+              <p className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500">
+                {formData.email}
+              </p>
             </div>
 
             <div>
@@ -255,16 +249,9 @@ export default function ProfilePage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Organization
             </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={formData.organization}
-                onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
-              />
-            ) : (
-              <p className="text-gray-900">{formData.organization}</p>
-            )}
+            <p className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500">
+              {formData.organization}
+            </p>
           </div>
 
           <div>
