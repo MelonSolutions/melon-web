@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from 'react';
 import { 
   Bell, 
@@ -190,6 +191,25 @@ export default function SettingsPage() {
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                   privacy.dataSharing ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Analytics</p>
+              <p className="text-sm text-gray-500">Opt out of anonymous usage tracking</p>
+            </div>
+            <button
+              onClick={() => setPrivacy(prev => ({ ...prev, analyticsOptOut: !prev.analyticsOptOut }))}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
+                privacy.analyticsOptOut ? 'bg-[#5B94E5]' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  privacy.analyticsOptOut ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
             </button>
