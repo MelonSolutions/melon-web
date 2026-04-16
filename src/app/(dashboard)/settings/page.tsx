@@ -1,22 +1,30 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { 
-  Bell, 
-  Shield, 
-  Palette, 
-  Globe, 
-  Database, 
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Bell,
+  Shield,
+  Palette,
+  Globe,
+  Database,
   CreditCard,
   Users,
   Download,
   Key,
   Eye,
   EyeOff,
-  Save
+  Save,
+  Building2
 } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
 import { apiClient } from '@/lib/api/auth';
 import { useToast } from '@/components/ui/Toast';
+import dynamic from 'next/dynamic';
+
+// Dynamically import PlatformAdministration to avoid SSR issues
+const PlatformAdministration = dynamic(
+  () => import('@/components/admin/PlatformAdministration'),
+  { ssr: false }
+);
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuthContext();
@@ -49,6 +57,13 @@ export default function SettingsPage() {
     currency: 'NGN',
     theme: 'light'
   });
+
+  // Check if user is from Melon organization (platform admin)
+  const isMelonAdmin = useMemo(() => {
+    const melonOrgId = process.env.NEXT_PUBLIC_MELON_ORG_ID;
+    if (!melonOrgId || !user?.organization?.id) return false;
+    return user.organization.id === melonOrgId;
+  }, [user]);
 
   // Sync state with user context on load
   useEffect(() => {
@@ -83,14 +98,27 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  const settingsTabs = [
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy & Security', icon: Shield },
-    { id: 'preferences', label: 'Preferences', icon: Palette },
-    { id: 'integrations', label: 'Integrations', icon: Database },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'team', label: 'Team Management', icon: Users }
-  ];
+  const settingsTabs = useMemo(() => {
+    const baseTabs = [
+      { id: 'notifications', label: 'Notifications', icon: Bell },
+      { id: 'privacy', label: 'Privacy & Security', icon: Shield },
+      { id: 'preferences', label: 'Preferences', icon: Palette },
+      { id: 'integrations', label: 'Integrations', icon: Database },
+      { id: 'billing', label: 'Billing', icon: CreditCard },
+      { id: 'team', label: 'Team Management', icon: Users }
+    ];
+
+    // Add admin tab only for Melon organization users
+    if (isMelonAdmin) {
+      baseTabs.push({
+        id: 'admin',
+        label: 'Platform Administration',
+        icon: Building2
+      });
+    }
+
+    return baseTabs;
+  }, [isMelonAdmin]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -429,6 +457,8 @@ export default function SettingsPage() {
         return <div className="text-center py-12 text-gray-500">Billing settings coming soon</div>;
       case 'team':
         return <div className="text-center py-12 text-gray-500">Team management coming soon</div>;
+      case 'admin':
+        return <PlatformAdministration />;
       default:
         return renderNotifications();
     }
@@ -468,18 +498,20 @@ export default function SettingsPage() {
                 <h2 className="text-lg font-medium text-gray-900">
                   {settingsTabs.find(tab => tab.id === activeTab)?.label}
                 </h2>
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Save Changes
-                </button>
+                {activeTab !== 'admin' && (
+                  <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Save Changes
+                  </button>
+                )}
               </div>
             </div>
             
