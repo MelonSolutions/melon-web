@@ -35,6 +35,8 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
     'Documents Count',
     'Document URLs',
     'Rejection Evidence URLs',
+    'Document URLs',
+    'Rejection Evidence URLs',
     'Assigned Agent',
     'Rejection Reason',
     'Submitted At',
@@ -58,8 +60,8 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
     );
 
     // Get photos from either top-level verificationData or from the first address if multi-address is used
-    const verificationPhotos = user.verificationData?.verificationPhotos ||
-                             user.addresses?.[0]?.verificationData?.verificationPhotos ||
+    const verificationPhotos = user.verificationData?.verificationPhotos || 
+                             user.addresses?.[0]?.verificationData?.verificationPhotos || 
                              [];
 
     const row = [
@@ -122,7 +124,7 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
  */
 function extractUrls(items: any[] | undefined | null): string {
   if (!items || !Array.isArray(items)) return '';
-
+  
   return items
     .map(item => {
       if (typeof item === 'string') return item;
