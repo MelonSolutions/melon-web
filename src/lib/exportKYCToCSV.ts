@@ -33,6 +33,8 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
     'Address Notes',
     'Verification Photos',
     'Documents Count',
+    'Document URLs',
+    'Rejection Evidence URLs',
     'Assigned Agent',
     'Rejection Reason',
     'Submitted At',
@@ -54,6 +56,11 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
       user.verificationData?.verifiedLatitude,
       user.verificationData?.verifiedLongitude,
     );
+
+    // Get photos from either top-level verificationData or from the first address if multi-address is used
+    const verificationPhotos = user.verificationData?.verificationPhotos || 
+                             user.addresses?.[0]?.verificationData?.verificationPhotos || 
+                             [];
 
     const row = [
       escapeCSV(userId || ''),
@@ -80,8 +87,10 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
       distance,
       escapeCSV(user.verificationData?.agentNotes || ''),
       escapeCSV(user.notes || ''),
-      escapeCSV(user.verificationData?.verificationPhotos?.join(' | ') || ''),
+      escapeCSV(extractUrls(verificationPhotos)),
       user.documents?.length || 0,
+      escapeCSV(extractUrls(user.documents?.map(doc => doc.fileUrl) || [])),
+      escapeCSV(extractUrls(user.rejectionEvidence || [])),
       escapeCSV(assignedAgent),
       escapeCSV(user.rejectionReason || ''),
       new Date(user.submittedAt).toISOString(),
@@ -106,6 +115,33 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+/**
+ * Extracts URLs from an array that may contain strings or objects with a url property
+ */
+function extractUrls(items: any[] | undefined | null): string {
+  if (!items || !Array.isArray(items)) return '';
+  
+  return items
+    .map(item => {
+      if (typeof item === 'string') return item;
+      if (item && typeof item === 'object') {
+        if (item.url) return item.url;
+        if (item.fileUrl) return item.fileUrl;
+        // Handle potential character-by-character mangled objects seen in some parts of the code
+        if (item['0']) {
+          return Object.keys(item)
+            .sort((a, b) => parseInt(a) - parseInt(b))
+            .filter(key => !isNaN(parseInt(key)))
+            .map(key => item[key])
+            .join('');
+        }
+      }
+      return '';
+    })
+    .filter(url => typeof url === 'string' && url.length > 0)
+    .join(' | ');
 }
 
 function escapeCSV(value: string | number): string {
