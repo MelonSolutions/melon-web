@@ -13,7 +13,7 @@ export type FeatureName =
   | 'overview';
 
 export interface OrganizationRestrictions {
-  _id: string;
+  id: string;
   organizationId: string;
   kyc: AccessLevel;
   portfolio: AccessLevel;
@@ -27,12 +27,19 @@ export interface OrganizationRestrictions {
   updatedAt: string;
 }
 
+export enum OrganizationStatus {
+  ACTIVE = 'ACTIVE',
+  TRIAL = 'TRIAL',
+  SUSPENDED = 'SUSPENDED',
+  EXPIRED = 'EXPIRED',
+}
+
 export interface Organization {
-  _id: string;
+  id: string;
   name: string;
   domain?: string;
   plan: string;
-  status: string;
+  status: OrganizationStatus;
   userCount: number;
   createdAt: string;
 }
@@ -57,12 +64,21 @@ export interface UpdateRestrictionsRequest {
 }
 
 export interface AuditLogEntry {
-  _id: string;
-  organizationId: string;
-  adminUserId: string;
-  feature: FeatureName;
-  oldValue: AccessLevel;
-  newValue: AccessLevel;
+  id: string;
+  organizationId: {
+    id: string;
+    name: string;
+    domain?: string;
+  };
+  adminUserId: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  feature: FeatureName | 'status';
+  oldValue: string;
+  newValue: string;
   reason: string;
   timestamp: string;
   ipAddress?: string;

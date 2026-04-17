@@ -12,10 +12,13 @@ import {
   User,
   Shield,
   X,
+  Building2,
+  Eye,
 } from 'lucide-react';
-import { adminApiClient, AuditLogEntry, FeatureName } from '@/lib/api/admin';
+import { adminApiClient, AuditLogEntry, FeatureName, OrganizationStatus } from '@/lib/api/admin';
+import AuditLogDetailModal from './AuditLogDetailModal';
 
-const featureOptions: { value: FeatureName; label: string }[] = [
+const featureOptions = [
   { value: 'kyc', label: 'KYC Management' },
   { value: 'portfolio', label: 'Portfolio Management' },
   { value: 'reports', label: 'Reports' },
@@ -23,6 +26,7 @@ const featureOptions: { value: FeatureName; label: string }[] = [
   { value: 'visualizations', label: 'Visualizations' },
   { value: 'responses', label: 'Responses' },
   { value: 'overview', label: 'Overview Dashboard' },
+  { value: 'status', label: 'Organization Status' },
 ];
 
 export default function AuditLogTab() {
@@ -30,6 +34,7 @@ export default function AuditLogTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,7 +46,7 @@ export default function AuditLogTab() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     organizationId: '',
-    feature: '' as FeatureName | '',
+    feature: '' as string,
     startDate: '',
     endDate: '',
   });
@@ -67,9 +72,9 @@ export default function AuditLogTab() {
 
       const response = await adminApiClient.getAuditLog(params);
 
-      setLogs(response.logs);
-      setTotalPages(response.totalPages);
-      setTotalLogs(response.total);
+      setLogs(response.logs || []);
+      setTotalPages(response.totalPages || 0);
+      setTotalLogs(response.total || 0);
     } catch (err: any) {
       console.error('Error fetching audit logs:', err);
       setError(err.message || 'Failed to load audit logs');
@@ -132,19 +137,28 @@ export default function AuditLogTab() {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
     }).format(date);
   };
 
   const getAccessLevelBadge = (level: string) => {
-    const styles = {
-      full: 'bg-green-100 text-green-800',
-      'read-only': 'bg-yellow-100 text-yellow-800',
-      blocked: 'bg-red-100 text-red-800',
+    // Check if it's an OrganizationStatus
+    const statusStyles: Record<string, string> = {
+      [OrganizationStatus.ACTIVE]: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      [OrganizationStatus.TRIAL]: 'bg-amber-100 text-amber-800 border-amber-200',
+      [OrganizationStatus.SUSPENDED]: 'bg-rose-100 text-rose-800 border-rose-200',
+      [OrganizationStatus.EXPIRED]: 'bg-slate-100 text-slate-800 border-slate-200',
     };
 
+    const restrictionStyles: Record<string, string> = {
+      full: 'bg-green-100 text-green-800 border-green-200',
+      'read-only': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      blocked: 'bg-red-100 text-red-800 border-red-200',
+    };
+
+    const style = statusStyles[level] || restrictionStyles[level] || 'bg-gray-100 text-gray-800 border-gray-200';
+
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[level as keyof typeof styles] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${style}`}>
         {level}
       </span>
     );
@@ -320,59 +334,74 @@ export default function AuditLogTab() {
           </p>
         </div>
       ) : (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 bg-white">
+              <thead className="bg-gray-50/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
                     Timestamp
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    Organization
+                  </th>
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
                     Feature
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">
                     Change
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reason
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Admin User
+                  <th className="px-5 py-4 text-right text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-100 italic">
                 {logs.map((log) => (
-                  <tr key={log._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-sm text-gray-900">
-                        <Calendar className="w-4 h-4 text-gray-400" />
+                  <tr 
+                    key={log.id} 
+                    onClick={() => setSelectedLog(log)}
+                    className="hover:bg-gray-50/50 transition-colors group cursor-pointer not-italic"
+                  >
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2.5 text-xs text-gray-600 font-medium">
+                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
                         {formatTimestamp(log.timestamp)}
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <td className="px-5 py-4 whitespace-nowrap max-w-[200px]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <div className="flex flex-col truncate">
+                          <span className="text-xs font-bold text-gray-900 truncate">{log.organizationId.name}</span>
+                          <span className="text-[10px] text-gray-500 font-mono truncate">{log.organizationId.domain}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tighter bg-blue-50 text-blue-700 border border-blue-100">
                         {featureOptions.find((f) => f.value === log.feature)?.label || log.feature}
                       </span>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-5 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {getAccessLevelBadge(log.oldValue)}
-                        <span className="text-gray-400">→</span>
+                        <span className="text-gray-300 text-xs">→</span>
                         {getAccessLevelBadge(log.newValue)}
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm text-gray-900 max-w-md truncate" title={log.reason}>
-                        {log.reason}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <span className="font-mono text-xs">{log.adminUserId.slice(-8)}</span>
-                      </div>
+                    <td className="px-5 py-4 whitespace-nowrap text-right">
+                      <button 
+                        className="p-2 hover:bg-white rounded-lg transition-all hover:shadow-md active:scale-95 text-gray-400 group-hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLog(log);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -384,29 +413,37 @@ export default function AuditLogTab() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+        <div className="flex items-center justify-between bg-white p-4 border border-gray-200 rounded-xl">
+          <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">
             Page {currentPage} of {totalPages}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1 || loading}
-              className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest border border-gray-300 rounded-lg hover:bg-gray-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
               Previous
             </button>
             <button
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages || loading}
-              className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest bg-gray-900 text-white rounded-lg hover:bg-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 shadow-md"
             >
               Next
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedLog && (
+        <AuditLogDetailModal 
+          log={selectedLog} 
+          onClose={() => setSelectedLog(null)} 
+        />
       )}
     </div>
   );

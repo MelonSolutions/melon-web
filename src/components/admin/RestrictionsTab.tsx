@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Settings, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
-import { adminApiClient, Organization, OrganizationRestrictions, AccessLevel } from '@/lib/api/admin';
+import { adminApiClient, Organization, OrganizationRestrictions, AccessLevel, OrganizationStatus } from '@/lib/api/admin';
 import RestrictionEditorModal from './RestrictionEditorModal';
 
 export default function RestrictionsTab() {
@@ -51,11 +51,15 @@ export default function RestrictionsTab() {
 
     await Promise.all(
       orgs.map(async (org) => {
+        if (!org.id) {
+          console.warn('Organization missing ID:', org);
+          return;
+        }
         try {
-          const orgRestrictions = await adminApiClient.getRestrictions(org._id);
-          restrictionsMap.set(org._id, orgRestrictions);
+          const orgRestrictions = await adminApiClient.getRestrictions(org.id);
+          restrictionsMap.set(org.id, orgRestrictions);
         } catch (err) {
-          console.error(`Error fetching restrictions for org ${org._id}:`, err);
+          console.error(`Error fetching restrictions for org ${org.id}:`, err);
           // If restrictions don't exist, they'll default to 'full' on the backend
         }
       })
@@ -65,13 +69,18 @@ export default function RestrictionsTab() {
   };
 
   const handleEditRestrictions = (orgId: string) => {
+    console.log('Opening editor for org:', orgId);
+    if (!orgId) {
+      console.error('Cannot open editor: Organization ID is missing');
+      return;
+    }
     setSelectedOrgId(orgId);
     setShowEditorModal(true);
   };
 
   const handleRestrictionsSaved = async () => {
-    // Refresh the restrictions for all organizations
-    await fetchRestrictionsForOrganizations(organizations);
+    // Refresh the organizations and their restrictions
+    await fetchOrganizations();
     setShowEditorModal(false);
     setSelectedOrgId(null);
   };
@@ -206,10 +215,10 @@ export default function RestrictionsTab() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {organizations.map((org) => {
-                const restrictedCount = getRestrictedFeaturesCount(org._id);
+                const restrictedCount = getRestrictedFeaturesCount(org.id);
 
                 return (
-                  <tr key={org._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={org.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">{org.name}</div>
@@ -246,7 +255,7 @@ export default function RestrictionsTab() {
                     <td className="px-6 py-4 text-sm text-gray-900">{org.userCount || 0}</td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleEditRestrictions(org._id)}
+                        onClick={() => handleEditRestrictions(org.id)}
                         className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#5B94E5] hover:bg-blue-50 rounded-lg transition-colors"
                       >
                         <Settings className="w-4 h-4" />
@@ -292,7 +301,8 @@ export default function RestrictionsTab() {
       {showEditorModal && selectedOrgId && (
         <RestrictionEditorModal
           organizationId={selectedOrgId}
-          organizationName={organizations.find((o) => o._id === selectedOrgId)?.name || ''}
+          organizationName={organizations.find((o) => o.id === selectedOrgId)?.name || ''}
+          currentStatus={organizations.find((o) => o.id === selectedOrgId)?.status || OrganizationStatus.TRIAL}
           currentRestrictions={restrictions.get(selectedOrgId)}
           onSave={handleRestrictionsSaved}
           onClose={handleCloseModal}

@@ -32,6 +32,7 @@ export interface AuthActions {
   canInviteUsers: () => boolean;
   isOwner: () => boolean;
   isAdmin: () => boolean;
+  isMelonAdmin: () => boolean;
   getTrialDaysLeft: () => number | null;
   login: (email: string, password: string) => Promise<void>; // Added for backwards compatibility
 }
@@ -245,6 +246,15 @@ export function useAuth(): AuthState & AuthActions {
     return state.user?.role === 'ADMIN' || state.user?.role === 'OWNER';
   };
 
+  const isMelonAdmin = (): boolean => {
+    const melonOrgId = process.env.NEXT_PUBLIC_MELON_ORG_ID;
+    if (!melonOrgId || !state.user) return false;
+    
+    // Check both top-level and nested organization IDs for robustness
+    const userOrgId = state.user.organizationId || state.user.organization?.id;
+    return userOrgId === melonOrgId;
+  };
+
   const getTrialDaysLeft = (): number | null => {
     if (!state.organization?.trialEndsAt) return null;
     
@@ -268,6 +278,7 @@ export function useAuth(): AuthState & AuthActions {
     canInviteUsers,
     isOwner,
     isAdmin,
+    isMelonAdmin,
     getTrialDaysLeft,
     // Legacy methods for backwards compatibility
     login: signin,
