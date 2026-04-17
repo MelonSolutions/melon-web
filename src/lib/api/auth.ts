@@ -37,7 +37,9 @@ export interface SigninResponse {
     lastName: string;
     email: string;
     role: 'OWNER' | 'ADMIN' | 'MEMBER';
-    organization: {
+    organizationId: string;
+    organizationName: string;
+    organization?: {
       id: string;
       name: string;
       plan: 'TRIAL' | 'STARTER' | 'REGULAR' | 'PREMIUM';
@@ -56,7 +58,9 @@ export interface User {
   role: 'OWNER' | 'ADMIN' | 'MEMBER';
   status: string;
   emailVerified: boolean;
-  organization: {
+  organizationId: string;
+  organizationName: string;
+  organization?: {
     id: string;
     name: string;
     plan: string;
