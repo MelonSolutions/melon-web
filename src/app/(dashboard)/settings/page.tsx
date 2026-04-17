@@ -1,25 +1,33 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { 
-  Bell, 
-  Shield, 
-  Palette, 
-  Globe, 
-  Database, 
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Bell,
+  Shield,
+  Palette,
+  Globe,
+  Database,
   CreditCard,
   Users,
   Download,
   Key,
   Eye,
   EyeOff,
-  Save
+  Save,
+  Building2
 } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
 import { apiClient } from '@/lib/api/auth';
 import { useToast } from '@/components/ui/Toast';
+import dynamic from 'next/dynamic';
+
+// Dynamically import PlatformAdministration to avoid SSR issues
+const PlatformAdministration = dynamic(
+  () => import('@/components/admin/PlatformAdministration'),
+  { ssr: false }
+);
 
 export default function SettingsPage() {
-  const { user, refreshUser } = useAuthContext();
+  const { user, refreshUser, isMelonAdmin } = useAuthContext();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('notifications');
   const [loading, setLoading] = useState(false);
@@ -49,6 +57,9 @@ export default function SettingsPage() {
     currency: 'NGN',
     theme: 'light'
   });
+
+  // Check if user is from Melon organization (platform admin)
+  const isAdmin = useMemo(() => isMelonAdmin(), [isMelonAdmin]);
 
   // Sync state with user context on load
   useEffect(() => {
@@ -83,14 +94,27 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  const settingsTabs = [
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy & Security', icon: Shield },
-    { id: 'preferences', label: 'Preferences', icon: Palette },
-    { id: 'integrations', label: 'Integrations', icon: Database },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
-    { id: 'team', label: 'Team Management', icon: Users }
-  ];
+  const settingsTabs = useMemo(() => {
+    const baseTabs = [
+      { id: 'notifications', label: 'Notifications', icon: Bell },
+      { id: 'privacy', label: 'Privacy & Security', icon: Shield },
+      { id: 'preferences', label: 'Preferences', icon: Palette },
+      { id: 'integrations', label: 'Integrations', icon: Database },
+      { id: 'billing', label: 'Billing', icon: CreditCard },
+      { id: 'team', label: 'Team Management', icon: Users }
+    ];
+
+    // Add admin tab only for Melon organization users
+    if (isAdmin) {
+      baseTabs.push({
+        id: 'admin',
+        label: 'Platform Administration',
+        icon: Building2
+      });
+    }
+
+    return baseTabs;
+  }, [isAdmin]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -100,9 +124,9 @@ export default function SettingsPage() {
         privacy,
         preferences
       });
-      
+
       await refreshUser();
-      
+
       addToast({
         type: 'success',
         title: 'Settings saved',
@@ -140,14 +164,12 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => setNotifications(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
-                  notifications[item.key as keyof typeof notifications] ? 'bg-[#5B94E5]' : 'bg-gray-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${notifications[item.key as keyof typeof notifications] ? 'bg-[#5B94E5]' : 'bg-gray-200'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    notifications[item.key as keyof typeof notifications] ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifications[item.key as keyof typeof notifications] ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
@@ -184,14 +206,12 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setPrivacy(prev => ({ ...prev, dataSharing: !prev.dataSharing }))}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
-                privacy.dataSharing ? 'bg-[#5B94E5]' : 'bg-gray-200'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${privacy.dataSharing ? 'bg-[#5B94E5]' : 'bg-gray-200'
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  privacy.dataSharing ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${privacy.dataSharing ? 'translate-x-6' : 'translate-x-1'
+                  }`}
               />
             </button>
           </div>
@@ -203,14 +223,12 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setPrivacy(prev => ({ ...prev, analyticsOptOut: !prev.analyticsOptOut }))}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
-                privacy.analyticsOptOut ? 'bg-[#5B94E5]' : 'bg-gray-200'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${privacy.analyticsOptOut ? 'bg-[#5B94E5]' : 'bg-gray-200'
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  privacy.analyticsOptOut ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${privacy.analyticsOptOut ? 'translate-x-6' : 'translate-x-1'
+                  }`}
               />
             </button>
           </div>
@@ -222,14 +240,12 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setPrivacy(prev => ({ ...prev, twoFactorAuth: !prev.twoFactorAuth }))}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
-                privacy.twoFactorAuth ? 'bg-[#5B94E5]' : 'bg-gray-200'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${privacy.twoFactorAuth ? 'bg-[#5B94E5]' : 'bg-gray-200'
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  privacy.twoFactorAuth ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${privacy.twoFactorAuth ? 'translate-x-6' : 'translate-x-1'
+                  }`}
               />
             </button>
           </div>
@@ -343,11 +359,10 @@ export default function SettingsPage() {
               <button
                 key={theme}
                 onClick={() => setPreferences(prev => ({ ...prev, theme }))}
-                className={`px-4 py-2 rounded-lg border transition-colors cursor-pointer ${
-                  preferences.theme === theme
-                    ? 'border-[#5B94E5] bg-blue-50 text-[#5B94E5]'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
+                className={`px-4 py-2 rounded-lg border transition-colors cursor-pointer ${preferences.theme === theme
+                  ? 'border-[#5B94E5] bg-blue-50 text-[#5B94E5]'
+                  : 'border-gray-300 hover:border-gray-400'
+                  }`}
               >
                 {theme.charAt(0).toUpperCase() + theme.slice(1)}
               </button>
@@ -400,11 +415,10 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-500">{service.description}</p>
               </div>
               <button
-                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer ${
-                  service.status === 'connected'
-                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'bg-[#5B94E5] text-white hover:bg-blue-600'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer ${service.status === 'connected'
+                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                  : 'bg-[#5B94E5] text-white hover:bg-blue-600'
+                  }`}
               >
                 {service.status === 'connected' ? 'Disconnect' : 'Connect'}
               </button>
@@ -429,6 +443,8 @@ export default function SettingsPage() {
         return <div className="text-center py-12 text-gray-500">Billing settings coming soon</div>;
       case 'team':
         return <div className="text-center py-12 text-gray-500">Team management coming soon</div>;
+      case 'admin':
+        return <PlatformAdministration />;
       default:
         return renderNotifications();
     }
@@ -446,11 +462,10 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
-                    activeTab === tab.id
-                      ? 'bg-blue-50 text-[#5B94E5] font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${activeTab === tab.id
+                    ? 'bg-blue-50 text-[#5B94E5] font-medium'
+                    : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   <tab.icon className="w-4 h-4" />
                   {tab.label}
@@ -468,21 +483,23 @@ export default function SettingsPage() {
                 <h2 className="text-lg font-medium text-gray-900">
                   {settingsTabs.find(tab => tab.id === activeTab)?.label}
                 </h2>
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Save Changes
-                </button>
+                {activeTab !== 'admin' && (
+                  <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Save Changes
+                  </button>
+                )}
               </div>
             </div>
-            
+
             <div className="p-6">
               {renderContent()}
             </div>
