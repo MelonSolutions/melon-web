@@ -49,7 +49,7 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
     const assignedAgent = user.assignedAgent && typeof user.assignedAgent !== 'string'
       ? `${user.assignedAgent.firstName} ${user.assignedAgent.lastName} (${user.assignedAgent.email})`
       : '';
-    
+
     const distance = calculateDistance(
       user.latitude,
       user.longitude,
@@ -94,8 +94,8 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
       escapeCSV(assignedAgent),
       escapeCSV(user.rejectionReason || ''),
       new Date(user.submittedAt).toISOString(),
-      user.verificationData?.verifiedAt 
-        ? new Date(user.verificationData.verifiedAt).toISOString() 
+      user.verificationData?.verifiedAt
+        ? new Date(user.verificationData.verifiedAt).toISOString()
         : '',
       escapeCSV(user.mobileJobId || ''),
     ];

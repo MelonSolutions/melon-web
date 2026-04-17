@@ -20,7 +20,7 @@ export interface VerificationData {
   verifiedLatitude?: number;
   verifiedLongitude?: number;
   verifiedAddress?: string;
-  verificationPhotos?: string[];
+  verificationPhotos?: Array<{ url: string; tag?: string } | string>;
   agentNotes?: string;
   verifiedAt?: string;
 }
