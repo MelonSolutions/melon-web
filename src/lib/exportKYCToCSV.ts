@@ -35,8 +35,6 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
     'Documents Count',
     'Document URLs',
     'Rejection Evidence URLs',
-    'Document URLs',
-    'Rejection Evidence URLs',
     'Assigned Agent',
     'Rejection Reason',
     'Submitted At',
