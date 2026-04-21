@@ -151,8 +151,32 @@ export default function ReportSettingsPage() {
       const { shareUrl: newShareUrl } = await getShareLink(reportId);
       setShareUrl(newShareUrl);
       
-      // Copy to clipboard
-      await navigator.clipboard.writeText(newShareUrl);
+      // Copy to clipboard with fallback
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(newShareUrl);
+        } else {
+          throw new Error('Clipboard API not available');
+        }
+      } catch (clipboardError) {
+        // Fallback for older browsers or insecure contexts
+        const textarea = document.createElement('textarea');
+        textarea.value = newShareUrl;
+        Object.assign(textarea.style, {
+          position: 'fixed',
+          top: '-9999px',
+          left: '-9999px'
+        });
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textarea);
+      }
       
       addToast({
         type: 'success',
