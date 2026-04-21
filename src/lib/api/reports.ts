@@ -242,6 +242,42 @@ export const shareReportViaEmail = async (
   return response.json();
 };
 
+// Generate edit token
+export const generateEditToken = async (reportId: string): Promise<{ editToken: string; editUrl: string }> => {
+  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/generate-edit-token`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Get report by edit token (public)
+export const getReportByEditToken = async (editToken: string): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/edit/${editToken}`);
+
+  await handleApiError(response);
+  return response.json();
+};
+
+// Update report via edit token (public)
+export const updateReportByEditToken = async (
+  editToken: string,
+  data: UpdateReportRequest
+): Promise<any> => {
+  const response = await fetch(`${API_BASE_URL}/reports/edit/${editToken}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
 // Get reports by project ID
 export const getReportsByProject = async (projectId: string): Promise<any[]> => {
   const response = await fetch(`${API_BASE_URL}/reports/by-project/${projectId}`, {
