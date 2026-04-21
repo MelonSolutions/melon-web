@@ -13,15 +13,20 @@ import {
   CheckCircle,
   AlertCircle,
   ExternalLink,
-  Loader2
+  Loader2,
+  FileSpreadsheet,
+  Link2,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useReport } from '@/hooks/useReports';
-import { updateReport, deleteReport, getShareLink } from '@/lib/api/reports';
+import { updateReport, deleteReport, getShareLink, generateEditToken } from '@/lib/api/reports';
 import { ReportCategory } from '@/types/reports';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import { useToast } from '@/components/ui/Toast';
 import { EmailSharingModal } from '@/components/reports/EmailSharingModal';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
 
 export default function ReportSettingsPage() {
   const params = useParams();
@@ -35,6 +40,10 @@ export default function ReportSettingsPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('general');
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [editTokenData, setEditTokenData] = useState<{ editToken: string; editUrl: string } | null>(null);
+  const [showEditLinkModal, setShowEditLinkModal] = useState(false);
+  const [isGeneratingEditLink, setIsGeneratingEditLink] = useState(false);
+  const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -165,6 +174,93 @@ export default function ReportSettingsPage() {
 const handleEmailLink = () => {
   setShowEmailModal(true);
 };
+
+  const handleGenerateEditLink = async () => {
+    if (!report) return;
+    setIsGeneratingEditLink(true);
+    try {
+      const result = await generateEditToken(report._id);
+      setEditTokenData(result);
+      setShowEditLinkModal(true);
+    } catch (error) {
+      console.error('Failed to generate edit link:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to Generate',
+        message: 'Could not generate edit link. Please try again.',
+      });
+    } finally {
+      setIsGeneratingEditLink(false);
+    }
+  };
+
+  const copyEditLink = async () => {
+    if (!editTokenData) return;
+    try {
+      await navigator.clipboard.writeText(editTokenData.editUrl);
+      addToast({
+        type: 'success',
+        title: 'Link Copied!',
+        message: 'Edit link has been copied to your clipboard.',
+      });
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = editTokenData.editUrl;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      addToast({
+        type: 'success',
+        title: 'Link Copied!',
+        message: 'Edit link has been copied to your clipboard.',
+      });
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    if (!report) return;
+    setIsDownloadingExcel(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const response = await fetch(`${API_BASE_URL}/responses/${report._id}/export/excel`, {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({ message: 'Export failed' }));
+        throw new Error(errData.message || 'Export failed');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `report-responses-${report._id}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      addToast({
+        type: 'success',
+        title: 'Download Started',
+        message: 'Your Excel export is downloading.',
+      });
+    } catch (error: any) {
+      console.error('Failed to download Excel:', error);
+      addToast({
+        type: 'error',
+        title: 'Export Failed',
+        message: error.message || 'Failed to download Excel file.',
+      });
+    } finally {
+      setIsDownloadingExcel(false);
+    }
+  };
 
   if (reportLoading) {
     return (
@@ -455,6 +551,31 @@ const handleEmailLink = () => {
                           <Mail className="w-4 h-4" />
                           Email Link
                         </button>
+                        <button
+                          onClick={handleGenerateEditLink}
+                          disabled={isGeneratingEditLink}
+                          className="flex items-center gap-2 px-4 py-2 text-amber-700 bg-amber-50 text-sm font-medium rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50"
+                        >
+                          {isGeneratingEditLink ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Link2 className="w-4 h-4" />
+                          )}
+                          {isGeneratingEditLink ? 'Generating...' : 'Edit Link'}
+                        </button>
+                        <button
+                          onClick={handleDownloadExcel}
+                          disabled={isDownloadingExcel || report.responseCount === 0}
+                          className="flex items-center gap-2 px-4 py-2 text-green-700 bg-green-50 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={report.responseCount === 0 ? 'No responses to export' : 'Download responses as Excel'}
+                        >
+                          {isDownloadingExcel ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FileSpreadsheet className="w-4 h-4" />
+                          )}
+                          {isDownloadingExcel ? 'Exporting...' : 'Excel Export'}
+                        </button>
                         <a
                           href={`/reports/public/${reportId}`}
                           target="_blank"
@@ -559,6 +680,49 @@ const handleEmailLink = () => {
                 report={report}
                 shareUrl={shareUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/reports/public/${reportId}`}
               />
+            )}
+
+            {/* Edit Link Modal */}
+            {showEditLinkModal && editTokenData && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Edit Link Generated</h3>
+                    <button
+                      onClick={() => setShowEditLinkModal(false)}
+                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Share this link with collaborators to allow them to edit survey questions <strong>without logging in</strong>.
+                  </p>
+                  <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg mb-4 break-all text-sm text-gray-700 font-mono">
+                    {editTokenData.editUrl}
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-5">
+                    <p className="text-xs text-amber-800">
+                      ⚠️ <strong>Security note:</strong> Anyone with this link can edit the survey&apos;s title, description, and questions. They cannot modify settings, delete the report, or access responses.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copyEditLink}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7EC9] transition-colors"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy Link
+                    </button>
+                    <button
+                      onClick={() => setShowEditLinkModal(false)}
+                      className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
