@@ -439,7 +439,7 @@ function CreateReportContent() {
                     value={formData.description}
                     onChange={(e) => handleDescriptionChange(e.target.value)}
                     onBlur={(e) => handleFieldBlur('description', e.target.value)}
-                    className={`text-gray-600 bg-transparent border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] p-3 w-full resize-none transition-colors ${
+                    className={`text-gray-600 bg-transparent border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] p-3 w-full resize-y min-h-[100px] transition-colors whitespace-pre-wrap ${
                       getFieldError('description') ? 'border-red-300' : ''
                     }`}
                     placeholder="Describe the purpose of this report..."
@@ -466,7 +466,7 @@ function CreateReportContent() {
                       <textarea
                         value={question.description || ''}
                         onChange={(e) => handleQuestionUpdate(question.id, { description: e.target.value })}
-                        className="text-sm text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full mt-2 resize-none"
+                        className="text-sm text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full mt-2 resize-y min-h-[40px] whitespace-pre-wrap"
                         placeholder="Add a description to help respondents understand this question"
                         rows={1}
                       />
