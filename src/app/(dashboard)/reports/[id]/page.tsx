@@ -16,11 +16,16 @@ import { ReportNavigation } from '@/components/reports/navigation/ReportNavigati
 import { useReport } from '@/hooks/useReports';
 import { updateReport } from '@/lib/api/reports';
 import { Question, QuestionType, QUESTION_TYPE_DISPLAY_NAMES } from '@/types/reports';
+import { useToast } from '@/components/ui/Toast';
+import { useModal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function ReportDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { addToast } = useToast();
+  const { openModal, closeModal } = useModal();
   
   const reportId = params.id as string;
   
@@ -92,8 +97,21 @@ export default function ReportDetailsPage() {
       
       await updateReport(reportId, dataToSave);
       await refetch();
+
+      addToast({
+        type: 'success',
+        title: shouldPublish ? 'Report Published!' : 'Changes Saved!',
+        message: shouldPublish 
+          ? 'Your report is now live and ready to collect responses.'
+          : 'Your changes have been saved successfully.',
+      });
     } catch (error) {
       console.error('Error saving report:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to save changes. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -141,10 +159,37 @@ export default function ReportDetailsPage() {
   };
 
   const deleteQuestion = (questionId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      questions: prev.questions?.filter(q => q.id !== questionId) || []
-    }));
+    if (formData.questions && formData.questions.length > 1) {
+      openModal(
+        <ConfirmDialog
+          title="Delete Question"
+          message="Are you sure you want to delete this question? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          onConfirm={() => {
+            setFormData(prev => ({
+              ...prev,
+              questions: prev.questions?.filter(q => q.id !== questionId) || []
+            }));
+            closeModal();
+            addToast({
+              type: 'info',
+              title: 'Question Deleted',
+              message: 'The question has been removed from your report.',
+            });
+          }}
+          onCancel={closeModal}
+        />,
+        { size: 'sm' }
+      );
+    } else {
+      addToast({
+        type: 'warning',
+        title: 'Cannot Delete',
+        message: 'You must have at least one question in your report.',
+      });
+    }
   };
 
   const addOption = (questionId: string) => {
@@ -277,7 +322,7 @@ export default function ReportDetailsPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full resize-none"
+                  className="text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full resize-y min-h-[60px] whitespace-pre-wrap"
                   placeholder="Form description"
                   rows={2}
                 />
@@ -298,7 +343,7 @@ export default function ReportDetailsPage() {
                         <textarea
                           value={question.description || ''}
                           onChange={(e) => handleQuestionUpdate(question.id, { description: e.target.value })}
-                          className="text-sm text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full mt-2 resize-none"
+                          className="text-sm text-gray-600 bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full mt-2 resize-y min-h-[40px] whitespace-pre-wrap"
                           placeholder="Question description (optional)"
                           rows={1}
                         />
