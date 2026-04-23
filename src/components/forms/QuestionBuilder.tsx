@@ -10,6 +10,7 @@ interface Question {
   description?: string;
   required: boolean;
   options?: string[];
+  allowOthers?: boolean;
   settings?: any;
 }
 
@@ -133,14 +134,15 @@ export const QuestionBuilder: React.FC<QuestionBuilderProps> = ({
               onClick={() => setEditingIndex(index)}
               className="flex items-center gap-3 p-4 cursor-pointer"
             >
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-1 border border-gray-200 rounded-lg bg-gray-50 p-1">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     moveQuestion(index, 'up');
                   }}
                   disabled={index === 0}
-                  className="px-1.5 py-0.5 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                  title="Move up"
+                  className="px-2 py-1 text-sm text-gray-500 hover:text-white hover:bg-[#5B94E5] rounded disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-gray-500 transition-colors"
                 >
                   ▲
                 </button>
@@ -150,7 +152,8 @@ export const QuestionBuilder: React.FC<QuestionBuilderProps> = ({
                     moveQuestion(index, 'down');
                   }}
                   disabled={index === questions.length - 1}
-                  className="px-1.5 py-0.5 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                  title="Move down"
+                  className="px-2 py-1 text-sm text-gray-500 hover:text-white hover:bg-[#5B94E5] rounded disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-gray-500 transition-colors"
                 >
                   ▼
                 </button>
@@ -291,6 +294,23 @@ export const QuestionBuilder: React.FC<QuestionBuilderProps> = ({
                 </span>
               </label>
 
+              {/* Allow Others toggle - only for choice-based questions */}
+              {needsOptions(question.type) && (
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={question.allowOthers || false}
+                    onChange={(e) =>
+                      updateQuestion(index, { allowOthers: e.target.checked })
+                    }
+                    className="w-4 h-4 rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Allow &apos;Others&apos; option with text input
+                  </span>
+                </label>
+              )}
+
               {/* Options editor for choice-based types */}
               {needsOptions(question.type) && (
                 <div>
@@ -324,6 +344,25 @@ export const QuestionBuilder: React.FC<QuestionBuilderProps> = ({
                         </button>
                       </div>
                     ))}
+                    {/* Show "- Others" option if allowOthers is enabled */}
+                    {question.allowOthers && (
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
+                        <div
+                          className={`w-4 h-4 flex-shrink-0 border-2 border-gray-400 ${
+                            question.type === 'MULTIPLE_CHOICE'
+                              ? 'rounded-full'
+                              : 'rounded'
+                          }`}
+                        />
+                        <input
+                          type="text"
+                          value="- Others"
+                          disabled
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 text-sm cursor-not-allowed"
+                        />
+                        <div className="p-1.5 w-6 h-6" />
+                      </div>
+                    )}
                     <button
                       onClick={() => addOption(index)}
                       className="text-sm text-[#5B94E5] hover:text-[#4A7EC9] font-medium flex items-center gap-1 mt-1"

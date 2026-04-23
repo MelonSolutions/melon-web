@@ -39,13 +39,90 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
   const { analytics, loading: analyticsLoading } = useResponseAnalytics(reportId);
   const { progress, loading: progressLoading } = useImpactMetricsProgress(reportId);
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'individual' | 'analytics' | 'impact'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'impact'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedResponses, setSelectedResponses] = useState<Set<string>>(new Set());
 
   const handleExport = () => {
-    console.log('Exporting responses...');
+    if (!report || !responses) return;
+
+    // Determine which responses to export
+    const responsesToExport = selectedResponses.size > 0
+      ? responses.filter(r => selectedResponses.has(r._id))
+      : responses;
+
+    if (responsesToExport.length === 0) {
+      alert('No responses to export');
+      return;
+    }
+
+    // Build CSV headers
+    const headers = ['Response ID', 'Respondent Name', 'Respondent Email', 'Submitted At'];
+    report.questions?.forEach(q => {
+      headers.push(q.title);
+    });
+
+    // Build CSV rows
+    const rows = responsesToExport.map(response => {
+      const row = [
+        response._id,
+        response.respondentName || '',
+        response.respondentEmail || '',
+        format(new Date(response.submittedAt), 'yyyy-MM-dd HH:mm:ss')
+      ];
+
+      report.questions?.forEach(q => {
+        const responses = response.responses || {};
+        const responseData = responses[q.id as keyof typeof responses];
+        if (responseData) {
+          const value = (responseData as any)?.actualValue !== undefined
+            ? (responseData as any).actualValue
+            : (responseData as any)?.answer || '';
+          row.push(String(value));
+        } else {
+          row.push('');
+        }
+      });
+
+      return row;
+    });
+
+    // Create CSV content
+    const csvContent = [
+      headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${report.title}-responses-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const toggleResponseSelection = (responseId: string) => {
+    const newSelected = new Set(selectedResponses);
+    if (newSelected.has(responseId)) {
+      newSelected.delete(responseId);
+    } else {
+      newSelected.add(responseId);
+    }
+    setSelectedResponses(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedResponses.size === filteredResponses.length) {
+      setSelectedResponses(new Set());
+    } else {
+      setSelectedResponses(new Set(filteredResponses.map(r => r._id)));
+    }
   };
 
   const filteredResponses = responses?.filter(response =>
@@ -119,8 +196,7 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
   }
 
   const tabs = [
-    { id: 'overview', label: 'Overview', count: responses?.length || 0 },
-    { id: 'individual', label: 'Individual', count: responses?.length || 0 },
+    { id: 'overview', label: 'Responses', count: responses?.length || 0 },
     { id: 'analytics', label: 'Analytics' },
     ...(progress && progress.totalMetrics > 0 ? [{ id: 'impact', label: 'Impact', count: progress.totalMetrics }] : [])
   ];
@@ -140,12 +216,18 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {selectedResponses.size > 0 && (
+              <span className="text-sm text-gray-600">
+                {selectedResponses.size} selected
+              </span>
+            )}
             <button
               onClick={handleExport}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={!responses || responses.length === 0}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" />
-              Export
+              {selectedResponses.size > 0 ? `Export Selected (${selectedResponses.size})` : 'Export All'}
             </button>
           </div>
         </div>
@@ -201,10 +283,21 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
 
         {/* Content */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Search and Filters */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Response List */}
+            <div className="bg-white rounded-lg border border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium text-gray-900">Responses</h3>
+                  {filteredResponses.length > 0 && (
+                    <button
+                      onClick={toggleSelectAll}
+                      className="text-xs text-[#5B94E5] hover:text-blue-700 font-medium"
+                    >
+                      {selectedResponses.size === filteredResponses.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
@@ -212,104 +305,58 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
                     placeholder="Search responses..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors w-64"
+                    className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors w-full"
                   />
                 </div>
-                <button 
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Filter className="w-4 h-4" />
-                  Filter
-                </button>
               </div>
-            </div>
-
-            {/* Responses List */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              {filteredResponses.length > 0 ? (
-                <div className="divide-y divide-gray-200">
-                  {filteredResponses.map((response, index) => (
-                    <div key={response._id} className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium text-blue-700">
-                              {index + 1}
-                            </span>
+              <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+                {filteredResponses.length > 0 ? (
+                  filteredResponses.map((response, index) => (
+                    <div
+                      key={response._id}
+                      className={`p-4 hover:bg-gray-50 transition-colors ${
+                        selectedResponse?._id === response._id ? 'bg-blue-50 border-r-2 border-[#5B94E5]' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedResponses.has(response._id)}
+                          onChange={() => toggleResponseSelection(response._id)}
+                          className="mt-1 w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 rounded"
+                        />
+                        <button
+                          onClick={() => setSelectedResponse(response)}
+                          className="flex-1 text-left"
+                        >
+                          <div className="font-medium text-gray-900 mb-1">
+                            Response #{response._id.slice(-6)}
                           </div>
-                          <div>
-                            <div className="font-medium text-gray-900">
-                              Response #{response._id.slice(-6)}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {response.respondentName || response.respondentEmail || 'Anonymous'} • 
-                              {' '}{formatDistanceToNow(new Date(response.submittedAt), { addSuffix: true })}
-                            </div>
+                          <div className="text-sm text-gray-500">
+                            {formatDistanceToNow(new Date(response.submittedAt), { addSuffix: true })}
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-500">
+                          {response.respondentName && (
+                            <div className="text-sm text-gray-600 mt-1">{response.respondentName}</div>
+                          )}
+                          <div className="text-xs text-gray-400 mt-1">
                             {Object.keys(response.responses || {}).length} answers
-                          </span>
-                          <button
-                            onClick={() => setSelectedResponse(response)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                          >
-                            <Eye className="w-4 h-4 text-gray-400" />
-                          </button>
-                          <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                            <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                          </button>
-                        </div>
+                          </div>
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No responses yet</h3>
-                  <p className="text-sm text-gray-500 max-w-sm mx-auto">
-                    {searchTerm 
-                      ? 'No responses match your search criteria.'
-                      : 'Responses will appear here once people start submitting your form.'
-                    }
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'individual' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Response List */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="font-medium text-gray-900">Responses</h3>
-              </div>
-              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                {filteredResponses.map((response, index) => (
-                  <button
-                    key={response._id}
-                    onClick={() => setSelectedResponse(response)}
-                    className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                      selectedResponse?._id === response._id ? 'bg-blue-50 border-r-2 border-[#5B94E5]' : ''
-                    }`}
-                  >
-                    <div className="font-medium text-gray-900 mb-1">
-                      Response #{response._id.slice(-6)}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {formatDistanceToNow(new Date(response.submittedAt), { addSuffix: true })}
-                    </div>
-                    {response.respondentName && (
-                      <div className="text-sm text-gray-600 mt-1">{response.respondentName}</div>
-                    )}
-                  </button>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-center py-12 px-4">
+                    <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No responses yet</h3>
+                    <p className="text-sm text-gray-500">
+                      {searchTerm
+                        ? 'No responses match your search criteria.'
+                        : 'Responses will appear here once people start submitting your form.'
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -342,7 +389,7 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
                           </h4>
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <p className="text-gray-900">
-                              {(response as any)?.actualValue !== undefined 
+                              {(response as any)?.actualValue !== undefined
                                 ? `Value: ${(response as any).actualValue}`
                                 : (response as any)?.answer || 'No response'}
                             </p>

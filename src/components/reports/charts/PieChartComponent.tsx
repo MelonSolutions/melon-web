@@ -68,8 +68,8 @@ export default function PieChartComponent({
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            outerRadius={80}
+            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+            outerRadius={90}
             fill="#8884d8"
             dataKey="value"
           >
@@ -82,9 +82,26 @@ export default function PieChartComponent({
               backgroundColor: '#fff',
               border: '1px solid #e5e7eb',
               borderRadius: '8px',
+              padding: '8px 12px',
+            }}
+            formatter={(value: number, name: string) => [
+              `${value} responses (${((value / data.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%)`,
+              name
+            ]}
+          />
+          <Legend
+            wrapperStyle={{
+              paddingTop: '20px',
+              fontSize: '13px',
+              maxHeight: '120px',
+              overflowY: 'auto'
+            }}
+            iconType="circle"
+            formatter={(value: string) => {
+              const maxLength = 40;
+              return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value;
             }}
           />
-          <Legend />
         </PieChart>
       </ResponsiveContainer>
     </div>

@@ -4,13 +4,15 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { 
-  Save, 
-  Send, 
-  Plus, 
-  Copy, 
-  Trash2, 
-  GripVertical
+import {
+  Save,
+  Send,
+  Plus,
+  Copy,
+  Trash2,
+  GripVertical,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import { useReport } from '@/hooks/useReports';
@@ -133,7 +135,7 @@ export default function ReportDetailsPage() {
       title: 'Untitled Question',
       description: '',
       required: false,
-      ...(type === 'MULTIPLE_CHOICE' || type === 'CHECKBOXES' ? { options: ['Option 1'] } : {}),
+      ...(type === 'MULTIPLE_CHOICE' || type === 'CHECKBOXES' || type === 'DROPDOWN' ? { options: ['Option 1'] } : {}),
     };
 
     setFormData(prev => ({
@@ -215,6 +217,22 @@ export default function ReportDetailsPage() {
       const newOptions = question.options.filter((_, index) => index !== optionIndex);
       handleQuestionUpdate(questionId, { options: newOptions });
     }
+  };
+
+  const moveQuestion = (questionId: string, direction: 'up' | 'down') => {
+    const currentIndex = formData.questions?.findIndex(q => q.id === questionId) ?? -1;
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= (formData.questions?.length || 0)) return;
+
+    const newQuestions = [...(formData.questions || [])];
+    [newQuestions[currentIndex], newQuestions[newIndex]] = [newQuestions[newIndex], newQuestions[currentIndex]];
+
+    setFormData(prev => ({
+      ...prev,
+      questions: newQuestions
+    }));
   };
 
   if (reportLoading) {
@@ -348,28 +366,49 @@ export default function ReportDetailsPage() {
                           rows={1}
                         />
                       </div>
-                      
-                      <select
-                        value={question.type}
-                        onChange={(e) => handleQuestionUpdate(question.id, { type: e.target.value as QuestionType })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
-                      >
-                        {questionTypes.map(type => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1 border border-gray-200 rounded-lg bg-gray-50 p-1">
+                          <button
+                            onClick={() => moveQuestion(question.id, 'up')}
+                            disabled={index === 0}
+                            title="Move up"
+                            className="p-1 text-gray-500 hover:text-white hover:bg-[#5B94E5] rounded disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-gray-500 transition-colors"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => moveQuestion(question.id, 'down')}
+                            disabled={index === formData.questions.length - 1}
+                            title="Move down"
+                            className="p-1 text-gray-500 hover:text-white hover:bg-[#5B94E5] rounded disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-gray-500 transition-colors"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <select
+                          value={question.type}
+                          onChange={(e) => handleQuestionUpdate(question.id, { type: e.target.value as QuestionType })}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors"
+                        >
+                          {questionTypes.map(type => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
 
                   <div className="p-6">
-                    {(question.type === 'MULTIPLE_CHOICE' || question.type === 'CHECKBOXES') && (
+                    {(question.type === 'MULTIPLE_CHOICE' || question.type === 'CHECKBOXES' || question.type === 'DROPDOWN') && (
                       <div className="space-y-3">
                         {question.options?.map((option, optionIndex) => (
                           <div key={optionIndex} className="flex items-center gap-3">
                             <div className={`w-4 h-4 border-2 border-gray-300 flex-shrink-0 ${
-                              question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : 'rounded'
+                              question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : question.type === 'DROPDOWN' ? 'hidden' : 'rounded'
                             }`}></div>
                             <input
                               type="text"
@@ -388,12 +427,26 @@ export default function ReportDetailsPage() {
                             )}
                           </div>
                         ))}
+                        {question.settings?.allowOther && (
+                          <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-2 border border-gray-200">
+                            <div className={`w-4 h-4 border-2 border-gray-400 flex-shrink-0 ${
+                              question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : question.type === 'DROPDOWN' ? 'hidden' : 'rounded'
+                            }`}></div>
+                            <input
+                              type="text"
+                              value="- Others"
+                              disabled
+                              className="flex-1 py-1 border-none bg-transparent text-gray-600 cursor-not-allowed"
+                            />
+                            <div className="w-8" />
+                          </div>
+                        )}
                         <button
                           onClick={() => addOption(question.id)}
                           className="flex items-center gap-3 text-[#5B94E5] hover:text-blue-700 transition-colors"
                         >
                           <div className={`w-4 h-4 border-2 border-gray-300 ${
-                            question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : 'rounded'
+                            question.type === 'MULTIPLE_CHOICE' ? 'rounded-full' : question.type === 'DROPDOWN' ? 'hidden' : 'rounded'
                           }`}></div>
                           <span className="text-sm">Add option</span>
                         </button>
@@ -474,16 +527,32 @@ export default function ReportDetailsPage() {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                    
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={question.required}
-                        onChange={(e) => handleQuestionUpdate(question.id, { required: e.target.checked })}
-                        className="rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
-                      />
-                      <span className="text-sm text-gray-600">Required</span>
-                    </label>
+
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={question.required}
+                          onChange={(e) => handleQuestionUpdate(question.id, { required: e.target.checked })}
+                          className="rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
+                        />
+                        <span className="text-sm text-gray-600">Required</span>
+                      </label>
+
+                      {(question.type === 'MULTIPLE_CHOICE' || question.type === 'CHECKBOXES' || question.type === 'DROPDOWN') && (
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={question.settings?.allowOther || false}
+                            onChange={(e) => handleQuestionUpdate(question.id, {
+                              settings: { ...question.settings, allowOther: e.target.checked }
+                            })}
+                            className="rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
+                          />
+                          <span className="text-sm text-gray-600">Allow &apos;Others&apos;</span>
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   <div className="absolute left-2 top-6 opacity-0 group-hover:opacity-100 transition-opacity">

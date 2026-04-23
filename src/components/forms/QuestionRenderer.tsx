@@ -9,6 +9,7 @@ interface Question {
   description?: string;
   required: boolean;
   options?: string[];
+  allowOthers?: boolean;
   impactMetricId?: string;
   settings?: {
     min?: number;
@@ -42,7 +43,10 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
 
   const renderInput = () => {
     switch (normalizedType) {
-      case 'MULTIPLE_CHOICE':
+      case 'MULTIPLE_CHOICE': {
+        const isOthersSelected = typeof value === 'object' && value?.option === '- Others';
+        const currentValue = isOthersSelected ? '- Others' : value;
+
         return (
           <div className="space-y-2.5">
             {question.options?.map((option, index) => (
@@ -55,7 +59,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                     type="radio"
                     name={`question-${question.id}`}
                     value={option}
-                    checked={value === option}
+                    checked={currentValue === option}
                     onChange={(e) => onChange(e.target.value)}
                     className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 cursor-pointer"
                   />
@@ -63,11 +67,43 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                 <span className="text-gray-800 text-[15px]">{option}</span>
               </label>
             ))}
+            {question.allowOthers && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="radio"
+                      name={`question-${question.id}`}
+                      value="- Others"
+                      checked={isOthersSelected}
+                      onChange={() => onChange({ option: '- Others', customText: '' })}
+                      className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-gray-800 text-[15px]">- Others</span>
+                </label>
+                {isOthersSelected && (
+                  <input
+                    type="text"
+                    value={value?.customText || ''}
+                    onChange={(e) => onChange({ option: '- Others', customText: e.target.value })}
+                    placeholder="Please specify..."
+                    className="ml-9 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none text-sm"
+                    autoFocus
+                  />
+                )}
+              </div>
+            )}
           </div>
         );
+      }
 
       case 'CHECKBOXES': {
         const currentValues = Array.isArray(value) ? value : [];
+        const othersObject = currentValues.find((v: any) => typeof v === 'object' && v?.option === '- Others');
+        const isOthersChecked = !!othersObject;
+        const regularValues = currentValues.filter((v: any) => typeof v === 'string');
+
         return (
           <div className="space-y-2.5">
             {question.options?.map((option, index) => (
@@ -78,12 +114,13 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                 <input
                   type="checkbox"
                   value={option}
-                  checked={currentValues.includes(option)}
+                  checked={regularValues.includes(option)}
                   onChange={(e) => {
+                    const newValues = currentValues.filter((v: any) => typeof v === 'object');
                     if (e.target.checked) {
-                      onChange([...currentValues, option]);
+                      onChange([...regularValues, option, ...newValues]);
                     } else {
-                      onChange(currentValues.filter((v: string) => v !== option));
+                      onChange([...regularValues.filter((v: string) => v !== option), ...newValues]);
                     }
                   }}
                   className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 rounded cursor-pointer"
@@ -91,25 +128,82 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                 <span className="text-gray-800 text-[15px]">{option}</span>
               </label>
             ))}
+            {question.allowOthers && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={isOthersChecked}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        onChange([...regularValues, { option: '- Others', customText: '' }]);
+                      } else {
+                        onChange(regularValues);
+                      }
+                    }}
+                    className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 rounded cursor-pointer"
+                  />
+                  <span className="text-gray-800 text-[15px]">- Others</span>
+                </label>
+                {isOthersChecked && (
+                  <input
+                    type="text"
+                    value={othersObject?.customText || ''}
+                    onChange={(e) => {
+                      const newValues = regularValues.filter((v: any) => typeof v === 'string');
+                      onChange([...newValues, { option: '- Others', customText: e.target.value }]);
+                    }}
+                    placeholder="Please specify..."
+                    className="ml-9 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none text-sm"
+                    autoFocus
+                  />
+                )}
+              </div>
+            )}
           </div>
         );
       }
 
-      case 'DROPDOWN':
+      case 'DROPDOWN': {
+        const isOthersSelected = typeof value === 'object' && value?.option === '- Others';
+        const currentValue = isOthersSelected ? '- Others' : (value || '');
+
         return (
-          <select
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            className={inputStyles}
-          >
-            <option value="">— Select an option —</option>
-            {question.options?.map((option, index) => (
-              <option key={index} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-3">
+            <select
+              value={currentValue}
+              onChange={(e) => {
+                if (e.target.value === '- Others') {
+                  onChange({ option: '- Others', customText: '' });
+                } else {
+                  onChange(e.target.value);
+                }
+              }}
+              className={inputStyles}
+            >
+              <option value="">— Select an option —</option>
+              {question.options?.map((option, index) => (
+                <option key={index} value={option}>
+                  {option}
+                </option>
+              ))}
+              {question.allowOthers && (
+                <option value="- Others">- Others (please specify)</option>
+              )}
+            </select>
+            {isOthersSelected && (
+              <input
+                type="text"
+                value={value?.customText || ''}
+                onChange={(e) => onChange({ option: '- Others', customText: e.target.value })}
+                placeholder="Please specify..."
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none"
+                autoFocus
+              />
+            )}
+          </div>
         );
+      }
 
       case 'SHORT_ANSWER':
         return (
