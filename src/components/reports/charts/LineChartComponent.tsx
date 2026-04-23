@@ -57,25 +57,34 @@ export default function LineChartComponent({
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       {title && <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>}
       <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis
             dataKey={xKey}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 11 }}
             stroke="#9ca3af"
+            height={40}
           />
           <YAxis
             tick={{ fontSize: 12 }}
             stroke="#9ca3af"
+            allowDecimals={false}
           />
           <Tooltip
             contentStyle={{
               backgroundColor: '#fff',
               border: '1px solid #e5e7eb',
               borderRadius: '8px',
+              padding: '8px 12px',
             }}
           />
-          <Legend />
+          <Legend
+            wrapperStyle={{
+              paddingTop: '10px',
+              fontSize: '13px',
+            }}
+            iconType="circle"
+          />
           <Line
             type="monotone"
             dataKey={yKey}

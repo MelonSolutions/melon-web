@@ -68,6 +68,24 @@ export default function PublicFormPage() {
           (!Array.isArray(answer) || answer.length === 0)
         ) {
           errors[question.id] = 'Please select at least one option';
+        } else if (
+          (type === 'MULTIPLE_CHOICE' || type === 'DROPDOWN') &&
+          typeof answer === 'object' &&
+          answer?.option === '- Others' &&
+          (!answer.customText || answer.customText.trim() === '')
+        ) {
+          errors[question.id] = 'Please specify your answer for Others';
+        } else if (
+          type === 'CHECKBOXES' &&
+          Array.isArray(answer)
+        ) {
+          // Check if "Others" is selected in checkboxes and has no custom text
+          const othersItem = answer.find((item: any) =>
+            typeof item === 'object' && item?.option === '- Others'
+          );
+          if (othersItem && (!othersItem.customText || othersItem.customText.trim() === '')) {
+            errors[question.id] = 'Please specify your answer for Others';
+          }
         }
       }
 
@@ -130,11 +148,33 @@ export default function PublicFormPage() {
           };
         }
 
-        // For checkboxes, join array for backend
-        if (type === 'CHECKBOXES' && Array.isArray(answer)) {
+        // Handle "Others" object for multiple choice
+        if (type === 'MULTIPLE_CHOICE' && typeof answer === 'object' && answer?.option === '- Others') {
           return {
             questionId: question.id,
-            answer: answer.join(', '),
+            answer: `- Others: ${answer.customText || ''}`,
+          };
+        }
+
+        // Handle "Others" object for dropdown
+        if (type === 'DROPDOWN' && typeof answer === 'object' && answer?.option === '- Others') {
+          return {
+            questionId: question.id,
+            answer: `- Others: ${answer.customText || ''}`,
+          };
+        }
+
+        // For checkboxes, process array and handle "Others" objects
+        if (type === 'CHECKBOXES' && Array.isArray(answer)) {
+          const formattedValues = answer.map((item: any) => {
+            if (typeof item === 'object' && item?.option === '- Others') {
+              return `- Others: ${item.customText || ''}`;
+            }
+            return item;
+          });
+          return {
+            questionId: question.id,
+            answer: formattedValues.join(', '),
           };
         }
 
