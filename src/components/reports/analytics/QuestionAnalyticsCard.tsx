@@ -33,33 +33,40 @@ export default function QuestionAnalyticsCard({
       }));
 
       return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <BarChartComponent
-              data={chartData}
-              xKey="name"
-              yKey="value"
-              title="Response Distribution"
-              height={250}
-            />
-            <PieChartComponent
-              data={chartData}
-              title="Percentage Breakdown"
-              height={250}
-            />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="min-h-[300px]">
+              <BarChartComponent
+                data={chartData}
+                xKey="name"
+                yKey="value"
+                title="Response Distribution"
+                height={280}
+              />
+            </div>
+            <div className="min-h-[300px]">
+              <PieChartComponent
+                data={chartData}
+                title="Percentage Breakdown"
+                height={280}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 mt-6">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Detailed Breakdown</h4>
             {analytics.optionBreakdown.map((option, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                className="flex items-start justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
               >
-                <span className="text-sm font-medium text-gray-700">{option.option}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500">{option.count} responses</span>
-                  <span className="text-sm font-semibold text-[#5B94E5]">
-                    {option.percentage}%
+                <span className="text-sm font-medium text-gray-900 flex-1 mr-4 leading-relaxed">
+                  {option.option}
+                </span>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <span className="text-sm text-gray-600 font-medium">{option.count} {option.count === 1 ? 'response' : 'responses'}</span>
+                  <span className="text-sm font-bold text-[#5B94E5] min-w-[50px] text-right">
+                    {option.percentage.toFixed(1)}%
                   </span>
                 </div>
               </div>

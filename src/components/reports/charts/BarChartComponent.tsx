@@ -53,29 +53,50 @@ export default function BarChartComponent({
     );
   }
 
+  // Truncate long labels for X-axis
+  const truncateLabel = (label: string, maxLength: number = 20) => {
+    if (!label) return '';
+    const str = String(label);
+    return str.length > maxLength ? `${str.substring(0, maxLength)}...` : str;
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       {title && <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>}
       <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 40 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis
             dataKey={xKey}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 11 }}
             stroke="#9ca3af"
+            angle={-25}
+            textAnchor="end"
+            height={60}
+            tickFormatter={(value) => truncateLabel(value, 20)}
           />
           <YAxis
             tick={{ fontSize: 12 }}
             stroke="#9ca3af"
+            allowDecimals={false}
           />
           <Tooltip
             contentStyle={{
               backgroundColor: '#fff',
               border: '1px solid #e5e7eb',
-              borderRadius: '8px'
+              borderRadius: '8px',
+              padding: '8px 12px',
             }}
+            formatter={(value: number) => [value, '']}
+            labelFormatter={(label: string) => String(label)}
           />
-          <Legend />
+          <Legend
+            wrapperStyle={{
+              paddingTop: '10px',
+              fontSize: '13px',
+            }}
+            iconType="circle"
+          />
           <Bar
             dataKey={yKey}
             fill={color}
