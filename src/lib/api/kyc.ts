@@ -92,8 +92,11 @@ export async function getKYCDashboardStats(organizationId?: string): Promise<KYC
   return fetchWithAuth(url);
 }
 
-export async function getOrganizations(): Promise<any[]> {
-  return fetchWithAuth(`${API_BASE_URL}/auth/organizations`);
+export async function getOrganizations(includeInactive = false): Promise<any[]> {
+  const url = includeInactive
+    ? `${API_BASE_URL}/auth/organizations?includeInactive=true`
+    : `${API_BASE_URL}/auth/organizations`;
+  return fetchWithAuth(url);
 }
 
 export async function createKYCUser(data: CreateKYCUserRequest): Promise<KYCUser> {

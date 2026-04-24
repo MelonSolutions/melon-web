@@ -1,23 +1,7 @@
 'use client';
 
 import React from 'react';
-
-interface Question {
-  id: string;
-  type: string;
-  title: string;
-  description?: string;
-  required: boolean;
-  options?: string[];
-  allowOthers?: boolean;
-  impactMetricId?: string;
-  settings?: {
-    min?: number;
-    max?: number;
-    step?: number;
-    placeholder?: string;
-  };
-}
+import { Question } from '@/types/reports';
 
 interface QuestionRendererProps {
   question: Question;
@@ -67,7 +51,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                 <span className="text-gray-800 text-[15px]">{option}</span>
               </label>
             ))}
-            {question.allowOthers && (
+            {question.settings?.allowOther && (
               <div className="space-y-2">
                 <label className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="relative flex items-center justify-center">
@@ -128,7 +112,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                 <span className="text-gray-800 text-[15px]">{option}</span>
               </label>
             ))}
-            {question.allowOthers && (
+            {question.settings?.allowOther && (
               <div className="space-y-2">
                 <label className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors">
                   <input
@@ -187,7 +171,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                   {option}
                 </option>
               ))}
-              {question.allowOthers && (
+              {question.settings?.allowOther && (
                 <option value="- Others">- Others (please specify)</option>
               )}
             </select>
@@ -260,6 +244,53 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
               </label>
             ))}
             <span className="text-sm text-gray-500 ml-1">{max}</span>
+          </div>
+        );
+      }
+
+      case 'MATRIX': {
+        const rows = question.settings?.rows || [];
+        const columns = question.settings?.columns || [];
+        const matrixValue = value || {};
+
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr>
+                  <th className="border border-gray-300 bg-gray-50 p-3 text-left text-sm font-medium"></th>
+                  {columns.map((col, colIndex) => (
+                    <th key={colIndex} className="border border-gray-300 bg-gray-50 p-3 text-center text-sm font-medium">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 p-3 text-sm font-medium text-gray-900">
+                      {row}
+                    </td>
+                    {columns.map((col, colIndex) => (
+                      <td key={colIndex} className="border border-gray-300 p-3 text-center">
+                        <input
+                          type="radio"
+                          name={`matrix-${question.id}-row-${rowIndex}`}
+                          value={col}
+                          checked={matrixValue[row] === col}
+                          onChange={() => {
+                            const newValue = { ...matrixValue, [row]: col };
+                            onChange(newValue);
+                          }}
+                          className="w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 cursor-pointer"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         );
       }
