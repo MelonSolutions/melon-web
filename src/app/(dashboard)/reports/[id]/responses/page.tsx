@@ -74,12 +74,20 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
       ];
 
       report.questions?.forEach(q => {
-        const responses = response.responses || {};
-        const responseData = responses[q.id as keyof typeof responses];
+        // responses is an array of QuestionResponse objects
+        const responseArray = Array.isArray(response.responses)
+          ? response.responses
+          : Object.entries(response.responses || {}).map(([questionId, data]) => ({
+              questionId,
+              ...(data as any)
+            }));
+
+        const responseData = responseArray.find((r: any) => r.questionId === q.id);
+
         if (responseData) {
-          const value = (responseData as any)?.actualValue !== undefined
-            ? (responseData as any).actualValue
-            : (responseData as any)?.answer || '';
+          const value = responseData.actualValue !== undefined
+            ? responseData.actualValue
+            : responseData.answer || '';
           row.push(String(value));
         } else {
           row.push('');
