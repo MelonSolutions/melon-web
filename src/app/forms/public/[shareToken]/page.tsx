@@ -86,6 +86,14 @@ export default function PublicFormPage() {
           if (othersItem && (!othersItem.customText || othersItem.customText.trim() === '')) {
             errors[question.id] = 'Please specify your answer for Others';
           }
+        } else if (type === 'MATRIX') {
+          // Matrix validation: check if all rows have been answered
+          const rows = question.settings?.rows || [];
+          const matrixAnswer = answer || {};
+          const unansweredRows = rows.filter((row: string) => !matrixAnswer[row]);
+          if (unansweredRows.length > 0) {
+            errors[question.id] = `Please answer all rows`;
+          }
         }
       }
 
@@ -175,6 +183,14 @@ export default function PublicFormPage() {
           return {
             questionId: question.id,
             answer: formattedValues.join(', '),
+          };
+        }
+
+        // For matrix, convert object to JSON string
+        if (type === 'MATRIX' && typeof answer === 'object') {
+          return {
+            questionId: question.id,
+            answer: JSON.stringify(answer),
           };
         }
 

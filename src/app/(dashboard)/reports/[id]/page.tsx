@@ -67,6 +67,7 @@ export default function ReportDetailsPage() {
     { value: 'SHORT_ANSWER', label: 'Short Answer', icon: '📄' },
     { value: 'PARAGRAPH', label: 'Paragraph', icon: '📝' },
     { value: 'LINEAR_SCALE', label: 'Linear Scale', icon: '📊' },
+    { value: 'MATRIX', label: 'Matrix / Likert', icon: '📋' },
     { value: 'DATE', label: 'Date', icon: '📅' },
     { value: 'TIME', label: 'Time', icon: '🕐' },
   ];
@@ -136,6 +137,12 @@ export default function ReportDetailsPage() {
       description: '',
       required: false,
       ...(type === 'MULTIPLE_CHOICE' || type === 'CHECKBOXES' || type === 'DROPDOWN' ? { options: ['Option 1'] } : {}),
+      ...(type === 'MATRIX' ? {
+        settings: {
+          rows: ['Row 1', 'Row 2'],
+          columns: ['Column 1', 'Column 2']
+        }
+      } : {}),
     };
 
     setFormData(prev => ({
@@ -216,6 +223,71 @@ export default function ReportDetailsPage() {
     if (question?.options && question.options.length > 1) {
       const newOptions = question.options.filter((_, index) => index !== optionIndex);
       handleQuestionUpdate(questionId, { options: newOptions });
+    }
+  };
+
+  // Matrix question helpers
+  const addMatrixRow = (questionId: string) => {
+    const question = formData.questions?.find(q => q.id === questionId);
+    const rowCount = question?.settings?.rows?.length || 0;
+    handleQuestionUpdate(questionId, {
+      settings: {
+        ...question?.settings,
+        rows: [...(question?.settings?.rows || []), `Row ${rowCount + 1}`]
+      }
+    });
+  };
+
+  const updateMatrixRow = (questionId: string, rowIndex: number, value: string) => {
+    const question = formData.questions?.find(q => q.id === questionId);
+    if (question?.settings?.rows) {
+      const newRows = [...question.settings.rows];
+      newRows[rowIndex] = value;
+      handleQuestionUpdate(questionId, {
+        settings: { ...question.settings, rows: newRows }
+      });
+    }
+  };
+
+  const removeMatrixRow = (questionId: string, rowIndex: number) => {
+    const question = formData.questions?.find(q => q.id === questionId);
+    if (question?.settings?.rows && question.settings.rows.length > 1) {
+      const newRows = question.settings.rows.filter((_, index) => index !== rowIndex);
+      handleQuestionUpdate(questionId, {
+        settings: { ...question.settings, rows: newRows }
+      });
+    }
+  };
+
+  const addMatrixColumn = (questionId: string) => {
+    const question = formData.questions?.find(q => q.id === questionId);
+    const colCount = question?.settings?.columns?.length || 0;
+    handleQuestionUpdate(questionId, {
+      settings: {
+        ...question?.settings,
+        columns: [...(question?.settings?.columns || []), `Column ${colCount + 1}`]
+      }
+    });
+  };
+
+  const updateMatrixColumn = (questionId: string, colIndex: number, value: string) => {
+    const question = formData.questions?.find(q => q.id === questionId);
+    if (question?.settings?.columns) {
+      const newColumns = [...question.settings.columns];
+      newColumns[colIndex] = value;
+      handleQuestionUpdate(questionId, {
+        settings: { ...question.settings, columns: newColumns }
+      });
+    }
+  };
+
+  const removeMatrixColumn = (questionId: string, colIndex: number) => {
+    const question = formData.questions?.find(q => q.id === questionId);
+    if (question?.settings?.columns && question.settings.columns.length > 1) {
+      const newColumns = question.settings.columns.filter((_, index) => index !== colIndex);
+      handleQuestionUpdate(questionId, {
+        settings: { ...question.settings, columns: newColumns }
+      });
     }
   };
 
@@ -486,6 +558,107 @@ export default function ReportDetailsPage() {
                           ))}
                         </div>
                         <span className="text-sm text-gray-600">5</span>
+                      </div>
+                    )}
+
+                    {question.type === 'MATRIX' && (
+                      <div className="space-y-6">
+                        {/* Rows */}
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">Rows (Questions)</label>
+                          <div className="space-y-2">
+                            {question.settings?.rows?.map((row, rowIndex) => (
+                              <div key={rowIndex} className="flex items-center gap-3">
+                                <input
+                                  type="text"
+                                  value={row}
+                                  onChange={(e) => updateMatrixRow(question.id, rowIndex, e.target.value)}
+                                  className="flex-1 py-1 px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#5B94E5] transition-colors"
+                                  placeholder={`Row ${rowIndex + 1}`}
+                                />
+                                {question.settings?.rows && question.settings.rows.length > 1 && (
+                                  <button
+                                    onClick={() => removeMatrixRow(question.id, rowIndex)}
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => addMatrixRow(question.id)}
+                              className="text-sm text-[#5B94E5] hover:text-blue-700 transition-colors"
+                            >
+                              + Add row
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Columns */}
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">Columns (Options)</label>
+                          <div className="space-y-2">
+                            {question.settings?.columns?.map((col, colIndex) => (
+                              <div key={colIndex} className="flex items-center gap-3">
+                                <input
+                                  type="text"
+                                  value={col}
+                                  onChange={(e) => updateMatrixColumn(question.id, colIndex, e.target.value)}
+                                  className="flex-1 py-1 px-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#5B94E5] transition-colors"
+                                  placeholder={`Column ${colIndex + 1}`}
+                                />
+                                {question.settings?.columns && question.settings.columns.length > 1 && (
+                                  <button
+                                    onClick={() => removeMatrixColumn(question.id, colIndex)}
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => addMatrixColumn(question.id)}
+                              className="text-sm text-[#5B94E5] hover:text-blue-700 transition-colors"
+                            >
+                              + Add column
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Preview table */}
+                        {question.settings?.rows && question.settings?.columns && (
+                          <div className="mt-4">
+                            <label className="text-sm font-medium text-gray-700 mb-2 block">Preview</label>
+                            <div className="overflow-x-auto">
+                              <table className="w-full border-collapse border border-gray-300">
+                                <thead>
+                                  <tr>
+                                    <th className="border border-gray-300 bg-gray-50 p-2 text-left text-sm font-medium"></th>
+                                    {question.settings.columns.map((col, idx) => (
+                                      <th key={idx} className="border border-gray-300 bg-gray-50 p-2 text-center text-sm font-medium">
+                                        {col}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {question.settings.rows.map((row, rowIdx) => (
+                                    <tr key={rowIdx}>
+                                      <td className="border border-gray-300 p-2 text-sm">{row}</td>
+                                      {question.settings?.columns?.map((_, colIdx) => (
+                                        <td key={colIdx} className="border border-gray-300 p-2 text-center">
+                                          <div className="w-4 h-4 border-2 border-gray-300 rounded-full inline-block"></div>
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
