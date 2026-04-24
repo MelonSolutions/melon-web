@@ -18,6 +18,7 @@ export type QuestionType =
   | 'SHORT_ANSWER'
   | 'PARAGRAPH'
   | 'LINEAR_SCALE'
+  | 'MATRIX'
   | 'DATE'
   | 'TIME'
   | 'EMAIL'
@@ -31,6 +32,8 @@ export interface QuestionSettings {
   step?: number;
   placeholder?: string;
   allowOther?: boolean;
+  rows?: string[]; // For matrix questions - the row labels/questions
+  columns?: string[]; // For matrix questions - the column options
 }
 
 export interface Question {
@@ -142,6 +145,7 @@ export const QUESTION_TYPE_DISPLAY_NAMES: Record<QuestionType, string> = {
   SHORT_ANSWER: 'Short Answer',
   PARAGRAPH: 'Paragraph',
   LINEAR_SCALE: 'Linear Scale',
+  MATRIX: 'Matrix / Likert Scale',
   DATE: 'Date',
   TIME: 'Time',
   EMAIL: 'Email',

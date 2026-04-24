@@ -108,14 +108,15 @@ function KYCContent() {
   useEffect(() => {
     async function fetchOrgs() {
       try {
-        const orgs = await getOrganizations();
+        // Melon admins should see all organizations including suspended/expired
+        const orgs = await getOrganizations(isMelonAdmin);
         setOrganizations(orgs);
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
       }
     }
     fetchOrgs();
-  }, []);
+  }, [isMelonAdmin]);
 
   const handleExport = async () => {
     try {
