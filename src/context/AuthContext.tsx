@@ -2,14 +2,50 @@
 
 import React, { createContext, useContext } from 'react';
 import { useAuth, AuthActions, AuthState } from '@/hooks/useAuth';
+import { useTrialAuth, TrialAuthState, TrialAuthActions } from '@/hooks/useTrialAuth';
 
-const AuthContext = createContext<(AuthState & AuthActions) | null>(null);
+type ExtendedAuthContext = AuthState & AuthActions & TrialAuthState & TrialAuthActions & {
+  isTrial: boolean;
+  isOrg: boolean;
+  logout: () => void; // Unified logout
+};
+
+const AuthContext = createContext<ExtendedAuthContext | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const auth = useAuth();
+  const orgAuth = useAuth();
+  const trialAuth = useTrialAuth();
+
+  // Prioritize org user over trial user
+  const isTrial = !!trialAuth.trialUser && !orgAuth.user;
+  const isOrg = !!orgAuth.user;
+
+  // Unified logout function
+  const unifiedLogout = () => {
+    if (isOrg) {
+      orgAuth.logout();
+    } else if (isTrial) {
+      trialAuth.logout();
+    }
+  };
+
+  const value: ExtendedAuthContext = {
+    // Org auth state
+    ...orgAuth,
+    // Trial auth state
+    trialUser: trialAuth.trialUser,
+    // Trial actions (but override logout)
+    refreshTrialUser: trialAuth.refreshTrialUser,
+    // Unified state
+    isTrial,
+    isOrg,
+    isLoading: orgAuth.isLoading || trialAuth.isLoading,
+    // Override logout with unified version
+    logout: unifiedLogout,
+  };
 
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getAuthHeaders, API_BASE_URL } from './client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface ApiResponse<T = any> {
@@ -73,13 +73,6 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
-const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-};
 
 const handleApiError = async (res: globalThis.Response) => {
   if (!res.ok) {
