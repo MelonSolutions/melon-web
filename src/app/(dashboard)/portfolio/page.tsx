@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, Suspense, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuthContext } from '@/context/AuthContext';
 import { PortfolioHeader } from '@/components/portfolio/PortfolioHeader';
 import { PortfolioFilters } from '@/components/portfolio/PortfolioFilters';
 import { ProjectsList } from '@/components/portfolio/ProjectsList';
@@ -11,6 +12,8 @@ import { Plus, Loader2, Download } from 'lucide-react';
 import Link from 'next/link';
 
 function PortfolioContent() {
+  const router = useRouter();
+  const { isTrial, isLoading: authLoading } = useAuthContext();
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
@@ -20,6 +23,13 @@ function PortfolioContent() {
   });
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
   const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  // Protect route - trial users cannot access portfolio
+  useEffect(() => {
+    if (!authLoading && isTrial) {
+      router.push('/reports');
+    }
+  }, [isTrial, authLoading, router]);
 
   // Debounce search filter
   useEffect(() => {
