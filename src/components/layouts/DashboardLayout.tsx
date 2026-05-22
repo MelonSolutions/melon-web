@@ -8,6 +8,8 @@ import { useAuthContext } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown';
 import { SearchModal } from '@/components/layouts/SearchModal';
+import { PaymentSetupBanner } from '@/components/billing/PaymentSetupBanner';
+import { PaymentStatus } from '@/types/payments';
 import {
   Layers,
   FileText,
@@ -36,7 +38,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, getInitials, getFullName, isLoading } = useAuthContext();
+  const { user, organization, getInitials, getFullName, isLoading } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const isMapView = pathname === '/map-view';
@@ -326,6 +328,10 @@ export default function DashboardLayout({
           ) : (
             <div className="py-6">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                {/* Temporarily disabled - focus on melon-landing trials for now */}
+                {/* {organization?.paymentStatus === PaymentStatus.SETUP_REQUIRED && (
+                  <PaymentSetupBanner />
+                )} */}
                 {children}
               </div>
             </div>

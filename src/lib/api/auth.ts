@@ -107,6 +107,7 @@ export interface OrganizationDetails {
   userCount: number;
   userLimit: number;
   trialEndsAt?: string;
+  paymentStatus?: string;
   members: Array<{
     id: string;
     firstName: string;
