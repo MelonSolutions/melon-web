@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ApiError } from './errors';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -74,7 +75,11 @@ const getAuthHeaders = () => {
 const handleApiError = async (res: globalThis.Response) => {
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ message: 'An error occurred' }));
-    throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`);
+    throw new ApiError(
+      errorData.message || `HTTP ${res.status}: ${res.statusText}`,
+      res.status,
+      errorData
+    );
   }
   return res;
 };

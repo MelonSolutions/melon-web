@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { getPublicReport } from '@/lib/api/reports';
 import { submitResponse } from '@/lib/api/responses';
+import { ApiError } from '@/lib/api/errors';
 import { QuestionRenderer } from '@/components/forms/QuestionRenderer';
 import { PublicFormLayout } from '@/components/forms/PublicFormLayout';
 
@@ -210,7 +211,21 @@ export default function PublicFormPage() {
       setIsSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      setError(err.message || 'Failed to submit response. Please try again.');
+      if (err instanceof ApiError && err.status === 402) {
+        // Payment method required
+        setError(
+          'This survey is temporarily unavailable. ' +
+          'Please contact the survey owner for more information.'
+        );
+      } else if (err instanceof ApiError && err.status === 400 && err.message?.toLowerCase().includes('suspended')) {
+        // Account suspended
+        setError(
+          'This survey is temporarily unavailable. ' +
+          'Please contact the survey owner.'
+        );
+      } else {
+        setError(err.message || 'Failed to submit response. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
