@@ -38,12 +38,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user, organization, getInitials, getFullName, isLoading } = useAuthContext();
+  const { user, trialUser, organization, getInitials, getFullName, isLoading, isTrial, isOrg } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   const isMapView = pathname === '/map-view';
-  
-  const navigation: NavItem[] = [
+
+  const fullNavigation: NavItem[] = [
     {
       name: 'Overview',
       href: '/overview',
@@ -88,6 +88,17 @@ export default function DashboardLayout({
     },
   ];
 
+  // Trial users only see Reports
+  const trialNavigation: NavItem[] = [
+    {
+      name: 'Reports',
+      href: '/reports',
+      icon: <FileText className="h-5 w-5" />,
+    },
+  ];
+
+  const navigation = isTrial ? trialNavigation : fullNavigation;
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -96,23 +107,44 @@ export default function DashboardLayout({
     );
   }
 
-  const UserProfile = ({ isMobile = false }) => (
-    <div className="flex items-center w-full">
-      <div className="flex-shrink-0">
-        <div className="bg-[#5B94E5] text-white rounded-full h-10 w-10 flex items-center justify-center">
-          <span className="text-sm font-medium">{getInitials()}</span>
+  const UserProfile = ({ isMobile = false }) => {
+    const displayName = isTrial
+      ? trialUser?.email?.split('@')[0] || 'Trial User'
+      : getFullName();
+
+    const displayEmail = isTrial
+      ? trialUser?.email || 'trial@example.com'
+      : user?.email || 'User';
+
+    const initials = isTrial
+      ? (trialUser?.email?.charAt(0) || 'T').toUpperCase()
+      : getInitials();
+
+    return (
+      <div className="flex items-center w-full">
+        <div className="flex-shrink-0">
+          <div className="bg-[#5B94E5] text-white rounded-full h-10 w-10 flex items-center justify-center">
+            <span className="text-sm font-medium">{initials}</span>
+          </div>
+        </div>
+        <div className={cn("ml-3", isMobile ? "flex-1" : "flex-grow")}>
+          <div className="flex items-center gap-2">
+            <p className={cn("font-medium text-gray-700", isMobile ? "text-base" : "text-sm")}>
+              {displayName}
+            </p>
+            {isTrial && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">
+                Trial
+              </span>
+            )}
+          </div>
+          <p className={cn("text-gray-500", isMobile ? "text-sm" : "text-xs")}>
+            {displayEmail}
+          </p>
         </div>
       </div>
-      <div className={cn("ml-3", isMobile ? "flex-1" : "flex-grow")}>
-        <p className={cn("font-medium text-gray-700", isMobile ? "text-base" : "text-sm")}>
-          {getFullName()}
-        </p>
-        <p className={cn("text-gray-500", isMobile ? "text-sm" : "text-xs")}>
-          {user?.email || 'User'}
-        </p>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const NavigationItem = ({ item, isMobile = false }: { item: NavItem; isMobile?: boolean }) => {
     const isActive = pathname === item.href;
