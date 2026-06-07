@@ -267,7 +267,7 @@ export default function AddKYCUserPage() {
         loanType: formData.loanType as any,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
+        ...(formData.email && { email: formData.email }),
         phone: formData.phone,
         ...(formData.loanId && { loanId: formData.loanId }),
         ...(formData.occupation && { occupation: formData.occupation }),
