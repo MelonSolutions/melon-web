@@ -1,44 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { 
-  ArrowLeft,
-  Plus,
-  Key,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  Zap,
-  Globe,
-  Bell,
-  FileText
+import {
+  ArrowLeft, Plus, Key, Eye, EyeOff, CheckCircle, Zap, Globe, Bell, FileText, Trash2, ExternalLink
 } from 'lucide-react';
+import { listApiKeys, createApiKey, revokeApiKey, ApiKey } from '@/lib/api/api-keys';
+import { getEndpoints, createEndpoint, deleteEndpoint, WebhookEndpoint } from '@/lib/api/webhooks';
 
 export default function IntegrationsSettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
-  const [newApiKeyName, setNewApiKeyName] = useState('');
-  const [showCreateKey, setShowCreateKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState('');
 
-  const apiKeys = [
-    {
-      id: '1',
-      name: 'Production API Key',
-      key: 'mel_sk_1a2b3c4d5e6f7g8h9i0j',
-      created: '2024-01-15',
-      lastUsed: '2024-01-20',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'Development Key',
-      key: 'mel_sk_9z8y7x6w5v4u3t2s1r0q',
-      created: '2024-01-10',
-      lastUsed: '2024-01-18',
-      status: 'active'
-    }
-  ];
+  // API Keys state
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(true);
+  const [showCreateKey, setShowCreateKey] = useState(false);
+  const [newApiKeyName, setNewApiKeyName] = useState('');
+  const [newKeyEnv, setNewKeyEnv] = useState<'live' | 'sandbox'>('sandbox');
+  const [newKeySecret, setNewKeySecret] = useState(''); // Store newly generated secret
+
+  const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Webhooks state
+  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
+  const [isLoadingWebhooks, setIsLoadingWebhooks] = useState(true);
+  const [showCreateWebhook, setShowCreateWebhook] = useState(false);
+  const [newWebhookUrl, setNewWebhookUrl] = useState('');
+  const [newWebhookEvents, setNewWebhookEvents] = useState('kyc.verified,kyc.rejected');
 
   const integrations = [
     {
@@ -67,34 +62,37 @@ export default function IntegrationsSettingsPage() {
       status: 'connected',
       lastSync: '2024-01-19 3:45 PM',
       features: ['Trigger actions', 'Data sync', 'Custom workflows']
-    },
-    {
-      id: 'webhook',
-      name: 'Custom Webhooks',
-      description: 'Send data to your custom endpoints',
-      icon: Globe,
-      status: 'configured',
-      lastSync: '2024-01-20 9:15 AM',
-      features: ['Real-time events', 'Custom payloads', 'Retry logic']
     }
   ];
 
-  const webhooks = [
-    {
-      id: '1',
-      url: 'https://api.example.com/webhooks/melon',
-      events: ['metric.updated', 'report.submitted'],
-      status: 'active',
-      lastTriggered: '2024-01-20 9:15 AM'
-    },
-    {
-      id: '2',
-      url: 'https://hooks.example.org/data/import',
-      events: ['project.created', 'project.updated'],
-      status: 'active',
-      lastTriggered: '2024-01-19 2:30 PM'
+  useEffect(() => {
+    fetchApiKeys();
+    fetchWebhooks();
+  }, []);
+
+  const fetchApiKeys = async () => {
+    try {
+      setIsLoadingKeys(true);
+      const keys = await listApiKeys();
+      setApiKeys(keys);
+    } catch (error) {
+      console.error('Failed to load API keys:', error);
+    } finally {
+      setIsLoadingKeys(false);
     }
-  ];
+  };
+
+  const fetchWebhooks = async () => {
+    try {
+      setIsLoadingWebhooks(true);
+      const hooks = await getEndpoints();
+      setWebhooks(hooks);
+    } catch (error) {
+      console.error('Failed to load webhooks:', error);
+    } finally {
+      setIsLoadingWebhooks(false);
+    }
+  };
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -102,23 +100,60 @@ export default function IntegrationsSettingsPage() {
     setTimeout(() => setCopiedKey(''), 2000);
   };
 
-  const handleCreateApiKey = () => {
-    if (newApiKeyName.trim()) {
-      // Simulate API key creation
-      console.log('Creating API key:', newApiKeyName);
+  const handleCreateApiKey = async () => {
+    if (!newApiKeyName.trim()) return;
+    try {
+      const result = await createApiKey({
+        name: newApiKeyName,
+        environment: newKeyEnv,
+        scopes: ['kyc:read', 'kyc:write']
+      });
+      setNewKeySecret(result.secret);
       setNewApiKeyName('');
-      setShowCreateKey(false);
+      fetchApiKeys(); // refresh list
+    } catch (error) {
+      console.error('Error creating key:', error);
+      alert('Failed to create API Key');
     }
   };
 
-  const handleDeleteApiKey = (keyId: string) => {
-    if (confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
-      console.log('Deleting API key:', keyId);
+  const handleDeleteApiKey = async () => {
+    if (keyToDelete) {
+      try {
+        await revokeApiKey(keyToDelete);
+        fetchApiKeys();
+        setKeyToDelete(null);
+      } catch (error) {
+        console.error('Failed to revoke API key:', error);
+      }
     }
   };
 
-  const handleToggleIntegration = (integrationId: string) => {
-    console.log('Toggling integration:', integrationId);
+  const handleCreateWebhook = async () => {
+    if (!newWebhookUrl.trim()) return;
+    try {
+      await createEndpoint({
+        url: newWebhookUrl,
+        events: newWebhookEvents.split(',').map(e => e.trim())
+      });
+      setNewWebhookUrl('');
+      setShowCreateWebhook(false);
+      fetchWebhooks();
+    } catch (error) {
+      console.error('Failed to create webhook:', error);
+      alert('Failed to create Webhook');
+    }
+  };
+
+  const handleDeleteWebhook = async (hookId: string) => {
+    if (confirm('Are you sure you want to delete this webhook endpoint?')) {
+      try {
+        await deleteEndpoint(hookId);
+        fetchWebhooks();
+      } catch (error) {
+        console.error('Failed to delete webhook:', error);
+      }
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -127,6 +162,8 @@ export default function IntegrationsSettingsPage() {
       case 'active':
         return 'bg-green-100 text-green-800';
       case 'disconnected':
+      case 'disabled':
+      case 'revoked':
         return 'bg-red-100 text-red-800';
       case 'configured':
         return 'bg-blue-100 text-blue-800';
@@ -135,39 +172,8 @@ export default function IntegrationsSettingsPage() {
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'connected':
-        return 'Connected';
-      case 'disconnected':
-        return 'Disconnected';
-      case 'configured':
-        return 'Configured';
-      case 'active':
-        return 'Active';
-      default:
-        return status;
-    }
-  };
-
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header */}
-      <div>
-        <Link 
-          href="/settings"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Settings
-        </Link>
-        
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Integrations</h1>
-          <p className="text-gray-600 mt-1">Connect Melon with your favorite tools and services</p>
-        </div>
-      </div>
-
+    <div className="space-y-8">
       {/* API Keys Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
@@ -177,87 +183,252 @@ export default function IntegrationsSettingsPage() {
             </div>
             <div>
               <h2 className="text-lg font-medium text-gray-900">API Keys</h2>
-              <p className="text-sm text-gray-500">Manage your API keys for programmatic access</p>
+              <p className="text-sm text-gray-500">Manage your keys for programmatic access</p>
             </div>
           </div>
           <button
-            onClick={() => setShowCreateKey(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={() => setShowCreateKey(!showCreateKey)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#5B94E5]/90"
           >
-            Create API Key
+            <Plus className="w-4 h-4" /> Generate Key
           </button>
         </div>
-        <div className="space-y-4">
-          {apiKeys.map((key) => (
-            <div key={key.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">{key.name}</h3>
-                <p className="text-xs text-gray-500">Created: {key.created} | Last Used: {key.lastUsed}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => copyToClipboard(key.key, key.name)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  {copiedKey === key.name ? 'Copied!' : 'Copy Key'}
-                </button>
-                <button
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-                <button
-                  onClick={() => handleDeleteApiKey(key.id)}
-                  className="text-red-600 hover:text-red-900"
-                >
-                  Delete Key
-                </button>
-                <button
-                  onClick={() => console.log('Editing API key:', key.id)}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  Edit Key
-                </button>
-                <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(key.status)}`}>
-                  {getStatusText(key.status)}
-                </span>
-                </div>
-                {showApiKey && (
-                    <div className="mt-2">
-                        <p className="text-sm text-gray-900">{key.key}</p>
-                    </div>
-                    )}
-                </div>
-            ))}
-            {showCreateKey && (
-              <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Create New API Key</h3>
-                <input
-                  type="text"
-                  value={newApiKeyName}
-                  onChange={(e) => setNewApiKeyName(e.target.value)}
-                  placeholder="Enter key name"
-                  className="w-full p-2 border border-gray-300 rounded-lg mb-4"
-                />
-                <button
-                  onClick={handleCreateApiKey}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Create Key
-                </button>
-              </div>
-            )}
+
+        {/* Create API Key Form */}
+        {showCreateKey && !newKeySecret && (
+          <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">Create New API Key</h3>
+            <div className="flex gap-4 mb-4">
+              <input
+                type="text"
+                value={newApiKeyName}
+                onChange={(e) => setNewApiKeyName(e.target.value)}
+                placeholder="Key name (e.g. Production Server)"
+                className="flex-1 p-2 border border-gray-300 rounded-lg"
+              />
+              <select
+                value={newKeyEnv}
+                onChange={(e) => setNewKeyEnv(e.target.value as 'live' | 'sandbox')}
+                className="p-2 border border-gray-300 rounded-lg"
+              >
+                <option value="sandbox">Sandbox</option>
+                <option value="live">Live</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCreateApiKey}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Create
+              </button>
+              <button
+                onClick={() => setShowCreateKey(false)}
+                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
+        )}
+
+        {/* API Key Secret Reveal */}
+        {newKeySecret && (
+          <div className="mb-6 bg-green-50 p-6 rounded-lg border border-green-200">
+            <h3 className="text-md font-bold text-green-900 mb-2">Save your API key secret!</h3>
+            <p className="text-sm text-green-800 mb-4">
+              This secret is only shown once. Please copy it and store it securely.
+            </p>
+            <div className="flex gap-3">
+              <code className="flex-1 p-3 bg-white border border-green-300 rounded-lg text-sm font-mono text-gray-800 break-all">
+                {newKeySecret}
+              </code>
+              <button
+                onClick={() => copyToClipboard(newKeySecret, 'secret')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 whitespace-nowrap"
+              >
+                {copiedKey === 'secret' ? 'Copied!' : 'Copy Secret'}
+              </button>
+            </div>
+            <button
+              onClick={() => { setNewKeySecret(''); setShowCreateKey(false); }}
+              className="mt-4 text-sm font-medium text-green-700 hover:text-green-900 underline"
+            >
+              I have saved my secret
+            </button>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {isLoadingKeys ? (
+            <p className="text-sm text-gray-500">Loading keys...</p>
+          ) : apiKeys.length === 0 ? (
+            <p className="text-sm text-gray-500">No API keys found.</p>
+          ) : (
+            apiKeys.map((key) => (
+              <div key={key.id} className="bg-white p-4 rounded-lg border border-gray-200 flex items-center justify-between hover:shadow-sm transition-shadow">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-medium text-gray-900">{key.name}</h3>
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadge(key.status)}`}>
+                      {key.status}
+                    </span>
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 uppercase border border-gray-200">
+                      {key.environment}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
+                    <span>{key.keyId}</span>
+                    <span>•</span>
+                    <span>Created: {new Date(key.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setKeyToDelete(key.keyId)}
+                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Revoke Key"
+                    disabled={key.status === 'revoked'}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-        {/* Integrations Section */}
-        <div className="mt-6">
-          <h2 className="text-lg font-medium text-gray-900">Integrations</h2>
-          <p className="text-sm text-gray-500">Connect your favorite tools and services</p>
+      </div>
+
+      {/* Revoke Key Modal */}
+      {mounted && keyToDelete && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Revoke API Key</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to revoke this API key? Any applications using it will immediately lose access. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setKeyToDelete(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteApiKey}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+              >
+                Revoke Key
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Webhooks Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Globe className="w-5 h-5 text-[#5B94E5]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                Webhooks
+                <a
+                  href="https://docs.melon.ng/webhooks"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 font-normal bg-blue-50 px-2 py-1 rounded-full transition-colors"
+                >
+                  View Documentation <ExternalLink className="w-3 h-3" />
+                </a>
+              </h2>
+              <p className="text-sm text-gray-500">Configure webhooks to receive real-time updates</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCreateWebhook(!showCreateWebhook)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#5B94E5] text-white rounded-lg hover:bg-[#5B94E5]/90"
+          >
+            <Plus className="w-4 h-4" /> Add Endpoint
+          </button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+
+        {showCreateWebhook && (
+          <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-900 mb-3">New Webhook Endpoint</h3>
+            <div className="space-y-4">
+              <input
+                type="url"
+                value={newWebhookUrl}
+                onChange={(e) => setNewWebhookUrl(e.target.value)}
+                placeholder="https://api.yourdomain.com/webhooks"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+              />
+              <input
+                type="text"
+                value={newWebhookEvents}
+                onChange={(e) => setNewWebhookEvents(e.target.value)}
+                placeholder="Events (comma separated, e.g. kyc.verified)"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCreateWebhook}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setShowCreateWebhook(false)}
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {isLoadingWebhooks ? (
+            <p className="text-sm text-gray-500">Loading webhooks...</p>
+          ) : webhooks.length === 0 ? (
+            <p className="text-sm text-gray-500">No webhooks configured.</p>
+          ) : (
+            webhooks.map((webhook) => (
+              <div key={webhook.id} className="bg-white p-4 rounded-lg border border-gray-200 flex items-center justify-between hover:shadow-sm transition-shadow">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-medium text-gray-900">{webhook.url}</h3>
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadge(webhook.status)}`}>
+                      {webhook.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">Events: {webhook.events.join(', ')}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleDeleteWebhook(webhook.id)}
+                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Other Integrations */}
+      <div>
+        <h2 className="text-lg font-medium text-gray-900 mb-4">No-Code Integrations</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {integrations.map((integration) => (
-            <div key={integration.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div key={integration.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <integration.icon className="w-6 h-6 text-blue-600" />
                 <div>
@@ -267,11 +438,8 @@ export default function IntegrationsSettingsPage() {
               </div>
               <div className="flex items-center justify-between mb-4">
                 <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(integration.status)}`}>
-                  {getStatusText(integration.status)}
+                  {integration.status}
                 </span>
-                {integration.lastSync && (
-                  <span className="text-xs text-gray-500">Last Sync: {integration.lastSync}</span>
-                )}
               </div>
               <ul className="text-xs text-gray-600 space-y-1 mb-4">
                 {integration.features.map((feature, index) => (
@@ -282,69 +450,14 @@ export default function IntegrationsSettingsPage() {
                 ))}
               </ul>
               <button
-                onClick={() => handleToggleIntegration(integration.id)}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
-                {integration.status === 'connected' ? 'Disconnect' : 'Connect'}
+                {integration.status === 'connected' ? 'Configure' : 'Connect'}
               </button>
             </div>
           ))}
         </div>
-        {/* Webhooks Section */}
-        <div className="mt-8">
-          <h2 className="text-lg font-medium text-gray-900">Webhooks</h2>
-          <p className="text-sm text-gray-500">Configure webhooks to receive real-time updates</p>
-          <div className="mt-4 space-y-4">
-            {webhooks.map((webhook) => (
-              <div key={webhook.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">{webhook.url}</h3>
-                  <p className="text-xs text-gray-500">Events: {webhook.events.join(', ')}</p>
-                  <p className="text-xs text-gray-500">Last Triggered: {webhook.lastTriggered}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => copyToClipboard(webhook.url, webhook.id)}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    {copiedKey === webhook.id ? 'Copied!' : 'Copy URL'}
-                  </button>
-                  <button
-                    onClick={() => console.log('Editing webhook:', webhook.id)}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => console.log('Deleting webhook:', webhook.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Create Webhook Button */}
-        <div className="mt-6">
-          <button
-            onClick={() => console.log('Creating new webhook')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <Plus className="w-4 h-4" />
-            Create Webhook
-          </button>
-        </div>
-        <div className="mt-6">
-          <button
-            onClick={() => console.log('Creating new webhook')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <Plus className="w-4 h-4" />
-            Create Webhook
-          </button>
-        </div>
-      </div>     
+      </div>
+    </div>
   );
 }
