@@ -19,6 +19,7 @@ import { useAuthContext } from '@/context/AuthContext';
 import { apiClient } from '@/lib/api/auth';
 import { useToast } from '@/components/ui/Toast';
 import dynamic from 'next/dynamic';
+import IntegrationsSettingsPage from './integrations/page';
 
 // Dynamically import PlatformAdministration to avoid SSR issues
 const PlatformAdministration = dynamic(
@@ -373,61 +374,7 @@ export default function SettingsPage() {
     </div>
   );
 
-  const renderIntegrations = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">API Access</h3>
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-gray-900">API Key</p>
-            <button
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="text-sm text-[#5B94E5] hover:text-blue-600 cursor-pointer"
-            >
-              {showApiKey ? 'Hide' : 'Show'}
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 px-3 py-2 bg-white border rounded text-sm font-mono">
-              {showApiKey ? 'mel_sk_1a2b3c4d5e6f7g8h9i0j' : '••••••••••••••••••••••••'}
-            </code>
-            <button className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50 cursor-pointer">
-              Copy
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Use this API key to integrate with external systems
-          </p>
-        </div>
-      </div>
 
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Connected Services</h3>
-        <div className="space-y-3">
-          {[
-            { name: 'Google Sheets', status: 'connected', description: 'Export data automatically' },
-            { name: 'Slack', status: 'disconnected', description: 'Get notifications in Slack' },
-            { name: 'Zapier', status: 'connected', description: 'Automate workflows' }
-          ].map((service, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{service.name}</p>
-                <p className="text-sm text-gray-500">{service.description}</p>
-              </div>
-              <button
-                className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer ${service.status === 'connected'
-                  ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                  : 'bg-[#5B94E5] text-white hover:bg-blue-600'
-                  }`}
-              >
-                {service.status === 'connected' ? 'Disconnect' : 'Connect'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -438,7 +385,7 @@ export default function SettingsPage() {
       case 'preferences':
         return renderPreferences();
       case 'integrations':
-        return renderIntegrations();
+        return <IntegrationsSettingsPage />;
       case 'billing':
         return <div className="text-center py-12 text-gray-500">Billing settings coming soon</div>;
       case 'team':
