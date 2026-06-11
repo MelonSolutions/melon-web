@@ -4,7 +4,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
-import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin, Upload, Trash2 } from 'lucide-react';
+import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin, Upload, Trash2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
@@ -13,7 +13,7 @@ import { DailyReportModal } from '@/components/kyc/DailyReportModal';
 import { VerificationTrends } from '@/components/kyc/analysis/VerificationTrends';
 import { OrgBreakdown } from '@/components/kyc/analysis/OrgBreakdown';
 import { GeographicDistribution } from '@/components/kyc/analysis/GeographicDistribution';
-import { exportKYCData, getKYCUsers, getOrganizations, bulkDeleteKYCUsers } from '@/lib/api/kyc';
+import { exportKYCData, getKYCUsers, getOrganizations, bulkDeleteKYCUsers, bulkApproveKYCUsers } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -59,6 +59,7 @@ function KYCContent() {
   const [showAnalysis, setShowAnalysis] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+  const [isApprovingBulk, setIsApprovingBulk] = useState(false);
   const { openConfirmModal } = useModal();
 
   // Load saved organization selection on mount
@@ -213,6 +214,41 @@ function KYCContent() {
           });
         } finally {
           setIsDeletingBulk(false);
+        }
+      }
+    });
+  };
+
+  const handleBulkApprove = () => {
+    if (selectedIds.size === 0) return;
+
+    openConfirmModal({
+      title: 'Bulk Approve Requests',
+      description: `Are you sure you want to approve ${selectedIds.size} verification request(s)? This will generate PDFs and fire webhooks for each request.`,
+      confirmText: 'Approve Selected',
+      cancelText: 'Cancel',
+      variant: 'primary',
+      onConfirm: async () => {
+        try {
+          setIsApprovingBulk(true);
+          const response = await bulkApproveKYCUsers(Array.from(selectedIds));
+          
+          addToast({
+            type: 'success',
+            title: 'Bulk Approve Successful',
+            message: response.message || `Successfully approved ${response.successCount} requests.`,
+          });
+
+          setSelectedIds(new Set());
+          refetch();
+        } catch (error: any) {
+          addToast({
+            type: 'error',
+            title: 'Bulk Approve Failed',
+            message: error.message || 'Failed to approve selected requests. Please try again.',
+          });
+        } finally {
+          setIsApprovingBulk(false);
         }
       }
     });
@@ -458,6 +494,15 @@ function KYCContent() {
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
                   Cancel
+                </Button>
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  onClick={handleBulkApprove}
+                  loading={isApprovingBulk}
+                  icon={<CheckCircle className="w-4 h-4" />}
+                >
+                  Approve Selected
                 </Button>
                 <Button 
                   variant="danger" 
