@@ -155,6 +155,13 @@ export async function bulkDeleteKYCUsers(userIds: string[]): Promise<any> {
   });
 }
 
+export async function bulkApproveKYCUsers(userIds: string[]): Promise<any> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/bulk-approve`, {
+    method: 'PATCH',
+    body: JSON.stringify({ userIds }),
+  });
+}
+
 export async function uploadDocument(
   userId: string,
   file: File,

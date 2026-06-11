@@ -136,7 +136,19 @@ export function useKYCUsers(
     pagination,
     loading,
     error,
-    refetch: async () => { await fetchData(true); },
+    refetch: async () => { 
+      const result = await fetchData(true);
+      if (result) {
+        const { response, statsData } = result;
+        if (response.data && response.pagination) {
+          setUsers(response.data);
+          setPagination(response.pagination);
+        } else {
+          setUsers(Array.isArray(response) ? response : []);
+        }
+        setDashboardStats(statsData);
+      }
+    },
     setPage,
   };
 }
