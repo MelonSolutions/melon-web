@@ -227,7 +227,7 @@ function KYCContent() {
       description: `Are you sure you want to approve ${selectedIds.size} verification request(s)? This will generate PDFs and fire webhooks for each request.`,
       confirmText: 'Approve Selected',
       cancelText: 'Cancel',
-      variant: 'primary',
+      variant: 'info',
       onConfirm: async () => {
         try {
           setIsApprovingBulk(true);
