@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
-  ArrowLeft, Plus, Key, Eye, EyeOff, CheckCircle, Zap, Globe, Bell, FileText, Trash2, ExternalLink
+  ArrowLeft, Plus, Key, Eye, EyeOff, CheckCircle, Zap, Globe, Bell, FileText, Trash2, ExternalLink, Play, RefreshCw, ChevronDown, ChevronUp, Send
 } from 'lucide-react';
 import { listApiKeys, createApiKey, revokeApiKey, ApiKey } from '@/lib/api/api-keys';
-import { getEndpoints, createEndpoint, deleteEndpoint, WebhookEndpoint } from '@/lib/api/webhooks';
+import { getEndpoints, createEndpoint, deleteEndpoint, getEndpointHistory, testEndpoint, replayEvent, WebhookEndpoint, WebhookEventLog } from '@/lib/api/webhooks';
 
 export default function IntegrationsSettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
@@ -34,6 +34,11 @@ export default function IntegrationsSettingsPage() {
   const [showCreateWebhook, setShowCreateWebhook] = useState(false);
   const [newWebhookUrl, setNewWebhookUrl] = useState('');
   const [newWebhookEvents, setNewWebhookEvents] = useState('kyc.verified,kyc.rejected');
+  const [expandedWebhookId, setExpandedWebhookId] = useState<string | null>(null);
+  const [webhookHistory, setWebhookHistory] = useState<WebhookEventLog[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [testingEndpointId, setTestingEndpointId] = useState<string | null>(null);
+  const [replayingEventId, setReplayingEventId] = useState<string | null>(null);
 
   const integrations = [
     {
@@ -399,24 +404,112 @@ export default function IntegrationsSettingsPage() {
             <p className="text-sm text-gray-500">No webhooks configured.</p>
           ) : (
             webhooks.map((webhook) => (
-              <div key={webhook.id} className="bg-white p-4 rounded-lg border border-gray-200 flex items-center justify-between hover:shadow-sm transition-shadow">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-medium text-gray-900">{webhook.url}</h3>
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadge(webhook.status)}`}>
-                      {webhook.status}
-                    </span>
+              <div key={webhook.id} className="bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm font-medium text-gray-900">{webhook.url}</h3>
+                      <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusBadge(webhook.status)}`}>
+                        {webhook.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">Events: {webhook.events.join(', ')}</p>
                   </div>
-                  <p className="text-xs text-gray-500">Events: {webhook.events.join(', ')}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        setTestingEndpointId(webhook.id);
+                        try {
+                          const result = await testEndpoint(webhook.id);
+                          alert(result.statusCode >= 200 && result.statusCode < 300
+                            ? `✅ Test delivered successfully (${result.statusCode})`
+                            : `❌ Test failed (${result.statusCode}): ${result.body}`);
+                        } catch { alert('❌ Failed to send test event'); }
+                        finally { setTestingEndpointId(null); }
+                      }}
+                      disabled={testingEndpointId === webhook.id}
+                      className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Send test event"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (expandedWebhookId === webhook.id) {
+                          setExpandedWebhookId(null);
+                          setWebhookHistory([]);
+                          return;
+                        }
+                        setExpandedWebhookId(webhook.id);
+                        setIsLoadingHistory(true);
+                        try {
+                          const history = await getEndpointHistory(webhook.id);
+                          setWebhookHistory(history);
+                        } catch { setWebhookHistory([]); }
+                        finally { setIsLoadingHistory(false); }
+                      }}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      title="View delivery history"
+                    >
+                      {expandedWebhookId === webhook.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteWebhook(webhook.id)}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleDeleteWebhook(webhook.id)}
-                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+
+                {expandedWebhookId === webhook.id && (
+                  <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/50">
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Delivery History</h4>
+                    {isLoadingHistory ? (
+                      <p className="text-xs text-gray-400">Loading...</p>
+                    ) : webhookHistory.length === 0 ? (
+                      <p className="text-xs text-gray-400">No delivery events yet.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {webhookHistory.map((evt) => (
+                          <div key={evt.id} className="flex items-center justify-between bg-white rounded-md border border-gray-100 px-3 py-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                evt.status === 'success' ? 'bg-green-500' :
+                                evt.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                              }`} />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-gray-800 truncate">{evt.eventType}</p>
+                                <p className="text-[10px] text-gray-400">
+                                  {new Date(evt.createdAt).toLocaleString()} · {evt.attempts} attempt(s)
+                                  {evt.responseStatusCode ? ` · HTTP ${evt.responseStatusCode}` : ''}
+                                </p>
+                              </div>
+                            </div>
+                            {evt.status === 'failed' && (
+                              <button
+                                onClick={async () => {
+                                  setReplayingEventId(evt.id);
+                                  try {
+                                    await replayEvent(webhook.id, evt.id);
+                                    const updated = await getEndpointHistory(webhook.id);
+                                    setWebhookHistory(updated);
+                                  } catch { /* silently fail */ }
+                                  finally { setReplayingEventId(null); }
+                                }}
+                                disabled={replayingEventId === evt.id}
+                                className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors disabled:opacity-50 flex-shrink-0"
+                                title="Replay event"
+                              >
+                                <RefreshCw className={`w-3.5 h-3.5 ${replayingEventId === evt.id ? 'animate-spin' : ''}`} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))
           )}
