@@ -66,3 +66,69 @@ export const deleteEndpoint = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+export interface WebhookEventLog {
+  id: string;
+  eventType: string;
+  status: 'pending' | 'success' | 'failed';
+  attempts: number;
+  responseStatusCode?: number;
+  responseBody?: string;
+  lastAttemptAt?: string;
+  nextAttemptAt?: string;
+  createdAt: string;
+}
+
+export const getEndpointHistory = async (endpointId: string): Promise<WebhookEventLog[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/webhooks/config/${endpointId}/history`, {
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw await response.json();
+    }
+    
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const testEndpoint = async (endpointId: string): Promise<{ statusCode: number; body: string }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/webhooks/config/${endpointId}/test`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw await response.json();
+    }
+    
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const replayEvent = async (endpointId: string, eventId: string): Promise<any> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/webhooks/config/${endpointId}/events/${eventId}/replay`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw await response.json();
+    }
+    
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
