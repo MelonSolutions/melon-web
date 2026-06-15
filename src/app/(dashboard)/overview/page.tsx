@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuthContext } from '@/context/AuthContext';
 import { 
   Target, 
   FileText,
@@ -24,6 +26,15 @@ interface QuickAction {
 }
 
 export default function OverviewPage() {
+  const router = useRouter();
+  const { isTrial, isLoading: authLoading } = useAuthContext();
+
+  useEffect(() => {
+    if (!authLoading && isTrial) {
+      router.push('/reports');
+    }
+  }, [isTrial, authLoading, router]);
+
   const [timeframe, setTimeframe] = useState('6months');
   const { 
     dashboardStats, 

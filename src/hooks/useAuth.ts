@@ -103,6 +103,7 @@ export function useAuth(): AuthState & AuthActions {
             }
           }
         } else {
+          localStorage.removeItem('userData');
           setState({
             user: null,
             organization: null,

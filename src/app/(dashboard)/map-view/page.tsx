@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuthContext } from '@/context/AuthContext';
 import { getKYCDashboardStats } from '@/lib/api/kyc';
 import {
   Clock,
@@ -39,6 +40,15 @@ const InteractiveMap = dynamic(
 );
 
 export default function MapViewPage() {
+  const router = useRouter();
+  const { isTrial, isLoading: authLoading } = useAuthContext();
+
+  useEffect(() => {
+    if (!authLoading && isTrial) {
+      router.push('/reports');
+    }
+  }, [isTrial, authLoading, router]);
+
   const searchParams = useSearchParams();
   const kycLayerRequested = searchParams.get('layer') === 'kyc';
   const focusId = searchParams.get('focus');

@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Filter, Download } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthContext } from '@/context/AuthContext';
 import { MetricsHeader } from '@/components/impact-metrics/MetricsHeader';
 import { MetricsFilters } from '@/components/impact-metrics/MetricsFilters';
 import { MetricsList } from '@/components/impact-metrics/MetricsList';
@@ -12,6 +14,15 @@ import { MetricsLoading } from '@/components/impact-metrics/MetricsLoading';
 import { useImpactMetrics } from '@/hooks/useImpactMetrics';
 
 function ImpactMetricsContent() {
+  const router = useRouter();
+  const { isTrial, isLoading: authLoading } = useAuthContext();
+
+  useEffect(() => {
+    if (!authLoading && isTrial) {
+      router.push('/reports');
+    }
+  }, [isTrial, authLoading, router]);
+
   const [activeTab, setActiveTab] = useState<'overview' | 'all-metrics' | 'analytics' | 'reports'>('overview');
   const [filters, setFilters] = useState({
     search: '',

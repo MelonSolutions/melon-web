@@ -30,6 +30,7 @@ interface NavItem {
   icon: React.ReactNode;
   disabled?: boolean;
   comingSoon?: boolean;
+  requiresUpgrade?: boolean;
 }
 
 export default function DashboardLayout({
@@ -88,16 +89,17 @@ export default function DashboardLayout({
     },
   ];
 
-  // Trial users only see Reports
-  const trialNavigation: NavItem[] = [
-    {
-      name: 'Reports',
-      href: '/reports',
-      icon: <FileText className="h-5 w-5" />,
-    },
-  ];
-
-  const navigation = isTrial ? trialNavigation : fullNavigation;
+  // For trial users, disable everything except Reports
+  const navigation = fullNavigation.map((item) => {
+    if (isTrial && item.name !== 'Reports') {
+      return {
+        ...item,
+        disabled: true,
+        requiresUpgrade: true,
+      };
+    }
+    return item;
+  });
 
   if (isLoading) {
     return (
@@ -164,11 +166,18 @@ export default function DashboardLayout({
           <span className="mr-3 flex-shrink-0 text-gray-300">
             {item.icon}
           </span>
-          <span className="flex-1 flex items-center">
-            {item.name}
-            {item.comingSoon && (
-              <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded-full whitespace-nowrap">
-                Coming Soon
+          <span className="flex-1 flex items-center justify-between">
+            <span className="flex items-center">
+              {item.name}
+              {item.comingSoon && (
+                <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded-full whitespace-nowrap">
+                  Coming Soon
+                </span>
+              )}
+            </span>
+            {item.requiresUpgrade && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-50 border border-blue-200 text-blue-600 rounded-full whitespace-nowrap ml-2">
+                Upgrade
               </span>
             )}
           </span>
@@ -348,6 +357,19 @@ export default function DashboardLayout({
             </div>
           </div>
         </header>  
+        
+        {isTrial && (
+          <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 shrink-0">
+            <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+              <p className="text-sm text-blue-800">
+                <strong>Trial Account:</strong> Upgrade to unlock Portfolio, KYC, Impact Metrics, and more.
+              </p>
+              <Link href="/upgrade" className="text-sm font-medium text-blue-600 hover:text-blue-800 underline">
+                Upgrade Now &rarr;
+              </Link>
+            </div>
+          </div>
+        )}
         
         <main className={cn(
           "flex-1 relative z-0 focus:outline-none",

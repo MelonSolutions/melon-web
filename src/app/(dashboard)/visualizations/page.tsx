@@ -2,8 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, Suspense, useMemo } from 'react';
+import { useState, Suspense, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Upload, Database, BarChart3, Share2, Users } from 'lucide-react';
+import { useAuthContext } from '@/context/AuthContext';
 import { VisualizationLoading } from '@/components/visualizations/VisualizationLoading';
 import { VisualizationEmpty } from '@/components/visualizations/VisualizationEmpty';
 import { ChartBuilder } from '@/components/visualizations/ChartBuilder';
@@ -40,6 +42,15 @@ function StatsCard({ icon: Icon, title, value }: {
 }
 
 function VisualizationContent() {
+  const router = useRouter();
+  const { isTrial, isLoading: authLoading } = useAuthContext();
+
+  useEffect(() => {
+    if (!authLoading && isTrial) {
+      router.push('/reports');
+    }
+  }, [isTrial, authLoading, router]);
+
   const [activeTab, setActiveTab] = useState<'data-sources' | 'chart-builder' | 'saved-charts'>('data-sources');
   const [showImportModal, setShowImportModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
