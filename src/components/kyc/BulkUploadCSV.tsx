@@ -8,6 +8,11 @@ import { useAuthContext } from '@/context/AuthContext';
 import { apiClient } from '@/lib/api/auth';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
+const ERROR_TRANSLATIONS: Record<string, string> = {
+  'EMAIL_EXISTS_NEEDS_REASON': 'A record with this email already exists. To re-log this user, please provide a "relogReason" in your CSV file.',
+  'DUPLICATE_EXISTS_NEEDS_REASON': 'A record with this phone number, name, or loan ID already exists. To re-log this user, please provide a "relogReason" in your CSV file.',
+};
+
 export function BulkUploadCSV() {
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<BulkUploadResult | null>(null);
@@ -281,7 +286,7 @@ export function BulkUploadCSV() {
                     <div className="space-y-1">
                       {record.errors.map((error, errorIndex) => (
                         <p key={errorIndex} className="text-xs text-red-600">
-                          • {error}
+                          • {ERROR_TRANSLATIONS[error] || error}
                         </p>
                       ))}
                     </div>
