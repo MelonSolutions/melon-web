@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useKYCUsers } from '@/hooks/useKYC';
 import { Search, Download, Grid3x3, List, RefreshCw, FileText, Plus, BarChart3, TrendingUp, LayoutGrid, MapPin, Upload, Trash2, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -44,7 +44,15 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 function KYCContent() {
-  const { user, organization } = useAuthContext();
+  const router = useRouter();
+  const { user, organization, isTrial, isLoading: authLoading } = useAuthContext();
+
+  useEffect(() => {
+    if (!authLoading && isTrial) {
+      router.push('/reports');
+    }
+  }, [isTrial, authLoading, router]);
+
   const searchParams = useSearchParams();
   const { addToast } = useToast();
 

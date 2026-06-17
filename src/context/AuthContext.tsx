@@ -42,6 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: orgAuth.isLoading || trialAuth.isLoading,
     // Override logout with unified version
     logout: unifiedLogout,
+    // Override getters for trial users
+    getInitials: () => {
+      if (isTrial && trialAuth.trialUser) {
+        return (trialAuth.trialUser.email.charAt(0) || 'T').toUpperCase();
+      }
+      return orgAuth.getInitials();
+    },
+    getFullName: () => {
+      if (isTrial && trialAuth.trialUser) {
+        return trialAuth.trialUser.email.split('@')[0];
+      }
+      return orgAuth.getFullName();
+    },
   };
 
   return (

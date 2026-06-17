@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export function ProfileDropdown() {
-  const { user, logout, getInitials, getFullName } = useAuthContext();
+  const { user, trialUser, isTrial, logout, getInitials, getFullName } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -53,23 +53,39 @@ export function ProfileDropdown() {
         }
       ]
     },
-    {
-      section: 'Billing & Support',
-      items: [
-        {
-          icon: HelpCircle,
-          label: 'Help & Support',
-          href: '/help',
-          description: 'Get help and documentation'
-        },
-        {
-          icon: Shield,
-          label: 'Privacy & Security',
-          href: '/settings/privacy',
-          description: 'Security and privacy settings'
-        }
-      ]
-    }
+    ...(isTrial
+      ? [
+          {
+            section: 'Trial Account',
+            items: [
+              {
+                icon: HelpCircle,
+                label: 'Trial Preferences',
+                href: '/preferences',
+                description: 'Manage trial limits and upgrades'
+              }
+            ]
+          }
+        ]
+      : [
+          {
+            section: 'Billing & Support',
+            items: [
+              {
+                icon: HelpCircle,
+                label: 'Help & Support',
+                href: '/help',
+                description: 'Get help and documentation'
+              },
+              {
+                icon: Shield,
+                label: 'Privacy & Security',
+                href: '/settings/privacy',
+                description: 'Security and privacy settings'
+              }
+            ]
+          }
+        ])
   ];
 
   return (
@@ -94,7 +110,7 @@ export function ProfileDropdown() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-base font-medium text-gray-900 truncate">{getFullName()}</p>
-                <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+                <p className="text-sm text-gray-500 truncate">{isTrial ? trialUser?.email : user?.email}</p>
                 <div className="flex items-center mt-1">
                   <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
                   <span className="text-xs text-gray-500">Online</span>
