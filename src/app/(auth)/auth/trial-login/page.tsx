@@ -4,10 +4,12 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Mail } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuthContext } from '@/context/AuthContext';
 
 function TrialLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshTrialUser } = useAuthContext();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -56,6 +58,9 @@ function TrialLoginContent() {
 
       // Store trial token in localStorage
       localStorage.setItem('trialToken', data.accessToken);
+
+      // Update AuthContext state
+      await refreshTrialUser();
 
       // Redirect to reports page - useTrialAuth will validate status
       router.push('/reports');

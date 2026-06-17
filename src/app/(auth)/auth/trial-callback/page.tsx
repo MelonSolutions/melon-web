@@ -2,10 +2,12 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuthContext } from '@/context/AuthContext';
 
 function TrialCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshTrialUser } = useAuthContext();
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -14,8 +16,11 @@ function TrialCallbackContent() {
       // Store the token
       localStorage.setItem('trialToken', token);
       
-      // Redirect to reports
-      router.replace('/reports');
+      // Update AuthContext state
+      refreshTrialUser().then(() => {
+        // Redirect to reports
+        router.replace('/reports');
+      });
     } else {
       // If no token, send them to login
       router.replace('/auth/trial-login');
