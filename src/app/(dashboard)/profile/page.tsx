@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { Camera, Save, X, Upload, Plus, CheckCircle } from 'lucide-react';
+import { Camera, Save, X, Upload, Plus, CheckCircle, Shield } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
 import { apiClient } from '@/lib/api/auth';
 import { useToast } from '@/components/ui/Toast';
 
 export default function ProfilePage() {
-  const { user, getInitials, getFullName, refreshUser } = useAuthContext();
+  const { user, trialUser, isTrial, getInitials, getFullName, refreshUser } = useAuthContext();
   const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -142,6 +142,10 @@ export default function ProfilePage() {
                   Save Changes
                 </button>
               </>
+            ) : isTrial ? (
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full border border-blue-200">
+                Trial Account
+              </span>
             ) : (
               <button
                 onClick={() => setIsEditing(true)}
@@ -217,7 +221,7 @@ export default function ProfilePage() {
                 Email Address
               </label>
               <p className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500">
-                {formData.email}
+                {isTrial ? trialUser?.email : formData.email}
               </p>
             </div>
 
@@ -241,16 +245,19 @@ export default function ProfilePage() {
       </div>
 
       {/* Contact Information */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-6">Contact Information</h2>
+      <div className="bg-white rounded-lg border border-gray-200 p-6 relative overflow-hidden">
+        <h2 className="text-lg font-medium text-gray-900 mb-6 flex items-center justify-between">
+          Contact Information
+          {isTrial && <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1"><Shield className="w-3 h-3" /> Locked</span>}
+        </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isTrial ? 'opacity-40 pointer-events-none filter blur-[1px]' : ''}`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Organization
             </label>
             <p className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500">
-              {formData.organization}
+              {formData.organization || 'Acme Inc'}
             </p>
           </div>
 
@@ -266,7 +273,7 @@ export default function ProfilePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
               />
             ) : (
-              <p className="text-gray-900">{formData.phone}</p>
+              <p className="text-gray-900">{formData.phone || '+1 234 567 8900'}</p>
             )}
           </div>
 
@@ -282,7 +289,7 @@ export default function ProfilePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors cursor-text"
               />
             ) : (
-              <p className="text-gray-900">{formData.location}</p>
+              <p className="text-gray-900">{formData.location || 'Lagos, Nigeria'}</p>
             )}
           </div>
 
@@ -302,17 +309,31 @@ export default function ProfilePage() {
                 <option value="Europe/London">Europe/London (GMT)</option>
               </select>
             ) : (
-              <p className="text-gray-900">Africa/Lagos (WAT)</p>
+              <p className="text-gray-900">{formData.timezone || 'Africa/Lagos (WAT)'}</p>
             )}
           </div>
         </div>
+        
+        {isTrial && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+            <button 
+              onClick={() => window.location.href = 'mailto:sales@melon.com'}
+              className="px-4 py-2 bg-white border border-gray-300 shadow-sm text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Upgrade to Add Contact Details
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Bio & Skills */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-6">Professional Information</h2>
+      <div className="bg-white rounded-lg border border-gray-200 p-6 relative overflow-hidden">
+        <h2 className="text-lg font-medium text-gray-900 mb-6 flex items-center justify-between">
+          Professional Information
+          {isTrial && <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1"><Shield className="w-3 h-3" /> Locked</span>}
+        </h2>
         
-        <div className="space-y-6">
+        <div className={`space-y-6 ${isTrial ? 'opacity-40 pointer-events-none filter blur-[1px]' : ''}`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Bio
@@ -326,7 +347,7 @@ export default function ProfilePage() {
                 placeholder="Tell us about yourself and your experience"
               />
             ) : (
-              <p className="text-gray-900">{formData.bio}</p>
+              <p className="text-gray-900">{formData.bio || 'Data Enthusiast'}</p>
             )}
           </div>
 
@@ -335,7 +356,7 @@ export default function ProfilePage() {
               Skills & Expertise
             </label>
             <div className="flex flex-wrap gap-2">
-              {formData.skills.map((skill, index) => (
+              {(formData.skills.length > 0 ? formData.skills : ['Data Analysis', 'Survey Design']).map((skill, index) => (
                 <span
                   key={index}
                   className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
@@ -397,6 +418,17 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+        
+        {isTrial && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+            <button 
+              onClick={() => window.location.href = 'mailto:sales@melon.com'}
+              className="px-4 py-2 bg-white border border-gray-300 shadow-sm text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Upgrade to Build Profile
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

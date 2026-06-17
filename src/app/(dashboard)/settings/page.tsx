@@ -28,7 +28,7 @@ const PlatformAdministration = dynamic(
 );
 
 export default function SettingsPage() {
-  const { user, refreshUser, isMelonAdmin } = useAuthContext();
+  const { user, refreshUser, isMelonAdmin, isTrial } = useAuthContext();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('notifications');
   const [loading, setLoading] = useState(false);
@@ -100,9 +100,9 @@ export default function SettingsPage() {
       { id: 'notifications', label: 'Notifications', icon: Bell },
       { id: 'privacy', label: 'Privacy & Security', icon: Shield },
       { id: 'preferences', label: 'Preferences', icon: Palette },
-      { id: 'integrations', label: 'Integrations', icon: Database },
-      { id: 'billing', label: 'Billing', icon: CreditCard },
-      { id: 'team', label: 'Team Management', icon: Users }
+      { id: 'integrations', label: 'Integrations', icon: Database, requiresUpgrade: isTrial },
+      { id: 'billing', label: 'Billing', icon: CreditCard, requiresUpgrade: isTrial },
+      { id: 'team', label: 'Team Management', icon: Users, requiresUpgrade: isTrial }
     ];
 
     // Add admin tab only for Melon organization users
@@ -376,6 +376,24 @@ export default function SettingsPage() {
 
 
 
+  const renderUpgradeCTA = (title: string, description: string) => (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+        <Shield className="w-8 h-8 text-blue-500" />
+      </div>
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title} is locked for Trial Accounts</h3>
+      <p className="text-gray-500 max-w-md mb-8">
+        {description} Convert to a Full Organization account to unlock this feature and scale your impact.
+      </p>
+      <button 
+        onClick={() => window.location.href = 'mailto:sales@melon.com'}
+        className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        Contact Sales to Upgrade
+      </button>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case 'notifications':
@@ -385,10 +403,13 @@ export default function SettingsPage() {
       case 'preferences':
         return renderPreferences();
       case 'integrations':
+        if (isTrial) return renderUpgradeCTA('API & Integrations', 'Connect Melon with your existing tools, automate workflows, and access our robust API.');
         return <IntegrationsSettingsPage />;
       case 'billing':
+        if (isTrial) return renderUpgradeCTA('Organization Billing', 'Manage invoices, payment methods, and subscription plans for your entire organization.');
         return <div className="text-center py-12 text-gray-500">Billing settings coming soon</div>;
       case 'team':
+        if (isTrial) return renderUpgradeCTA('Team Management', 'Invite team members, assign roles, and collaborate on data collection projects.');
         return <div className="text-center py-12 text-gray-500">Team management coming soon</div>;
       case 'admin':
         return <PlatformAdministration />;
@@ -409,13 +430,20 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${activeTab === tab.id
+                  className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${activeTab === tab.id
                     ? 'bg-blue-50 text-[#5B94E5] font-medium'
                     : 'text-gray-700 hover:bg-gray-50'
                     }`}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
+                  <div className="flex items-center gap-3">
+                    <tab.icon className="w-4 h-4" />
+                    {tab.label}
+                  </div>
+                  {tab.requiresUpgrade && (
+                    <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Lock
+                    </span>
+                  )}
                 </button>
               ))}
             </nav>

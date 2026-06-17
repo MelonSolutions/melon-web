@@ -8,16 +8,43 @@ import { PaymentStatus } from '@/types/payments';
 
 export default function PaymentCallbackPage() {
   const router = useRouter();
-  const { organization, refreshOrganization } = useAuthContext();
+  const { organization, isTrial, refreshOrganization, isLoading } = useAuthContext();
   const [status, setStatus] = useState<'verifying' | 'polling' | 'success' | 'failed'>('verifying');
   const [message, setMessage] = useState('Verifying payment setup...');
 
   useEffect(() => {
-    const reference = sessionStorage.getItem('paymentSetupRef');
+    if (isLoading) return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const reference = urlParams.get('reference') || sessionStorage.getItem('paymentSetupRef');
+    const isTrialParam = urlParams.get('type') === 'trial';
+    const effectivelyTrial = isTrial || isTrialParam;
 
-    if (!reference || !organization) {
+    if (!reference || (!organization && !effectivelyTrial)) {
       setStatus('failed');
       setMessage('Invalid payment setup session');
+      return;
+    }
+
+    if (effectivelyTrial) {
+      // Handle Trial User Payment Verification
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/trials/verify-payment-setup?reference=${reference}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.redirectUrl) {
+            setStatus('success');
+            setMessage('Payment method verified! Redirecting...');
+            sessionStorage.removeItem('paymentSetupRef');
+            window.location.href = data.redirectUrl;
+          } else {
+            setStatus('failed');
+            setMessage(data.message || 'Verification failed');
+          }
+        })
+        .catch(err => {
+          setStatus('failed');
+          setMessage(err.message || 'Verification error');
+        });
       return;
     }
 
@@ -75,19 +102,26 @@ export default function PaymentCallbackPage() {
       }, 2000);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization, router]);
+  }, [organization, isTrial, isLoading, router]);
 
   return (
     <div className="max-w-md mx-auto p-6 mt-20">
       <div className="bg-white rounded-lg shadow p-6 text-center">
-        {status === 'verifying' && (
+        {isLoading && (
+          <div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-700">Loading your session...</p>
+          </div>
+        )}
+
+        {!isLoading && status === 'verifying' && (
           <div>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-700">{message}</p>
           </div>
         )}
 
-        {status === 'polling' && (
+        {!isLoading && status === 'polling' && (
           <div>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-700">{message}</p>
@@ -95,7 +129,7 @@ export default function PaymentCallbackPage() {
           </div>
         )}
 
-        {status === 'success' && (
+        {!isLoading && status === 'success' && (
           <div>
             <div className="text-green-600 text-5xl mb-4">✓</div>
             <h2 className="text-xl font-bold mb-2">Success!</h2>
@@ -104,7 +138,7 @@ export default function PaymentCallbackPage() {
           </div>
         )}
 
-        {status === 'failed' && (
+        {!isLoading && status === 'failed' && (
           <div>
             <div className="text-red-600 text-5xl mb-4">✗</div>
             <h2 className="text-xl font-bold mb-2">Setup Failed</h2>

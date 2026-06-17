@@ -156,7 +156,7 @@ function LoginContent() {
         </button>
       </form>
 
-      <div className="text-center pt-2">
+      <div className="text-center pt-2 space-y-2">
         <p className="text-sm text-gray-600">
           Don&apos;t have an account?{' '}
           <button
@@ -166,6 +166,15 @@ function LoginContent() {
           >
             Request a Demo
           </button>
+        </p>
+        <p className="text-sm text-gray-600">
+          Using a Trial or Pay-Per-Use account?{' '}
+          <a
+            href="/auth/trial-login"
+            className="text-primary hover:underline font-medium"
+          >
+            Sign in here
+          </a>
         </p>
       </div>
     </div>
