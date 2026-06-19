@@ -20,7 +20,7 @@ export interface TrialAuthState {
 
 export interface TrialAuthActions {
   logout: () => void;
-  refreshTrialUser: () => Promise<void>;
+  refreshTrialUser: () => Promise<any>;
 }
 
 export function useTrialAuth(): TrialAuthState & TrialAuthActions {
@@ -163,6 +163,8 @@ export function useTrialAuth(): TrialAuthState & TrialAuthActions {
           surveysCreated: data.surveysCreated,
         },
       }));
+      
+      return data;
     } catch (error) {
       console.error('Trial user refresh failed:', error);
       throw error;

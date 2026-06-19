@@ -45,13 +45,19 @@ function TrialLoginContent() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, loginOnly: true }),
         }
       );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to initiate trial');
+        let errorMessage = 'Failed to initiate trial';
+        if (errorData.message) {
+          errorMessage = Array.isArray(errorData.message) 
+            ? errorData.message.join(', ') 
+            : errorData.message;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -62,7 +68,7 @@ function TrialLoginContent() {
       // Update AuthContext state
       await refreshTrialUser();
 
-      // Redirect to reports page - useTrialAuth will validate status
+      // Redirect to reports page
       router.push('/reports');
     } catch (err: any) {
       console.error('Trial login error:', err);
@@ -88,7 +94,7 @@ function TrialLoginContent() {
         </p>
       </div>
 
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-4" noValidate>
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-red-600 text-sm">{error}</p>
