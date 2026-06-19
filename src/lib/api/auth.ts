@@ -193,7 +193,14 @@ private async request<T>(
         }
       }
       
-      throw new AuthError(errorData.message || `HTTP error! status: ${response.status}`, response.status);
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      if (errorData.message) {
+        errorMessage = Array.isArray(errorData.message)
+          ? errorData.message.join(', ')
+          : errorData.message;
+      }
+      
+      throw new AuthError(errorMessage, response.status);
     }
 
     return await response.json();
