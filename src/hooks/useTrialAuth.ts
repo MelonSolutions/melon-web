@@ -47,7 +47,7 @@ export function useTrialAuth(): TrialAuthState & TrialAuthActions {
         try {
           // Fetch trial status
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/trials/status`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com'}/trials/status`,
             {
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -138,7 +138,7 @@ export function useTrialAuth(): TrialAuthState & TrialAuthActions {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/trials/status`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com'}/trials/status`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

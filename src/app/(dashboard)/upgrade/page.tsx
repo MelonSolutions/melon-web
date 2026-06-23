@@ -62,7 +62,7 @@ export default function UpgradePage() {
 
     try {
       const token = localStorage.getItem('trialToken');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trials/initialize-payment-setup`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com'}/trials/initialize-payment-setup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

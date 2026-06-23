@@ -28,7 +28,7 @@ export default function PaymentCallbackPage() {
 
     if (effectivelyTrial) {
       // Handle Trial User Payment Verification
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/trials/verify-payment-setup?reference=${reference}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com'}/trials/verify-payment-setup?reference=${reference}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.redirectUrl) {
