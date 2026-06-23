@@ -12,6 +12,8 @@ import { getEndpoints, createEndpoint, deleteEndpoint, getEndpointHistory, testE
 export default function IntegrationsSettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState('');
+  const [copiedBaseUrl, setCopiedBaseUrl] = useState(false);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
 
   // API Keys state
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -240,26 +242,51 @@ export default function IntegrationsSettingsPage() {
         {/* API Key Secret Reveal */}
         {newKeySecret && (
           <div className="mb-6 bg-green-50 p-6 rounded-lg border border-green-200">
-            <h3 className="text-md font-bold text-green-900 mb-2">Save your API key secret!</h3>
+            <h3 className="text-md font-bold text-green-900 mb-2">Save your API key secret and Base URL!</h3>
             <p className="text-sm text-green-800 mb-4">
-              This secret is only shown once. Please copy it and store it securely.
+              This secret is only shown once. Please copy both the secret and the Base URL and store them securely.
             </p>
-            <div className="flex gap-3">
-              <code className="flex-1 p-3 bg-white border border-green-300 rounded-lg text-sm font-mono text-gray-800 break-all">
-                {newKeySecret}
-              </code>
-              <button
-                onClick={() => copyToClipboard(newKeySecret, 'secret')}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 whitespace-nowrap"
-              >
-                {copiedKey === 'secret' ? 'Copied!' : 'Copy Secret'}
-              </button>
+            
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <code className="flex-1 p-3 bg-white border border-green-300 rounded-lg text-sm font-mono text-gray-800 break-all">
+                  {newKeySecret}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(newKeySecret, 'secret')}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 whitespace-nowrap w-32"
+                >
+                  {copiedKey === 'secret' ? 'Copied!' : 'Copy Secret'}
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <code className="flex-1 p-3 bg-white border border-green-300 rounded-lg text-sm font-mono text-gray-800 break-all">
+                  <span className="text-gray-500 mr-2">Base URL:</span> {API_BASE_URL}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(API_BASE_URL);
+                    setCopiedBaseUrl(true);
+                  }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 whitespace-nowrap w-32"
+                >
+                  {copiedBaseUrl ? 'Copied!' : 'Copy URL'}
+                </button>
+              </div>
             </div>
+
             <button
-              onClick={() => { setNewKeySecret(''); setShowCreateKey(false); }}
-              className="mt-4 text-sm font-medium text-green-700 hover:text-green-900 underline"
+              onClick={() => { 
+                setNewKeySecret(''); 
+                setShowCreateKey(false); 
+                setCopiedBaseUrl(false);
+                setCopiedKey('');
+              }}
+              disabled={!(copiedKey === 'secret' && copiedBaseUrl)}
+              className="mt-6 text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-green-100 text-green-800 hover:bg-green-200 border border-green-300"
             >
-              I have saved my secret
+              I have saved my secret and URL
             </button>
           </div>
         )}
