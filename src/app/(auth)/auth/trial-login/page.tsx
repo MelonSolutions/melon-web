@@ -39,7 +39,7 @@ function TrialLoginContent() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/trials/initiate`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com'}/trials/initiate`,
         {
           method: 'POST',
           headers: {
