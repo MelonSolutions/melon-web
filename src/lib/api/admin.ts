@@ -41,6 +41,10 @@ export interface Organization {
   plan: string;
   status: OrganizationStatus;
   userCount: number;
+  isWhiteLabel?: boolean;
+  brandColor?: string;
+  brandName?: string;
+  logoUrl?: string;
   createdAt: string;
 }
 
@@ -315,6 +319,29 @@ class AdminApiClient {
       console.error(`Export failed [${url}]:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Update white-label status for a specific organization
+   */
+  async toggleWhiteLabel(organizationId: string, isWhiteLabel: boolean): Promise<any> {
+    return this.request(`/admin/organizations/${organizationId}/white-label`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isWhiteLabel }),
+    });
+  }
+
+  /**
+   * Update branding details for a specific organization (Admin override)
+   */
+  async updateBranding(
+    organizationId: string,
+    branding: { brandColor?: string; brandName?: string; logoUrl?: string }
+  ): Promise<any> {
+    return this.request(`/admin/organizations/${organizationId}/branding`, {
+      method: 'PATCH',
+      body: JSON.stringify(branding),
+    });
   }
 }
 

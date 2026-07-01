@@ -78,6 +78,19 @@ export default function RestrictionsTab() {
     setShowEditorModal(true);
   };
 
+  const handleToggleWhiteLabel = async (orgId: string, currentVal: boolean) => {
+    try {
+      await adminApiClient.toggleWhiteLabel(orgId, !currentVal);
+      setOrganizations((prev) =>
+        prev.map((org) =>
+          org.id === orgId ? { ...org, isWhiteLabel: !currentVal } : org
+        )
+      );
+    } catch (err: any) {
+      alert(err.message || 'Failed to toggle white-label status');
+    }
+  };
+
   const handleRestrictionsSaved = async () => {
     // Refresh the organizations and their restrictions
     await fetchOrganizations();
@@ -208,6 +221,9 @@ export default function RestrictionsTab() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Users
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  White-label
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -253,6 +269,20 @@ export default function RestrictionsTab() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">{org.userCount || 0}</td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => handleToggleWhiteLabel(org.id, !!org.isWhiteLabel)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#5B94E5] focus:ring-offset-2 ${
+                          org.isWhiteLabel ? 'bg-green-500' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            org.isWhiteLabel ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleEditRestrictions(org.id)}
@@ -304,6 +334,7 @@ export default function RestrictionsTab() {
           organizationName={organizations.find((o) => o.id === selectedOrgId)?.name || ''}
           currentStatus={organizations.find((o) => o.id === selectedOrgId)?.status || OrganizationStatus.TRIAL}
           currentRestrictions={restrictions.get(selectedOrgId)}
+          organizationDetails={organizations.find((o) => o.id === selectedOrgId)}
           onSave={handleRestrictionsSaved}
           onClose={handleCloseModal}
         />
