@@ -108,6 +108,10 @@ export interface OrganizationDetails {
   userLimit: number;
   trialEndsAt?: string;
   paymentStatus?: string;
+  isWhiteLabel?: boolean;
+  brandColor?: string;
+  brandName?: string;
+  logoUrl?: string;
   members: Array<{
     id: string;
     firstName: string;
@@ -293,6 +297,13 @@ private async request<T>(
   // Legacy method for backwards compatibility  
   async register(data: SignupRequest): Promise<SignupResponse> {
     return this.signup(data);
+  }
+
+  async updateBranding(data: { brandColor?: string; brandName?: string; logoUrl?: string }): Promise<any> {
+    return this.request('/auth/organization/branding', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 
   async requestDemo(data: { email: string; organizationName: string; message?: string }): Promise<{ message: string }> {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -43,6 +43,15 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isMapView = pathname === '/map-view';
+
+  // Dynamic page title based on white-label brand name
+  useEffect(() => {
+    if (organization?.isWhiteLabel && organization?.brandName) {
+      document.title = `${organization.brandName} - Impact Platform`;
+    } else {
+      document.title = 'Melon Impact Platform';
+    }
+  }, [organization]);
 
   const fullNavigation: NavItem[] = [
     {
@@ -101,10 +110,39 @@ export default function DashboardLayout({
     return item;
   });
 
+  const SidebarLogo = () => {
+    if (organization?.isWhiteLabel && (organization?.logoUrl || organization?.brandName)) {
+      return (
+        <div className="flex items-center gap-2 h-8">
+          {organization.logoUrl ? (
+            <img
+              src={organization.logoUrl}
+              alt={organization.brandName || organization.name}
+              className="max-h-8 max-w-[160px] object-contain"
+            />
+          ) : (
+            <span className="text-xl font-bold text-[var(--color-primary)]">
+              {organization.brandName || organization.name}
+            </span>
+          )}
+        </div>
+      );
+    }
+    return (
+      <Image
+        src="/images/melon-logo.svg"
+        alt="Melon"
+        width={120}
+        height={32}
+        priority
+      />
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5B94E5]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]"></div>
       </div>
     );
   }
@@ -125,7 +163,7 @@ export default function DashboardLayout({
     return (
       <div className="flex items-center w-full">
         <div className="flex-shrink-0">
-          <div className="bg-[#5B94E5] text-white rounded-full h-10 w-10 flex items-center justify-center">
+          <div className="bg-[var(--color-primary)] text-white rounded-full h-10 w-10 flex items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--color-primary)' }}>
             <span className="text-sm font-medium">{initials}</span>
           </div>
         </div>
@@ -191,7 +229,7 @@ export default function DashboardLayout({
         className={cn(
           baseClasses,
           isActive
-            ? 'bg-blue-50 text-blue-600'
+            ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-bold'
             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
         )}
         onClick={() => isMobile && setSidebarOpen(false)}
@@ -199,7 +237,7 @@ export default function DashboardLayout({
         <span
           className={cn(
             isActive
-              ? 'text-blue-600'
+              ? 'text-[var(--color-primary)] font-bold'
               : 'text-gray-400 group-hover:text-gray-500',
             'mr-3 flex-shrink-0'
           )}
@@ -243,13 +281,7 @@ export default function DashboardLayout({
             
             <div className="flex-1 h-0 pt-6 pb-4 overflow-y-auto">
               <div className="flex-shrink-0 flex items-center px-6">
-                <Image
-                  src="/images/melon-logo.svg"
-                  alt="Melon"
-                  width={120}
-                  height={32}
-                  priority
-                />
+                <SidebarLogo />
               </div>
               <nav className="mt-8 px-6 space-y-2">
                 {navigation.map((item) => (
@@ -273,13 +305,7 @@ export default function DashboardLayout({
           <div className="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
             <div className="flex-1 flex flex-col pt-6 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-6 mb-4">
-                <Image
-                  src="/images/melon-logo.svg"
-                  alt="Melon"
-                  width={120}
-                  height={32}
-                  priority
-                />
+                <SidebarLogo />
               </div>
               <nav className="mt-4 flex-1 px-4 bg-white space-y-2">
                 {navigation.map((item) => (
