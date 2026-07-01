@@ -46,6 +46,23 @@ export function useAuth(): AuthState & AuthActions {
     isLoading: true,
   });
 
+  // Dynamic theming: inject CSS variables if white-labeling is enabled
+  useEffect(() => {
+    if (state.organization?.isWhiteLabel && state.organization?.brandColor) {
+      const color = state.organization.brandColor;
+      const hoverColor = darkenHex(color, 15);
+      const lightColor = `${color}1A`; // Add 10% opacity for light background
+
+      document.documentElement.style.setProperty('--color-primary', color);
+      document.documentElement.style.setProperty('--color-primary-hover', hoverColor);
+      document.documentElement.style.setProperty('--color-primary-light', lightColor);
+    } else {
+      document.documentElement.style.removeProperty('--color-primary');
+      document.documentElement.style.removeProperty('--color-primary-hover');
+      document.documentElement.style.removeProperty('--color-primary-light');
+    }
+  }, [state.organization]);
+
   // Check if user is authenticated on mount
   useEffect(() => {
     const fetchAuthData = async (): Promise<{ userData: User; orgData: OrganizationDetails }> => {
@@ -284,4 +301,27 @@ export function useAuth(): AuthState & AuthActions {
     // Legacy methods for backwards compatibility
     login: signin,
   };
+}
+
+/**
+ * Darken a hex color by a specified percentage.
+ */
+function darkenHex(hex: string, percent: number): string {
+  let cleanHex = hex.replace(/^\s*#|\s*$/g, '');
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.replace(/(.)/g, '$1$1');
+  }
+  let r = parseInt(cleanHex.substr(0, 2), 16),
+      g = parseInt(cleanHex.substr(2, 2), 16),
+      b = parseInt(cleanHex.substr(4, 2), 16);
+
+  r = Math.max(0, Math.min(255, Math.floor(r * (1 - percent / 100))));
+  g = Math.max(0, Math.min(255, Math.floor(g * (1 - percent / 100))));
+  b = Math.max(0, Math.min(255, Math.floor(b * (1 - percent / 100))));
+
+  const rHex = r.toString(16).padStart(2, '0');
+  const gHex = g.toString(16).padStart(2, '0');
+  const bHex = b.toString(16).padStart(2, '0');
+
+  return `#${rHex}${gHex}${bHex}`;
 }
