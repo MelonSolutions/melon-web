@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react'; import { X, Shield, AlertCircle, Save, Database, FileText, BarChart3, PieChart, MessageSquare, LayoutDashboard, Users, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react'; import { X, Shield, AlertCircle, Save, Database, FileText, BarChart3, PieChart, MessageSquare, LayoutDashboard, Users, Activity, Palette } from 'lucide-react';
 import { adminApiClient, AccessLevel, OrganizationRestrictions, FeatureName, OrganizationStatus } from '@/lib/api/admin';
 
 interface RestrictionEditorModalProps {
@@ -10,6 +10,7 @@ interface RestrictionEditorModalProps {
   organizationName: string;
   currentStatus: OrganizationStatus;
   currentRestrictions?: OrganizationRestrictions;
+  organizationDetails?: any;
   onSave: () => void;
   onClose: () => void;
 }
@@ -116,6 +117,7 @@ export default function RestrictionEditorModal({
   organizationName,
   currentStatus,
   currentRestrictions,
+  organizationDetails,
   onSave,
   onClose,
 }: RestrictionEditorModalProps) {
@@ -129,6 +131,10 @@ export default function RestrictionEditorModal({
     overview: 'full',
   });
   const [selectedStatus, setSelectedStatus] = useState<OrganizationStatus>(currentStatus);
+  const [isWhiteLabel, setIsWhiteLabel] = useState(organizationDetails?.isWhiteLabel || false);
+  const [brandName, setBrandName] = useState(organizationDetails?.brandName || organizationDetails?.name || '');
+  const [brandColor, setBrandColor] = useState(organizationDetails?.brandColor || '#5B94E5');
+  const [logoUrl, setLogoUrl] = useState(organizationDetails?.logoUrl || '');
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +164,13 @@ export default function RestrictionEditorModal({
     const statusChanged = selectedStatus !== currentStatus;
     if (statusChanged) return true;
 
+    const whiteLabelChanged = isWhiteLabel !== (organizationDetails?.isWhiteLabel || false);
+    const brandNameChanged = brandName !== (organizationDetails?.brandName || organizationDetails?.name || '');
+    const brandColorChanged = brandColor !== (organizationDetails?.brandColor || '#5B94E5');
+    const logoUrlChanged = logoUrl !== (organizationDetails?.logoUrl || '');
+
+    if (whiteLabelChanged || brandNameChanged || brandColorChanged || logoUrlChanged) return true;
+
     if (!currentRestrictions) {
       return Object.values(formData).some((level) => level !== 'full');
     }
@@ -178,6 +191,42 @@ export default function RestrictionEditorModal({
         label: 'Organization Status',
         old: currentStatus,
         new: selectedStatus,
+      });
+    }
+
+    if (isWhiteLabel !== (organizationDetails?.isWhiteLabel || false)) {
+      changes.push({
+        type: 'feature',
+        label: 'White-Label Status',
+        old: (organizationDetails?.isWhiteLabel ? 'enabled' : 'disabled'),
+        new: (isWhiteLabel ? 'enabled' : 'disabled'),
+      });
+    }
+
+    if (brandName !== (organizationDetails?.brandName || organizationDetails?.name || '')) {
+      changes.push({
+        type: 'feature',
+        label: 'Brand Name',
+        old: (organizationDetails?.brandName || organizationDetails?.name || 'none'),
+        new: brandName,
+      });
+    }
+
+    if (brandColor !== (organizationDetails?.brandColor || '#5B94E5')) {
+      changes.push({
+        type: 'feature',
+        label: 'Brand Color',
+        old: (organizationDetails?.brandColor || 'none'),
+        new: brandColor,
+      });
+    }
+
+    if (logoUrl !== (organizationDetails?.logoUrl || '')) {
+      changes.push({
+        type: 'feature',
+        label: 'Logo URL',
+        old: (organizationDetails?.logoUrl || 'none'),
+        new: logoUrl || 'none',
       });
     }
 
@@ -221,25 +270,50 @@ export default function RestrictionEditorModal({
 
       setSaving(true);
 
-      const changes = getChangedItems();
-      const updates: any = { reason: reason.trim() };
+      // Save restrictions/status if they changed
+      const restrictionsChanged = features.some((feature) => {
+        const currentLevel = currentRestrictions?.[feature.key] || 'full';
+        const newLevel = formData[feature.key];
+        return currentLevel !== newLevel;
+      }) || selectedStatus !== currentStatus;
 
-      changes.forEach((change) => {
-        if (change.type === 'status') {
-          updates.status = change.new;
-        } else {
-          // Find feature key from label
-          const feature = features.find(f => f.label === change.label);
-          if (feature) {
-            updates[feature.key] = change.new;
+      if (restrictionsChanged) {
+        const changes = getChangedItems();
+        const updates: any = { reason: reason.trim() };
+
+        changes.forEach((change) => {
+          if (change.type === 'status') {
+            updates.status = change.new;
+          } else {
+            const feature = features.find(f => f.label === change.label);
+            if (feature) {
+              updates[feature.key] = change.new;
+            }
           }
-        }
-      });
+        });
+        await adminApiClient.updateRestrictions(organizationId, updates);
+      }
 
-      await adminApiClient.updateRestrictions(organizationId, updates);
+      // Save White-label status if it changed
+      if (isWhiteLabel !== (organizationDetails?.isWhiteLabel || false)) {
+        await adminApiClient.toggleWhiteLabel(organizationId, isWhiteLabel);
+      }
+
+      // Save branding settings if they changed
+      const brandingChanged = brandName !== (organizationDetails?.brandName || organizationDetails?.name || '') ||
+                              brandColor !== (organizationDetails?.brandColor || '#5B94E5') ||
+                              logoUrl !== (organizationDetails?.logoUrl || '');
+      if (brandingChanged) {
+        await adminApiClient.updateBranding(organizationId, {
+          brandName,
+          brandColor,
+          logoUrl,
+        });
+      }
+
       onSave();
     } catch (err: any) {
-      console.error('Error updating status/restrictions:', err);
+      console.error('Error updating status/restrictions/branding:', err);
       setError(err.message || 'Failed to update organization settings');
     } finally {
       setSaving(false);
@@ -367,6 +441,72 @@ export default function RestrictionEditorModal({
                 );
               })}
             </div>
+          </section>
+
+          {/* White-Label Configuration */}
+          <section className="space-y-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-gray-700" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">White-Label Configuration</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWhiteLabel(!isWhiteLabel)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  isWhiteLabel ? 'bg-green-500' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isWhiteLabel ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {isWhiteLabel && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 animate-fade-in">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Brand Name</label>
+                  <input
+                    type="text"
+                    value={brandName}
+                    onChange={(e) => setBrandName(e.target.value)}
+                    placeholder="Enter brand name override"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Brand Color</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={brandColor}
+                      onChange={(e) => setBrandColor(e.target.value)}
+                      className="w-9 h-9 border border-gray-200 rounded-lg cursor-pointer p-0 bg-transparent flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={brandColor}
+                      onChange={(e) => setBrandColor(e.target.value)}
+                      placeholder="#5B94E5"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm uppercase focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Logo URL</label>
+                  <input
+                    type="text"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Reason Input */}
