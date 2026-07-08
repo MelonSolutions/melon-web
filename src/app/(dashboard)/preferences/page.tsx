@@ -3,10 +3,10 @@
 import React from 'react';
 import { useAuthContext } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { 
-  BarChart3, 
-  Activity, 
-  Clock, 
+import {
+  BarChart3,
+  Activity,
+  Clock,
   ShieldAlert,
   CreditCard,
   Building2
@@ -54,7 +54,7 @@ export default function PreferencesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         {/* Card 1: Surveys */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col justify-between">
           <div>
@@ -79,7 +79,7 @@ export default function PreferencesPage() {
               <h3 className="text-gray-900 font-medium">Response Usage</h3>
               <Activity className="w-5 h-5 text-gray-400" />
             </div>
-            
+
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-semibold text-gray-900">{trialUser.responsesUsed}</span>
@@ -93,7 +93,7 @@ export default function PreferencesPage() {
 
             <div className="mt-4">
               <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div 
+                <div
                   style={{ width: `${responsePercentage}%` }}
                   className="h-full bg-[#5B94E5] rounded-full transition-all duration-500"
                 />
@@ -127,16 +127,16 @@ export default function PreferencesPage() {
               <h3 className="text-lg font-medium text-gray-900">Upgrade to Full Organization</h3>
             </div>
           </div>
-          
+
           <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="space-y-2 max-w-xl">
               <p className="text-sm text-gray-600 leading-relaxed">
                 Convert your Pay-Per-Use trial to a Full Organization account to unlock Portfolio management, KYC verification, infinite data retention, API integrations, and multiple team members.
               </p>
             </div>
-            
-            <button 
-              onClick={() => window.location.href = 'mailto:sales@melon.com'}
+
+            <button
+              onClick={() => window.location.href = 'mailto:admin@melon.ng'}
               className="shrink-0 bg-[#5B94E5] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
             >
               <CreditCard className="w-4 h-4" />
