@@ -42,8 +42,8 @@ export default function UpgradePage() {
           <p className="text-gray-500 mb-6">
             Contact our sales team to discuss converting your Pay-Per-Use account into a Full Organization account.
           </p>
-          <Button 
-            onClick={() => window.location.href = 'mailto:sales@melon.com'}
+          <Button
+            onClick={() => window.location.href = 'mailto:admin@melon.ng'}
             variant="primary"
             className="w-full h-12 text-lg"
           >
@@ -56,7 +56,7 @@ export default function UpgradePage() {
 
   const handleUpgrade = async () => {
     if (!trialUser?.email) return;
-    
+
     setIsLoading(true);
     setError('');
 
@@ -77,10 +77,10 @@ export default function UpgradePage() {
       }
 
       const data = await res.json();
-      
+
       // Store reference to verify after redirect
       sessionStorage.setItem('paymentSetupRef', data.reference);
-      
+
       // Redirect to Paystack
       window.location.href = data.authorizationUrl;
     } catch (err: any) {
@@ -156,7 +156,7 @@ export default function UpgradePage() {
                 </div>
               )}
             </Button>
-            
+
             <div className="flex items-center justify-center gap-4 text-gray-500 text-sm mt-4">
               <div className="flex items-center">
                 <Shield className="w-4 h-4 mr-1" />
