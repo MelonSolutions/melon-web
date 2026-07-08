@@ -13,7 +13,7 @@ export default function TrialExpiredPage() {
   };
 
   const handleContactSales = () => {
-    window.location.href = 'mailto:sales@melon.com?subject=Trial Upgrade Inquiry';
+    window.location.href = 'mailto:admin@melon.ng?subject=Trial Upgrade Inquiry';
   };
 
   const handleLogout = () => {
