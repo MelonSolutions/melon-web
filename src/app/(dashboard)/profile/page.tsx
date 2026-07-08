@@ -12,7 +12,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [newSkill, setNewSkill] = useState('');
   const [showSkillInput, setShowSkillInput] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -60,15 +60,15 @@ export default function ProfilePage() {
           timezone: formData.timezone
         }
       });
-      
+
       await refreshUser();
-      
+
       addToast({
         type: 'success',
         title: 'Profile updated',
         message: 'Your profile information has been saved successfully.'
       });
-      
+
       setIsEditing(false);
     } catch (error: any) {
       console.error('Error saving profile:', error);
@@ -161,7 +161,7 @@ export default function ProfilePage() {
       {/* Profile Picture & Basic Info */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-medium text-gray-900 mb-6">Profile Picture & Basic Information</h2>
-        
+
         <div className="flex items-start gap-6">
           {/* Profile Picture */}
           <div className="flex-shrink-0">
@@ -250,7 +250,7 @@ export default function ProfilePage() {
           Contact Information
           {isTrial && <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1"><Shield className="w-3 h-3" /> Locked</span>}
         </h2>
-        
+
         <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${isTrial ? 'opacity-40 pointer-events-none filter blur-[1px]' : ''}`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -313,11 +313,11 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
-        
+
         {isTrial && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-            <button 
-              onClick={() => window.location.href = 'mailto:sales@melon.com'}
+            <button
+              onClick={() => window.location.href = 'mailto:admin@melon.ng'}
               className="px-4 py-2 bg-white border border-gray-300 shadow-sm text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
             >
               Upgrade to Add Contact Details
@@ -332,7 +332,7 @@ export default function ProfilePage() {
           Professional Information
           {isTrial && <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1"><Shield className="w-3 h-3" /> Locked</span>}
         </h2>
-        
+
         <div className={`space-y-6 ${isTrial ? 'opacity-40 pointer-events-none filter blur-[1px]' : ''}`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -405,7 +405,7 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   ) : (
-                    <button 
+                    <button
                       onClick={() => setShowSkillInput(true)}
                       className="inline-flex items-center gap-1 px-3 py-1 border border-dashed border-gray-300 rounded-full text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
                     >
@@ -418,11 +418,11 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-        
+
         {isTrial && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-            <button 
-              onClick={() => window.location.href = 'mailto:sales@melon.com'}
+            <button
+              onClick={() => window.location.href = 'mailto:admin@melon.ng'}
               className="px-4 py-2 bg-white border border-gray-300 shadow-sm text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
             >
               Upgrade to Build Profile
