@@ -211,17 +211,16 @@ export default function PublicFormPage() {
       setIsSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      if (err instanceof ApiError && err.status === 402) {
-        // Payment method required
+      const isPaymentError = 
+        (err instanceof ApiError && err.status === 402) ||
+        (err.message?.toLowerCase().includes('payment method'));
+      const isSuspended = 
+        err instanceof ApiError && err.status === 400 && err.message?.toLowerCase().includes('suspended');
+
+      if (isPaymentError || isSuspended) {
         setError(
           'This survey is temporarily unavailable. ' +
           'Please contact the survey owner for more information.'
-        );
-      } else if (err instanceof ApiError && err.status === 400 && err.message?.toLowerCase().includes('suspended')) {
-        // Account suspended
-        setError(
-          'This survey is temporarily unavailable. ' +
-          'Please contact the survey owner.'
         );
       } else {
         setError(err.message || 'Failed to submit response. Please try again.');
