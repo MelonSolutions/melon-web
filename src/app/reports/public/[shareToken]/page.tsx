@@ -42,6 +42,7 @@ export default function PublicFormPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [respondentName, setRespondentName] = useState('');
   const [respondentEmail, setRespondentEmail] = useState('');
@@ -102,6 +103,7 @@ export default function PublicFormPage() {
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
+  setSubmitError(null);
   
   if (!report) return;
 
@@ -164,14 +166,21 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Failed to submit' }));
-      throw new Error(errorData.message || 'Failed to submit response');
+      const rawMessage = errorData.message || 'Failed to submit response';
+      // Show user-friendly message for payment/billing errors
+      const isPaymentError = response.status === 402 || rawMessage.toLowerCase().includes('payment method');
+      throw new Error(
+        isPaymentError
+          ? 'This survey is temporarily unavailable. Please contact the survey owner for more information.'
+          : rawMessage
+      );
     }
 
     setSubmitted(true);
   } catch (err) {
     console.error('Error submitting response:', err);
     const errorMessage = err instanceof Error ? err.message : 'Failed to submit response';
-    setError(errorMessage);
+    setSubmitError(errorMessage);
     addToast({
       type: 'error',
       title: 'Submission Failed',
@@ -577,30 +586,51 @@ const handleSubmit = async (e: React.FormEvent) => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-8 border border-white flex flex-col md:flex-row items-center justify-between gap-6"
+            className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-8 border border-white"
           >
-            <div className="flex items-center gap-3 text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
-              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-              <span className="text-sm font-medium">Fields with * are mandatory</span>
-            </div>
-            
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 bg-[#5B94E5] text-white font-bold rounded-2xl hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-            >
-              {submitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Submit Responses
-                </>
+            <AnimatePresence>
+              {submitError && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-6"
+                >
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                    <span className="text-red-500 text-lg mt-0.5">⚠️</span>
+                    <div>
+                      <p className="text-red-800 font-semibold text-sm">Submission Failed</p>
+                      <p className="text-red-700 text-sm mt-1">{submitError}</p>
+                    </div>
+                  </div>
+                </motion.div>
               )}
-            </button>
+            </AnimatePresence>
+
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-3 text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
+                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="text-sm font-medium">Fields with * are mandatory</span>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 bg-[#5B94E5] text-white font-bold rounded-2xl hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Submit Responses
+                  </>
+                )}
+              </button>
+            </div>
           </motion.div>
         </form>
       </div>
