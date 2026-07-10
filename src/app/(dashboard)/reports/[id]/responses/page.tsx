@@ -13,11 +13,14 @@ import {
   Eye,
   Users,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { useReport } from '@/hooks/useReports';
 import { useReportResponses, useResponseAnalytics, useImpactMetricsProgress } from '@/hooks/useResponses';
+import { getResponsesByReport } from '@/lib/api/responses';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import OverviewStats from '@/components/reports/analytics/OverviewStats';
@@ -31,10 +34,11 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
   const router = useRouter();
   const reportId = params.id as string;
   
+  const [currentPage, setCurrentPage] = useState(1);
   const { report, loading: reportLoading } = useReport(reportId);
   const { responses, loading: responsesLoading, pagination, refetch } = useReportResponses(reportId, {
     pageSize: 20,
-    currentPage: 1,
+    currentPage,
   });
   const { analytics, loading: analyticsLoading } = useResponseAnalytics(reportId);
   const { progress, loading: progressLoading } = useImpactMetricsProgress(reportId);
@@ -44,19 +48,39 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedResponses, setSelectedResponses] = useState<Set<string>>(new Set());
+  const [exportingMode, setExportingMode] = useState<'page' | 'all' | 'selected' | null>(null);
 
-  const handleExport = () => {
+  const totalResponsesCount =
+    (pagination as any)?.total ??
+    (pagination as any)?.totalCount ??
+    report?.responseCount ??
+    responses?.length ??
+    0;
+
+  const handleExport = async (mode: 'page' | 'all' | 'selected' = 'page') => {
     if (!report || !responses) return;
 
-    // Determine which responses to export
-    const responsesToExport = selectedResponses.size > 0
-      ? responses.filter(r => selectedResponses.has(r._id))
-      : responses;
+    try {
+      setExportingMode(mode);
+      let responsesToExport = responses;
 
-    if (responsesToExport.length === 0) {
-      alert('No responses to export');
-      return;
-    }
+      if (mode === 'selected' && selectedResponses.size > 0) {
+        responsesToExport = responses.filter(r => selectedResponses.has(r._id));
+      } else if (mode === 'all') {
+        const allResult = await getResponsesByReport(reportId, {
+          pageSize: totalResponsesCount || 10000,
+          currentPage: 1,
+        });
+        responsesToExport = allResult.data || responses;
+      } else {
+        responsesToExport = responses;
+      }
+
+      if (responsesToExport.length === 0) {
+        alert('No responses to export');
+        setExportingMode(null);
+        return;
+      }
 
     // Build CSV headers
     const headers = ['Response ID', 'Respondent Name', 'Respondent Email', 'Submitted At'];
@@ -113,6 +137,12 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    } catch (err) {
+      console.error('Error exporting responses:', err);
+      alert('Failed to export responses. Please try again.');
+    } finally {
+      setExportingMode(null);
+    }
   };
 
   const toggleResponseSelection = (responseId: string) => {
@@ -224,26 +254,49 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            {selectedResponses.size > 0 && (
-              <span className="text-sm text-gray-600">
-                {selectedResponses.size} selected
-              </span>
+            {selectedResponses.size > 0 ? (
+              <>
+                <span className="text-sm text-gray-600">
+                  {selectedResponses.size} selected
+                </span>
+                <button
+                  onClick={() => handleExport('selected')}
+                  disabled={exportingMode !== null}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download className="w-4 h-4" />
+                  {exportingMode === 'selected' ? 'Exporting...' : `Export Selected (${selectedResponses.size})`}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleExport('page')}
+                  disabled={!responses || responses.length === 0 || exportingMode !== null}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Export only the currently visible page of responses"
+                >
+                  <Download className="w-4 h-4" />
+                  {exportingMode === 'page' ? 'Exporting...' : `Export Page (${responses?.length || 0})`}
+                </button>
+                <button
+                  onClick={() => handleExport('all')}
+                  disabled={!responses || responses.length === 0 || exportingMode !== null}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#5B94E5] hover:bg-blue-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Export all responses across all pages"
+                >
+                  <Download className="w-4 h-4" />
+                  {exportingMode === 'all' ? 'Exporting All...' : `Export All (${totalResponsesCount})`}
+                </button>
+              </>
             )}
-            <button
-              onClick={handleExport}
-              disabled={!responses || responses.length === 0}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download className="w-4 h-4" />
-              {selectedResponses.size > 0 ? `Export Selected (${selectedResponses.size})` : 'Export All'}
-            </button>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-2xl font-semibold text-gray-900">{responses?.length || 0}</div>
+            <div className="text-2xl font-semibold text-gray-900">{totalResponsesCount}</div>
             <div className="text-sm text-gray-500">Total Responses</div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -366,6 +419,32 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
                   </div>
                 )}
               </div>
+              {pagination && pagination.totalPages > 1 && (
+                <div className="p-3 border-t border-gray-200 flex items-center justify-between bg-gray-50 rounded-b-lg">
+                  <div className="text-xs text-gray-600">
+                    Showing page <span className="font-semibold">{pagination.currentPage}</span> of{' '}
+                    <span className="font-semibold">{pagination.totalPages}</span> ({totalResponsesCount} total)
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={pagination.currentPage <= 1 || responsesLoading}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))}
+                      disabled={pagination.currentPage >= pagination.totalPages || responsesLoading}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Response Details */}
