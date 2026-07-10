@@ -108,12 +108,12 @@ export default function ReportDetailsPage() {
           ? 'Your report is now live and ready to collect responses.'
           : 'Your changes have been saved successfully.',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving report:', error);
       addToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to save changes. Please try again.',
+        message: error?.message || 'Failed to save changes. Please try again.',
       });
     } finally {
       setLoading(false);

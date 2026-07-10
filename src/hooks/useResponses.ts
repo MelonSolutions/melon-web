@@ -17,9 +17,10 @@ export function useReportResponses(reportId: string, pagination: { pageSize?: nu
   const [responses, setResponses] = useState<ReportResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [paginationInfo, setPaginationInfo] = useState({
+  const [paginationInfo, setPaginationInfo] = useState<any>({
     currentPage: 1,
     pageSize: 10,
+    total: 0,
     totalCount: 0,
     totalPages: 0,
   });
@@ -36,7 +37,13 @@ export function useReportResponses(reportId: string, pagination: { pageSize?: nu
 
       const result = await getResponsesByReport(reportId, pagination);
       setResponses(result.data || []);
-      setPaginationInfo(result.pagination);
+      const pag: any = result.pagination || {};
+      const total = pag.total ?? pag.totalCount ?? 0;
+      setPaginationInfo({
+        ...pag,
+        total,
+        totalCount: total,
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch responses';
       setError(errorMessage);
