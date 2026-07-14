@@ -28,6 +28,8 @@ const ADDRESS_LABELS = [
 const LOAN_TYPES = [
     { value: 'PERSONAL', label: 'Personal Loan' },
     { value: 'BUSINESS', label: 'Business Loan' },
+    { value: 'DOCUMENT_VERIFICATION', label: 'Document Verification (Purchase Order, Invoices)' },
+    { value: 'NEW_CUSTOMER', label: 'New Customer Verification' },
 ];
 
 export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
