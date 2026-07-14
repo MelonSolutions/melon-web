@@ -25,7 +25,8 @@ import { RejectKYCModal } from '@/components/kyc/RejectKYCModal';
 import { useAuthContext } from '@/context/AuthContext';
 import {
   KYCDocument,
-  getDocumentTypeDisplayName
+  getDocumentTypeDisplayName,
+  formatLoanType
 } from '@/types/kyc';
 import {
   uploadDocument,
@@ -462,7 +463,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     <div className="text-sm text-gray-900">
                       {user.loanType ? (
                         <Badge variant="neutral" size="sm" className="bg-gray-100 text-gray-800 border-gray-200">
-                          {user.loanType.toLowerCase()}
+                          {formatLoanType(user.loanType)}
                         </Badge>
                       ) : (
                         <span className="text-gray-400 italic">Not specified</span>

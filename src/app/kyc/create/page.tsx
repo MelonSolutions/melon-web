@@ -57,6 +57,8 @@ const ADDRESS_LABELS = [
 const LOAN_TYPES = [
   { value: 'PERSONAL', label: 'Personal Loan' },
   { value: 'BUSINESS', label: 'Business Loan' },
+  { value: 'DOCUMENT_VERIFICATION', label: 'Document Verification (Purchase Order, Invoices)' },
+  { value: 'NEW_CUSTOMER', label: 'New Customer Verification' },
 ];
 
 const createEmptyAddress = (index: number): AddressData => ({
@@ -258,6 +260,17 @@ export default function AddKYCUserPage() {
           type: 'error',
           title: 'Address Required',
           message: 'Please provide at least one address with city, state, or street name.',
+        });
+        setCreating(false);
+        return;
+      }
+
+      const missingInstructions = formData.addresses.some(addr => !addr.notes || !addr.notes.trim());
+      if (missingInstructions) {
+        addToast({
+          type: 'error',
+          title: 'Instructions Required',
+          message: 'Please provide instructions for the agent for each address.',
         });
         setCreating(false);
         return;
@@ -655,9 +668,10 @@ export default function AddKYCUserPage() {
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Instructions for Agent (Optional)
+                      Instructions for Agent <span className="text-red-500">*</span>
                     </label>
                     <textarea
+                      required
                       rows={3}
                       className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm resize-none"
                       placeholder="e.g. Call before coming, The building has a blue gate..."

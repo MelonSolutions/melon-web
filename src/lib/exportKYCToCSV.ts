@@ -1,6 +1,6 @@
 'use client';
 
-import { KYCUser } from '@/types/kyc';
+import { KYCUser, formatLoanType } from '@/types/kyc';
 
 export function exportKYCToCSV(users: KYCUser[], filename?: string) {
   const csvRows = [];
@@ -69,7 +69,7 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
       escapeCSV(user.email),
       escapeCSV(user.phone),
       escapeCSV(user.loanId || ''),
-      escapeCSV(user.loanType || ''),
+      escapeCSV(formatLoanType(user.loanType) || ''),
       escapeCSV(user.organization?.name || ''),
       escapeCSV(user.status),
       escapeCSV(user.streetNumber || ''),
