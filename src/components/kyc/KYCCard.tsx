@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert, Building2, Clock, User, MapPin } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
-import { KYCUser } from '@/types/kyc';
+import { KYCUser, formatLoanType } from '@/types/kyc';
 import { deleteKYCUser, downloadKYCReport, ApiError } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
@@ -152,7 +152,7 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
                 <p className="text-xs font-medium text-primary mt-0.5 uppercase">
                   {user.loanId && user.loanId}
                   {user.loanId && user.loanType && ' • '}
-                  <span className="text-gray-400">{user.loanType?.toLowerCase()}</span>
+                  <span className="text-gray-400">{formatLoanType(user.loanType)}</span>
                 </p>
                 <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
                 <p className="text-sm text-gray-500 mt-0.5">{user.phone}</p>
@@ -379,7 +379,7 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
               </div>
               <div className="flex flex-col gap-0.5 mt-0.5">
                 <span className="text-[10px] font-bold text-primary uppercase whitespace-nowrap overflow-hidden text-ellipsis">
-                  {user.loanId || 'N/A'} {user.loanType && `• ${(user.loanType as string).toLowerCase()}`}
+                  {user.loanId || 'N/A'} {user.loanType && `• ${formatLoanType(user.loanType as string)}`}
                 </span>
                 <div className="text-[11px] text-gray-500 truncate max-w-full">{user.email}</div>
                 

@@ -14,7 +14,19 @@ export type DocumentType =
   | 'PASSPORT_PHOTO' 
   | 'UTILITY_BILL';
 
-export type LoanType = 'PERSONAL' | 'BUSINESS';
+export type LoanType = 'PERSONAL' | 'BUSINESS' | 'DOCUMENT_VERIFICATION' | 'NEW_CUSTOMER';
+
+export const LOAN_TYPE_LABELS: Record<string, string> = {
+  PERSONAL: 'Personal Loan',
+  BUSINESS: 'Business Loan',
+  DOCUMENT_VERIFICATION: 'Document Verification (Purchase Order, Invoices)',
+  NEW_CUSTOMER: 'New Customer Verification',
+};
+
+export function formatLoanType(loanType?: string): string {
+  if (!loanType) return '';
+  return LOAN_TYPE_LABELS[loanType] || loanType.toLowerCase();
+}
 
 export interface VerificationData {
   verifiedLatitude?: number;
