@@ -62,6 +62,9 @@ export async function getKYCUsers(filters?: {
   status?: string;
   identityType?: string;
   organizationId?: string;
+  month?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   pageSize?: number;
 }): Promise<any> {
@@ -71,6 +74,9 @@ export async function getKYCUsers(filters?: {
   if (filters?.status) params.append('status', filters.status);
   if (filters?.identityType) params.append('identityType', filters.identityType);
   if (filters?.organizationId) params.append('organizationId', filters.organizationId);
+  if (filters?.month) params.append('month', filters.month);
+  if (filters?.startDate) params.append('startDate', filters.startDate);
+  if (filters?.endDate) params.append('endDate', filters.endDate);
   
   params.append('currentPage', String(filters?.page || 1));
   params.append('pageSize', String(filters?.pageSize || 10));
@@ -85,9 +91,19 @@ export async function getKYCUser(id: string): Promise<KYCUser> {
   return fetchWithAuth(`${API_BASE_URL}/kyc/details/${id}`);
 }
 
-export async function getKYCDashboardStats(organizationId?: string): Promise<KYCDashboardStats> {
+export async function getKYCDashboardStats(
+  organizationId?: string,
+  filters?: {
+    month?: string;
+    startDate?: string;
+    endDate?: string;
+  }
+): Promise<KYCDashboardStats> {
   const params = new URLSearchParams();
   if (organizationId) params.append('organizationId', organizationId);
+  if (filters?.month) params.append('month', filters.month);
+  if (filters?.startDate) params.append('startDate', filters.startDate);
+  if (filters?.endDate) params.append('endDate', filters.endDate);
   const url = `${API_BASE_URL}/kyc/stats${params.toString() ? `?${params.toString()}` : ''}`;
   return fetchWithAuth(url);
 }

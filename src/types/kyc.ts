@@ -186,6 +186,7 @@ export interface KYCDashboardStats {
     status: string;
     customer: string;
   }[];
+  availableMonths?: string[];
 }
 
 export interface CreateKYCUserRequest {

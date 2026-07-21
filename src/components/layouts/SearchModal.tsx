@@ -73,12 +73,12 @@ const SEARCH_ITEMS: SearchItem[] = [
   },
   {
     id: 'reports',
-    name: 'Reports',
+    name: 'Reports (Surveys)',
     description: 'View and create reports',
     href: '/reports',
     icon: <FileText className="w-4 h-4" />,
     category: 'Pages',
-    keywords: ['reports', 'analytics', 'insights'],
+    keywords: ['reports', 'surveys', 'analytics', 'insights'],
   },
   {
     id: 'visualizations',

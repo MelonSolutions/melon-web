@@ -75,7 +75,7 @@ export default function DashboardLayout({
       icon: <Activity className="h-5 w-5" />,
     },
     {
-      name: 'Reports',
+      name: 'Reports (Surveys)',
       href: '/reports',
       icon: <FileText className="h-5 w-5" />,
     },
@@ -98,9 +98,9 @@ export default function DashboardLayout({
     },
   ];
 
-  // For trial users, disable everything except Reports
+  // For trial users, disable everything except Reports (Surveys)
   const navigation = fullNavigation.map((item) => {
-    if (isTrial && item.name !== 'Reports') {
+    if (isTrial && item.name !== 'Reports (Surveys)') {
       return {
         ...item,
         disabled: true,
@@ -339,7 +339,7 @@ export default function DashboardLayout({
               </div>
               <h1 className="text-[20px] font-medium text-gray-900">
                 {pathname === '/overview' && 'Program Impact Dashboard'}
-                {pathname === '/reports' && 'Reports'}
+                {pathname === '/reports' && 'Reports (Surveys)'}
                 {pathname === '/visualizations' && 'Visualizations'}
                 {pathname === '/dashboards' && 'Dashboards'}
                 {pathname === '/impact-metrics' && 'Impact Metrics'}

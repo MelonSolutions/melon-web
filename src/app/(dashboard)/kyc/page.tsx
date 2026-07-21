@@ -58,6 +58,7 @@ function KYCContent() {
 
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+  const [monthFilter, setMonthFilter] = useState(searchParams.get('month') || '');
   const [organizationId, setOrganizationId] = useState('');
   const [isFilterInitialized, setIsFilterInitialized] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -100,6 +101,7 @@ function KYCContent() {
     status: statusFilter,
     organizationId: organizationId,
     identityType: '',
+    month: monthFilter,
   };
 
   const {
@@ -111,6 +113,19 @@ function KYCContent() {
     refetch,
     setPage
   } = useKYCUsers(filters, { skip: !isFilterInitialized });
+
+  // Automatically clear monthFilter if the selected organization changes and the currently selected month has no records
+  useEffect(() => {
+    if (
+      !loading &&
+      monthFilter &&
+      dashboardStats?.availableMonths &&
+      dashboardStats.availableMonths.length > 0 &&
+      !dashboardStats.availableMonths.includes(monthFilter)
+    ) {
+      setMonthFilter('');
+    }
+  }, [loading, monthFilter, dashboardStats?.availableMonths]);
  
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
  
@@ -281,15 +296,20 @@ function KYCContent() {
   }
 
   const hasUsers = users && users.length > 0;
-  const hasFilters = debouncedSearch || statusFilter;
+  const hasFilters = debouncedSearch || statusFilter || monthFilter;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-2xl font-semibold text-gray-900">Address Verification</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage address and business verification requests
+          <p className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-2">
+            <span>Manage address and business verification requests</span>
+            {monthFilter && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                Filtering by: {new Date(monthFilter + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -315,6 +335,36 @@ function KYCContent() {
               </select>
             </div>
           )}
+          <div className="w-full sm:w-48 lg:w-52 transition-all">
+            <select
+              className="w-full truncate px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer hover:border-gray-300 font-medium pr-8 text-gray-700"
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.5rem center',
+                backgroundSize: '1.25rem'
+              }}
+            >
+              <option value="">All Months</option>
+              {(dashboardStats?.availableMonths && dashboardStats.availableMonths.length > 0
+                ? dashboardStats.availableMonths
+                : Array.from({ length: 12 }, (_, i) => {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  })
+              ).map((value) => {
+                const label = new Date(value + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                return (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
           <Link href="/kyc/bulk-upload" prefetch={false} className="w-full sm:w-auto">
             <Button variant="secondary" icon={<Upload className="w-4 h-4" />} className="w-full sm:w-auto">
               Bulk Upload CSV
@@ -408,7 +458,7 @@ function KYCContent() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-emerald-500" />
-                    Verification Trends (30d)
+                    Verification Trends {monthFilter ? `(${new Date(monthFilter + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})` : '(All Months)'}
                   </h3>
                 </div>
                 <VerificationTrends data={dashboardStats.timeSeries || []} />
@@ -701,6 +751,7 @@ function KYCContent() {
                 onClick={() => {
                   setSearchInput('');
                   setStatusFilter('');
+                  setMonthFilter('');
                 }}
               >
                 Clear filters

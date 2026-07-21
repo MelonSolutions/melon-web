@@ -35,6 +35,9 @@ export function useKYCUsers(
     status?: string;
     identityType?: string;
     organizationId?: string;
+    month?: string;
+    startDate?: string;
+    endDate?: string;
   },
   options?: { skip?: boolean }
 ): UseKYCUsersResult {
@@ -51,6 +54,7 @@ export function useKYCUsers(
     orgBreakdown: [],
     geographicBreakdown: [],
     locations: [],
+    availableMonths: [],
   });
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
@@ -67,7 +71,7 @@ export function useKYCUsers(
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId]);
+  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId, filters?.month, filters?.startDate, filters?.endDate]);
 
   const fetchData = useCallback(async (isSubsequent: boolean = false) => {
     if (options?.skip && !isSubsequent) return null;
@@ -78,7 +82,11 @@ export function useKYCUsers(
       
       const [response, statsData] = await Promise.all([
         getKYCUsers({ ...filters, page: currentPage }),
-        getKYCDashboardStats(filters?.organizationId),
+        getKYCDashboardStats(filters?.organizationId, {
+          month: filters?.month,
+          startDate: filters?.startDate,
+          endDate: filters?.endDate,
+        }),
       ]);
       
       return { response, statsData };
@@ -93,7 +101,7 @@ export function useKYCUsers(
     } finally {
       setLoading(false);
     }
-  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId, currentPage, options?.skip]);
+  }, [filters?.search, filters?.status, filters?.identityType, filters?.organizationId, filters?.month, filters?.startDate, filters?.endDate, currentPage, options?.skip]);
 
   useEffect(() => {
     let ignore = false;
