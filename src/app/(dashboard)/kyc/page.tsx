@@ -208,8 +208,8 @@ function VerificationTrendsCardSection({
         <button
           onClick={() => setShowFilterDrawer(!showFilterDrawer)}
           className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${hasCustomFilter || showFilterDrawer
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
         >
           <Filter className="w-3.5 h-3.5" />
@@ -355,8 +355,8 @@ function GeographicDistributionCardSection({
         <button
           onClick={() => setShowFilterDrawer(!showFilterDrawer)}
           className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${hasCustomFilter || showFilterDrawer
-              ? 'bg-orange-50 border-orange-200 text-orange-700'
-              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+            ? 'bg-orange-50 border-orange-200 text-orange-700'
+            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
         >
           <Filter className="w-3.5 h-3.5" />
@@ -903,8 +903,8 @@ function KYCContent() {
                       key={tab.id}
                       onClick={() => setStatusFilter(tab.id)}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all ${isActive
-                          ? 'bg-gray-900 border-gray-900 text-white shadow-xs'
-                          : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                        ? 'bg-gray-900 border-gray-900 text-white shadow-xs'
+                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                     >
                       {tab.label}
