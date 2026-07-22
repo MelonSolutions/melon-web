@@ -19,7 +19,11 @@ interface UseOverviewResult {
   refetch: () => Promise<void>;
 }
 
-export function useOverview(timeframe: string = '6months'): UseOverviewResult {
+export function useOverview(
+  timeframe: string = '6months',
+  organizationId?: string,
+  month?: string,
+): UseOverviewResult {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [programProgress, setProgramProgress] = useState<ProgramProgress[]>([]);
   const [regionalDistribution, setRegionalDistribution] = useState<RegionalDistribution[]>([]);
@@ -32,9 +36,9 @@ export function useOverview(timeframe: string = '6months'): UseOverviewResult {
       setError(null);
 
       const [stats, progress, regional] = await Promise.all([
-        getDashboardStats(timeframe),
-        getProgramProgress(),
-        getRegionalDistribution(),
+        getDashboardStats(timeframe, organizationId, month),
+        getProgramProgress(organizationId),
+        getRegionalDistribution(organizationId),
       ]);
 
       setDashboardStats(stats);
@@ -50,7 +54,7 @@ export function useOverview(timeframe: string = '6months'): UseOverviewResult {
 
   useEffect(() => {
     fetchData();
-  }, [timeframe]);
+  }, [timeframe, organizationId, month]);
 
   return {
     dashboardStats,
