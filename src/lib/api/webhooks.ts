@@ -5,6 +5,7 @@ export interface WebhookEndpoint {
   id: string;
   url: string;
   events: string[];
+  environment?: 'live' | 'sandbox' | 'all';
   status: 'active' | 'disabled';
   description?: string;
   createdAt: string;
@@ -13,6 +14,7 @@ export interface WebhookEndpoint {
 export interface CreateWebhookDto {
   url: string;
   events: string[];
+  environment?: 'live' | 'sandbox' | 'all';
   description?: string;
 }
 
@@ -52,7 +54,26 @@ export const createEndpoint = async (dto: CreateWebhookDto): Promise<{ endpoint:
   }
 };
 
+export const rotateEndpointSecret = async (id: string): Promise<{ secret: string }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/webhooks/config/${id}/rotate-secret`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw await response.json();
+    }
+    
+    const result = await response.json();
+    return { secret: result.data.secret };
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const deleteEndpoint = async (id: string): Promise<void> => {
+
   try {
     const response = await fetch(`${API_BASE_URL}/webhooks/config/${id}`, {
       method: 'DELETE',
