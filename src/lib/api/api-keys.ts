@@ -55,6 +55,24 @@ export const createApiKey = async (dto: CreateApiKeyDto): Promise<{ apiKey: ApiK
   }
 };
 
+export const rotateApiKey = async (keyId: string): Promise<{ apiKey: ApiKey, secret: string }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api-keys/${keyId}/rotate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw await response.json();
+    }
+    
+    const result = await response.json();
+    return { apiKey: result.data, secret: result.data.secret };
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const revokeApiKey = async (keyId: string): Promise<void> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api-keys/${keyId}`, {
@@ -69,3 +87,4 @@ export const revokeApiKey = async (keyId: string): Promise<void> => {
     throw error;
   }
 };
+
