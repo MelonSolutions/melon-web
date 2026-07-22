@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface PaginationProps {
   currentPage: number;
@@ -19,24 +20,41 @@ export function Pagination({
   hasNextPage,
   hasPreviousPage,
   totalItems,
-  pageSize,
+  pageSize = 10,
 }: PaginationProps) {
-  const startItem = ((currentPage - 1) * (pageSize || 10)) + 1;
-  const endItem = Math.min(currentPage * (pageSize || 10), totalItems || 0);
+  const [jumpInput, setJumpInput] = useState(String(currentPage));
+
+  useEffect(() => {
+    setJumpInput(String(currentPage));
+  }, [currentPage]);
+
+  const effectiveTotal = totalItems !== undefined ? totalItems : totalPages * pageSize;
+  const startItem = totalPages === 0 || effectiveTotal === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, effectiveTotal);
+
+  const handleJumpSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const targetPage = parseInt(jumpInput, 10);
+    if (!isNaN(targetPage) && targetPage >= 1 && targetPage <= totalPages) {
+      onPageChange(targetPage);
+    } else {
+      setJumpInput(String(currentPage));
+    }
+  };
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
-    const showPages = 5;
+    const maxVisible = 5;
 
-    if (totalPages <= showPages) {
+    if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
       if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, '...', totalPages);
+        pages.push(1, 2, 3, '...', totalPages);
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+        pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
       } else {
         pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
       }
@@ -47,36 +65,50 @@ export function Pagination({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 gap-4 sm:gap-0">
+      {/* Results Count */}
       <div className="text-sm text-gray-500 order-2 sm:order-1">
-        Showing <span className="font-medium text-gray-900">{totalItems === 0 ? 0 : startItem}</span> to{' '}
+        Showing <span className="font-medium text-gray-900">{startItem}</span> to{' '}
         <span className="font-medium text-gray-900">{endItem}</span> of{' '}
-        <span className="font-medium text-gray-900">{totalItems}</span> results
+        <span className="font-medium text-gray-900">{effectiveTotal}</span> results
       </div>
 
-      <div className="flex items-center gap-2 order-1 sm:order-2">
+      {/* Pagination Controls */}
+      <div className="flex flex-wrap items-center gap-1.5 order-1 sm:order-2">
+        {/* First Page Button */}
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          title="First Page"
+          className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        >
+          <ChevronsLeft className="w-4 h-4" />
+        </button>
+
+        {/* Previous Page Button */}
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPreviousPage}
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          title="Previous Page"
+          className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Desktop View: Full page numbers */}
+        {/* Desktop View: Full page number buttons */}
         <div className="hidden sm:flex items-center gap-1">
           {getPageNumbers().map((page, index) =>
             page === '...' ? (
-              <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-400">
+              <span key={`ellipsis-${index}`} className="px-2 py-1 text-xs text-gray-400">
                 ...
               </span>
             ) : (
               <button
                 key={page}
                 onClick={() => onPageChange(page as number)}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                   currentPage === page
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 {page}
@@ -85,18 +117,59 @@ export function Pagination({
           )}
         </div>
 
-        {/* Mobile View: Page X of Y */}
-        <div className="flex sm:hidden items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg">
-          Page {currentPage} of {totalPages}
-        </div>
-
+        {/* Next Page Button */}
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={!hasNextPage}
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          title="Next Page"
+          className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
+
+        {/* Last Page Button */}
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          title="Last Page"
+          className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        >
+          <ChevronsRight className="w-4 h-4" />
+        </button>
+
+        {/* Direct Page Jump Selector / Input */}
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1.5 border-l border-gray-200 pl-2.5 ml-1">
+            {totalPages <= 50 ? (
+              <select
+                value={currentPage}
+                onChange={(e) => onPageChange(Number(e.target.value))}
+                className="h-8 px-2 text-xs font-semibold border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                title="Jump directly to any page"
+              >
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <option key={p} value={p}>
+                    Page {p} of {totalPages}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <form onSubmit={handleJumpSubmit} className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">Go to:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={jumpInput}
+                  onChange={(e) => setJumpInput(e.target.value)}
+                  onBlur={() => handleJumpSubmit()}
+                  className="w-12 h-8 px-1 text-center text-xs font-semibold border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <span className="text-xs text-gray-400">/ {totalPages}</span>
+              </form>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
