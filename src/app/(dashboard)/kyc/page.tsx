@@ -108,9 +108,39 @@ function parseTimeValue(value: string): { timeframe: string; month: string } {
   return { timeframe: value, month: '' };
 }
 
-function getTimeValue(month: string): string {
+function computeDateRange(timeRange: string): { startDate: string; endDate: string } | null {
+  const now = new Date();
+  const endDate = now.toISOString().split('T')[0]; // today
+  let start: Date;
+
+  switch (timeRange) {
+    case '1month':
+      start = new Date(now);
+      start.setDate(start.getDate() - 30);
+      return { startDate: start.toISOString().split('T')[0], endDate };
+    case '3months':
+      start = new Date(now);
+      start.setMonth(start.getMonth() - 3);
+      return { startDate: start.toISOString().split('T')[0], endDate };
+    case '6months':
+      start = new Date(now);
+      start.setMonth(start.getMonth() - 6);
+      return { startDate: start.toISOString().split('T')[0], endDate };
+    case '1year':
+      start = new Date(now);
+      start.setFullYear(start.getFullYear() - 1);
+      return { startDate: start.toISOString().split('T')[0], endDate };
+    case 'all':
+      return null; // no date restriction
+    default:
+      return null;
+  }
+}
+
+function getTimeValue(timeRange: string, month: string): string {
+  if (timeRange) return timeRange;
   if (month) return `month:${month}`;
-  return '6months';
+  return 'all';
 }
 
 function renderOrgOptions(organizations: any[]) {
@@ -241,7 +271,7 @@ function VerificationTrendsCardSection({
               Time Range / Month
             </label>
             <select
-              value={getTimeValue(month)}
+              value={getTimeValue('', month)}
               onChange={(e) => handleTimeChange(e.target.value)}
               className="w-full h-8 px-2 text-xs border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-6 truncate font-medium"
             >
@@ -388,7 +418,7 @@ function GeographicDistributionCardSection({
               Time Range / Month
             </label>
             <select
-              value={getTimeValue(month)}
+              value={getTimeValue('', month)}
               onChange={(e) => handleTimeChange(e.target.value)}
               className="w-full h-8 px-2 text-xs border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer pr-6 truncate font-medium"
             >
@@ -438,6 +468,7 @@ function KYCContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [monthFilter, setMonthFilter] = useState(searchParams.get('month') || '');
+  const [timeRange, setTimeRange] = useState('all');
   const [organizationId, setOrganizationId] = useState('');
   const [isFilterInitialized, setIsFilterInitialized] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -471,12 +502,17 @@ function KYCContent() {
 
   const debouncedSearch = useDebounce(searchInput, 500);
 
+  // Compute date range from relative timeRange or specific month
+  const dateRange = monthFilter ? null : computeDateRange(timeRange);
+
   const filters = {
     search: debouncedSearch,
     status: statusFilter,
     organizationId: organizationId,
     identityType: '',
     month: monthFilter,
+    startDate: dateRange?.startDate || '',
+    endDate: dateRange?.endDate || '',
   };
 
   const {
@@ -516,8 +552,16 @@ function KYCContent() {
   }, [isMelonAdmin]);
 
   const handleGlobalTimeChange = (val: string) => {
-    const { month: m } = parseTimeValue(val);
-    setMonthFilter(m);
+    const { timeframe, month: m } = parseTimeValue(val);
+    if (m) {
+      // Specific month selected
+      setMonthFilter(m);
+      setTimeRange(`month:${m}`);
+    } else {
+      // Relative period selected (1month, 3months, 6months, 1year, all)
+      setMonthFilter('');
+      setTimeRange(timeframe);
+    }
   };
 
   const handleExport = async () => {
@@ -639,16 +683,16 @@ function KYCContent() {
 
   const statusTabs = [
     { id: '', label: 'All' },
-    { id: 'pending', label: 'Pending' },
-    { id: 'assigned', label: 'Assigned' },
-    { id: 'in_review', label: 'In Review' },
-    { id: 'verification_submitted', label: 'Pending Approval' },
-    { id: 'verified', label: 'Verified' },
-    { id: 'rejected', label: 'Rejected' },
+    { id: 'PENDING', label: 'Pending' },
+    { id: 'ASSIGNED', label: 'Assigned' },
+    { id: 'IN_REVIEW', label: 'In Review' },
+    { id: 'VERIFICATION_SUBMITTED', label: 'Pending Approval' },
+    { id: 'VERIFIED', label: 'Verified' },
+    { id: 'REJECTED', label: 'Rejected' },
   ];
 
   const hasUsers = users && users.length > 0;
-  const hasFilters = searchInput || statusFilter || monthFilter || organizationId;
+  const hasFilters = searchInput || statusFilter || monthFilter || organizationId || (timeRange && timeRange !== 'all');
   const isAllSelected = hasUsers && users.every((u: KYCUser) => selectedIds.has(u.id || (u as any)._id));
 
   if (loading && !isFilterInitialized) {
@@ -696,7 +740,7 @@ function KYCContent() {
               Time Range / Month
             </label>
             <select
-              value={getTimeValue(monthFilter)}
+              value={getTimeValue(timeRange, monthFilter)}
               onChange={(e) => handleGlobalTimeChange(e.target.value)}
               className="w-full truncate px-3 py-2 text-sm font-medium border border-gray-200 rounded-lg bg-gray-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors pr-8 text-gray-800"
               style={{
