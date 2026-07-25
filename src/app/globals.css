@@ -182,6 +182,18 @@ a:hover {
   overflow: hidden;
 }
 
+/* KYC enriched popup — prevent content clipping */
+.kyc-popup .leaflet-popup-content-wrapper {
+  overflow: visible;
+  border-radius: 12px;
+}
+.kyc-popup .leaflet-popup-content {
+  overflow: visible;
+  margin: 0;
+  padding: 14px 20px;
+  width: auto !important;
+}
+
 .leaflet-popup-tip,
 .professional-popup .leaflet-popup-tip {
   background: white;
