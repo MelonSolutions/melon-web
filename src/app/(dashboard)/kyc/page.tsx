@@ -768,6 +768,30 @@ function KYCContent() {
         </div>
       </div>
 
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="text-sm font-medium text-gray-500 mb-1">Total Requests</div>
+          <div className="text-2xl font-bold text-gray-900">{dashboardStats.totalUsers || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="text-sm font-medium text-gray-500 mb-1">Verified</div>
+          <div className="text-2xl font-bold text-emerald-600">{dashboardStats.verified || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="text-sm font-medium text-gray-500 mb-1">In Review</div>
+          <div className="text-2xl font-bold text-indigo-600">{dashboardStats.inReview || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="text-sm font-medium text-gray-500 mb-1">Pending</div>
+          <div className="text-2xl font-bold text-amber-600">{dashboardStats.pending || 0}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="text-sm font-medium text-gray-500 mb-1">Rejected</div>
+          <div className="text-2xl font-bold text-red-600">{dashboardStats.rejected || 0}</div>
+        </div>
+      </div>
+
       {/* Insights & Analysis Section */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-white to-gray-50/50 gap-4">
