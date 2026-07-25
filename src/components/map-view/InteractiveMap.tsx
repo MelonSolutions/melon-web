@@ -140,6 +140,40 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
   onSelect: (project: ProjectLocation) => void;
   showCoverage: boolean;
 }) {
+  const isKYC = !!project.kycStatus;
+
+  const getKYCStatusColor = (status?: string) => {
+    switch (status) {
+      case 'VERIFIED': return '#10b981';
+      case 'REJECTED': return '#ef4444';
+      case 'PENDING': return '#f59e0b';
+      case 'IN_REVIEW': return '#3b82f6';
+      case 'ASSIGNED': return '#8b5cf6';
+      case 'VERIFICATION_SUBMITTED': return '#f97316';
+      default: return '#6b7280';
+    }
+  };
+
+  const getKYCStatusBadgeClasses = (status?: string) => {
+    switch (status) {
+      case 'VERIFIED': return 'background:#dcfce7;color:#15803d;';
+      case 'REJECTED': return 'background:#fee2e2;color:#b91c1c;';
+      case 'PENDING': return 'background:#fef3c7;color:#92400e;';
+      case 'IN_REVIEW': return 'background:#dbeafe;color:#1d4ed8;';
+      case 'ASSIGNED': return 'background:#ede9fe;color:#6d28d9;';
+      case 'VERIFICATION_SUBMITTED': return 'background:#ffedd5;color:#c2410c;';
+      default: return 'background:#f3f4f6;color:#374151;';
+    }
+  };
+
+  const getKYCStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'VERIFICATION_SUBMITTED': return 'PENDING APPROVAL';
+      case 'IN_REVIEW': return 'IN REVIEW';
+      default: return status || 'UNKNOWN';
+    }
+  };
+
   const getSectorColor = (sector: string) => {
     switch (sector) {
       case 'Health': return '#dc2626';
@@ -152,25 +186,33 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
     }
   };
 
-  const getSectorIcon = (sector: string) => {
-    switch (sector) {
-      default: return '';
-    }
-  };
-
-  let color = getSectorColor(project.sector);
-  if (project.kycStatus === 'VERIFIED') {
-    color = '#10b981';
-  } else if (project.kycStatus === 'REJECTED') {
-    color = '#ef4444';
-  }
-
-  const size = isSelected ? 34 : (project.id.startsWith('kyc') ? 20 : 26);
+  const color = isKYC ? getKYCStatusColor(project.kycStatus) : getSectorColor(project.sector);
+  const isPending = project.kycStatus === 'PENDING' || project.kycStatus === 'ASSIGNED';
+  const size = isSelected ? 34 : (isKYC ? 22 : 26);
   const iconSize: [number, number] = [size, size];
   const iconAnchor: [number, number] = [size / 2, size / 2];
 
-  const icon = getSectorIcon(project.sector);
-  
+  // Build address string
+  const addressParts = [
+    project.streetNumber,
+    project.streetName,
+  ].filter(Boolean).join(' ');
+
+  const locationParts = [
+    project.city,
+    project.lga ? `${project.lga} LGA` : null,
+    project.state,
+  ].filter(Boolean).join(', ');
+
+  const fullAddress = [addressParts, locationParts].filter(Boolean).join(', ');
+
+  // Format dates
+  const formatDate = (d?: string) => {
+    if (!d) return null;
+    try { return new Date(d).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }); }
+    catch { return null; }
+  };
+
   const customIcon = new DivIcon({
     html: `
       <div class="relative">
@@ -187,28 +229,28 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
           transition: all 0.2s ease;
           position: relative;
           z-index: ${isSelected ? '1000' : '500'};
-        ">
-          <span style="font-size: ${isSelected ? '18px' : '14px'};">${icon}</span>
-        </div>
-        ${project.status === 'active' ? `
+        "></div>
+        ${isPending ? `
           <div style="
             position: absolute;
-            top: -2px;
-            right: -2px;
-            width: 10px;
-            height: 10px;
-            background: #10b981;
-            border: 2px solid white;
+            top: 50%;
+            left: 50%;
+            width: ${size + 12}px;
+            height: ${size + 12}px;
+            margin-top: -${(size + 12) / 2}px;
+            margin-left: -${(size + 12) / 2}px;
+            border: 2px solid ${color};
             border-radius: 50%;
-            animation: pulse 2s infinite;
+            animation: kycPulse 2s infinite;
+            opacity: 0.6;
           "></div>
         ` : ''}
       </div>
       <style>
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.7; }
-          100% { transform: scale(1); opacity: 1; }
+        @keyframes kycPulse {
+          0% { transform: scale(1); opacity: 0.6; }
+          50% { transform: scale(1.4); opacity: 0; }
+          100% { transform: scale(1); opacity: 0; }
         }
       </style>
     `,
@@ -232,38 +274,180 @@ function ProjectMarker({ project, isSelected, onSelect, showCoverage }: {
           </div>
         </Tooltip>
         
-        <Popup className="kyc-popup" maxWidth={300}>
-          <div className="p-3 min-w-[220px] bg-white rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-gray-900 pr-4">{project.title}</h3>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                project.kycStatus === 'VERIFIED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
-                {project.kycStatus || project.status}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-500">
-              <span className="font-medium px-1.5 py-0.5 bg-gray-100 rounded tracking-wider">{project.sector}</span>
-              <span>•</span>
-              <span className="italic">{project.id.startsWith('kyc') ? 'Address Verification' : 'Geospatial Project'}</span>
-            </div>
-            <p className="text-xs text-gray-600 mb-4 leading-relaxed line-clamp-2">
-              {project.description}
-            </p>
-            <div className="grid grid-cols-2 gap-3 py-2 border-t border-gray-100">
-              <div>
-                <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Impact</span>
-                <span className="text-sm font-bold text-indigo-600">{project.impactScore}%</span>
+        <Popup className="kyc-popup" maxWidth={340} minWidth={280}>
+          {isKYC ? (
+            /* ── Rich KYC Popup ── */
+            <div className="p-0 min-w-[260px] bg-white rounded-lg overflow-hidden" style={{ margin: '-14px -20px -14px -20px' }}>
+              {/* Header with status accent bar */}
+              <div style={{ borderTop: `3px solid ${color}` }} className="px-4 pt-3 pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-bold text-gray-900 text-sm leading-tight">{project.title}</h3>
+                  <span
+                    className="flex-shrink-0 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                    style={{ ...Object.fromEntries(getKYCStatusBadgeClasses(project.kycStatus).split(';').filter(Boolean).map(s => { const [k,v] = s.split(':'); return [k.trim(), v.trim()]; })) }}
+                  >
+                    {getKYCStatusLabel(project.kycStatus)}
+                  </span>
+                </div>
+                {project.loanId && (
+                  <div className="text-[10px] text-gray-400 mt-0.5 font-mono">ID: {project.loanId}</div>
+                )}
               </div>
-              <div>
-                <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Volume</span>
-                <span className="text-sm font-bold text-gray-900">{project.beneficiaries.toLocaleString()}</span>
+
+              {/* Address Section */}
+              {fullAddress && (
+                <div className="px-4 py-2 border-t border-gray-100">
+                  <div className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 mb-1">Address</div>
+                  <p className="text-xs text-gray-700 leading-relaxed">{fullAddress}</p>
+                </div>
+              )}
+
+              {/* Landmark Callout */}
+              {project.landmark && (
+                <div className="mx-4 mb-2 px-3 py-2 rounded-md" style={{ background: '#fefce8', border: '1px solid #fef08a' }}>
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-sm flex-shrink-0">📍</span>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: '#a16207' }}>Landmark</div>
+                      <p className="text-xs font-medium" style={{ color: '#854d0e' }}>{project.landmark}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Verification Details (Verified) */}
+              {project.kycStatus === 'VERIFIED' && (project.verifiedAddress || project.agentNotes) && (
+                <div className="px-4 py-2 border-t border-gray-100" style={{ background: '#f0fdf4' }}>
+                  <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: '#15803d' }}>Verification Details</div>
+                  {project.verifiedAddress && (
+                    <p className="text-xs text-gray-700 mb-1">
+                      <span className="font-medium text-gray-500">Verified Address:</span> {project.verifiedAddress}
+                    </p>
+                  )}
+                  {project.agentNotes && (
+                    <p className="text-xs text-gray-600 italic">&ldquo;{project.agentNotes}&rdquo;</p>
+                  )}
+                </div>
+              )}
+
+              {/* Rejection Details */}
+              {project.kycStatus === 'REJECTED' && (project.rejectionReason || project.rejectionNote) && (
+                <div className="px-4 py-2 border-t border-gray-100" style={{ background: '#fef2f2' }}>
+                  <div className="text-[10px] uppercase tracking-wider font-semibold mb-1" style={{ color: '#b91c1c' }}>Rejection Details</div>
+                  {project.rejectionReason && (
+                    <p className="text-xs text-gray-700 mb-1">
+                      <span className="font-medium text-gray-500">Reason:</span> {project.rejectionReason.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                  {project.rejectionNote && (
+                    <p className="text-xs text-gray-600 italic">&ldquo;{project.rejectionNote}&rdquo;</p>
+                  )}
+                </div>
+              )}
+
+              {/* Dates & Contact */}
+              <div className="px-4 py-2 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-2">
+                  {formatDate(project.submittedAt) && (
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Submitted</div>
+                      <div className="text-[11px] font-medium text-gray-700">{formatDate(project.submittedAt)}</div>
+                    </div>
+                  )}
+                  {formatDate(project.verifiedAt) && (
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+                        {project.kycStatus === 'REJECTED' ? 'Rejected' : 'Verified'}
+                      </div>
+                      <div className="text-[11px] font-medium text-gray-700">{formatDate(project.verifiedAt)}</div>
+                    </div>
+                  )}
+                </div>
+                {project.phone && (
+                  <div className="mt-1.5">
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Phone</div>
+                    <div className="text-[11px] font-medium text-gray-700">{project.phone}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Action Footer */}
+              <div className="px-4 py-2.5 border-t border-gray-100" style={{ background: '#f9fafb' }}>
+                <a
+                  href={`/kyc/${project.id}`}
+                  className="flex items-center justify-center gap-1.5 text-xs font-semibold rounded-md py-1.5 px-3 transition-colors"
+                  style={{ color: '#4f46e5', background: '#eef2ff', border: '1px solid #c7d2fe' }}
+                >
+                  View Full Details →
+                </a>
               </div>
             </div>
-          </div>
+          ) : (
+            /* ── Original Popup for non-KYC points ── */
+            <div className="p-3 min-w-[220px] bg-white rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-gray-900 pr-4">{project.title}</h3>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                  project.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {project.status}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mb-3 text-[10px] text-gray-500">
+                <span className="font-medium px-1.5 py-0.5 bg-gray-100 rounded tracking-wider">{project.sector}</span>
+                <span>•</span>
+                <span className="italic">Geospatial Project</span>
+              </div>
+              <p className="text-xs text-gray-600 mb-4 leading-relaxed line-clamp-2">
+                {project.description}
+              </p>
+              <div className="grid grid-cols-2 gap-3 py-2 border-t border-gray-100">
+                <div>
+                  <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Impact</span>
+                  <span className="text-sm font-bold text-indigo-600">{project.impactScore}%</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-400 block uppercase tracking-wider font-semibold">Volume</span>
+                  <span className="text-sm font-bold text-gray-900">{project.beneficiaries.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </Popup>
       </Marker>
       
+      {/* Landmark Marker (Only visible when selected) */}
+      {isSelected && isKYC && project.landmark && (
+        <Marker
+          position={[project.lat + 0.0003, project.lng + 0.0003]} // Slight offset to appear nearby
+          interactive={false}
+          icon={new DivIcon({
+            html: `
+              <div style="
+                background: #fefce8;
+                border: 2px solid #eab308;
+                color: #713f12;
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 800;
+                white-space: nowrap;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                width: max-content;
+                transform: translate(12px, -20px);
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+              ">
+                <span style="font-size: 15px;">📍</span> 
+                <span>${project.landmark}</span>
+              </div>
+            `,
+            className: 'landmark-marker-label',
+          })}
+        />
+      )}
+
       {showCoverage && (
         <Circle
           center={[project.lat, project.lng]}

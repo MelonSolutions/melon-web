@@ -81,13 +81,30 @@ export default function MapViewPage() {
               description: `Status: ${loc.status}`,
               lat: loc.lat,
               lng: loc.lng,
-              sector: 'Finance' as any, // Use Finance for KYC
+              sector: 'Finance' as any,
               status: (loc.status === 'VERIFIED' ? 'active' : 'inactive') as any,
-              kycStatus: loc.status, // Custom field for coloring
+              kycStatus: loc.status,
               impactScore: 100,
               beneficiaries: 1,
               coverage: 0,
-              activeAgents: 0
+              activeAgents: 0,
+              // Rich address data
+              streetNumber: loc.streetNumber,
+              streetName: loc.streetName,
+              landmark: loc.landmark,
+              city: loc.city,
+              lga: loc.lga,
+              state: loc.state,
+              country: loc.country,
+              phone: loc.phone,
+              loanId: loc.loanId,
+              loanType: loc.loanType,
+              submittedAt: loc.submittedAt,
+              verifiedAt: loc.verifiedAt,
+              rejectionReason: loc.rejectionReason,
+              rejectionNote: loc.rejectionNote,
+              verifiedAddress: loc.verificationData?.verifiedAddress,
+              agentNotes: loc.verificationData?.agentNotes,
             }));
 
             const kycLayer: Layer = {

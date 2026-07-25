@@ -181,10 +181,31 @@ export interface KYCDashboardStats {
     verified: number;
   }[];
   locations?: {
+    _id?: string;
     lat: number;
     lng: number;
     status: string;
     customer: string;
+    phone?: string;
+    streetNumber?: string;
+    streetName?: string;
+    landmark?: string;
+    city?: string;
+    lga?: string;
+    state?: string;
+    country?: string;
+    loanId?: string;
+    loanType?: string;
+    submittedAt?: string;
+    verifiedAt?: string;
+    rejectionReason?: string;
+    rejectionNote?: string;
+    verificationData?: {
+      verifiedAddress?: string;
+      verifiedLatitude?: number;
+      verifiedLongitude?: number;
+      agentNotes?: string;
+    };
   }[];
   availableMonths?: string[];
 }
