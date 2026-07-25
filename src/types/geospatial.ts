@@ -21,6 +21,23 @@ export interface ProjectLocation extends Coordinates {
   // region: string;
   description: string;
   phases?: ProjectPhase[];
+  // KYC enrichment fields (optional)
+  streetNumber?: string;
+  streetName?: string;
+  landmark?: string;
+  city?: string;
+  lga?: string;
+  state?: string;
+  country?: string;
+  phone?: string;
+  loanId?: string;
+  loanType?: string;
+  submittedAt?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+  rejectionNote?: string;
+  verifiedAddress?: string;
+  agentNotes?: string;
 }
 
 export interface ProjectPhase {
