@@ -16,7 +16,9 @@ export function StatusBadge({ status, size = 'md', className }: StatusBadgeProps
     IN_REVIEW: 'warning',
     VERIFICATION_SUBMITTED: 'warning',
     VERIFIED: 'success',
+    NOT_APPROVED: 'warning',
     REJECTED: 'error',
+    EXPIRED: 'neutral',
   };
 
   return (

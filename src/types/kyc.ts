@@ -5,8 +5,10 @@ export type VerificationStatus =
   | 'ASSIGNED'
   | 'IN_REVIEW'
   | 'VERIFICATION_SUBMITTED'
-  | 'VERIFIED' 
-  | 'REJECTED';
+  | 'VERIFIED'
+  | 'NOT_APPROVED'
+  | 'REJECTED'
+  | 'EXPIRED';
 
 export type DocumentType = 
   | 'ID_CARD' 
@@ -285,7 +287,9 @@ export const STATUS_DISPLAY_NAMES: Record<VerificationStatus, string> = {
   IN_REVIEW: 'In Review',
   VERIFICATION_SUBMITTED: 'Pending Approval',
   VERIFIED: 'Verified',
+  NOT_APPROVED: 'Not Approved',
   REJECTED: 'Rejected',
+  EXPIRED: 'Expired',
 };
 
 export const DOCUMENT_TYPE_DISPLAY_NAMES: Record<DocumentType, string> = {
@@ -310,7 +314,9 @@ export const getStatusColor = (status: VerificationStatus): string => {
     IN_REVIEW: 'yellow',
     VERIFICATION_SUBMITTED: 'orange',
     VERIFIED: 'green',
+    NOT_APPROVED: 'yellow',
     REJECTED: 'red',
+    EXPIRED: 'gray',
   };
   return colors[status] || 'gray';
 };
