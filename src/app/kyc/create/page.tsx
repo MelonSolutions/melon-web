@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { createKYCUser, ApiError } from '@/lib/api/kyc';
+import { createKYCUser, uploadImageToCloudinary, ApiError } from '@/lib/api/kyc';
 import { apiClient } from '@/lib/api/auth';
 import { useAuthContext } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/Toast';
@@ -28,6 +28,13 @@ interface AddressData {
   notes: string;
 }
 
+interface UploadedDocument {
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  documentType: string;
+}
+
 interface CreateKYCFormData {
   loanId: string;
   loanType: string;
@@ -42,6 +49,7 @@ interface CreateKYCFormData {
   addresses: AddressData[];
   organizationId: string;
   relogReason: string;
+  documents: UploadedDocument[];
 }
 
 const ADDRESS_LABELS = [
@@ -142,6 +150,7 @@ export default function AddKYCUserPage() {
     addresses: [createEmptyAddress(0)],
     organizationId: '',
     relogReason: '',
+    documents: [],
   });
 
   const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
@@ -300,6 +309,7 @@ export default function AddKYCUserPage() {
           ...(addr.country && { country: addr.country }),
           ...(addr.notes && { notes: addr.notes }),
         })),
+        documents: formData.documents,
       };
 
       const result = await createKYCUser(requestData);
@@ -684,6 +694,84 @@ export default function AddKYCUserPage() {
             </CardContent>
           </Card>
         ))}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Documents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  Upload any supporting documents (e.g., ID, utility bill, purchase order).
+                </p>
+              </div>
+
+              {formData.documents.length > 0 && (
+                <ul className="space-y-2 mb-4">
+                  {formData.documents.map((doc, i) => (
+                    <li key={i} className="flex items-center justify-between p-2 bg-white border rounded">
+                      <span className="text-sm truncate">{doc.fileName} ({doc.documentType})</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const updated = [...formData.documents];
+                          updated.splice(i, 1);
+                          setFormData(prev => ({ ...prev, documents: updated }));
+                        }}
+                        icon={<Trash2 className="w-4 h-4" />}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      try {
+                        const url = await uploadImageToCloudinary(file);
+                        setFormData(prev => ({
+                          ...prev,
+                          documents: [
+                            ...prev.documents,
+                            {
+                              fileName: file.name,
+                              fileUrl: url,
+                              fileType: file.type,
+                              documentType: 'OTHER'
+                            }
+                          ]
+                        }));
+                        addToast({
+                          type: 'success',
+                          title: 'Upload Successful',
+                          message: `${file.name} uploaded successfully.`
+                        });
+                      } catch (err: any) {
+                        addToast({
+                          type: 'error',
+                          title: 'Upload Failed',
+                          message: err.message || 'Failed to upload document'
+                        });
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {formData.addresses.length < 5 && (
           <button

@@ -343,6 +343,13 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
               <span className="text-gray-500">Addresses:</span>
               <span className="text-gray-900 font-bold">{user.addresses?.length || 1}</span>
             </div>
+            
+            {user.notes && (
+              <div className="pt-2 mt-2 border-t border-gray-100">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-0.5">Instructions</span>
+                <p className="text-[10px] text-gray-700 line-clamp-2" title={user.notes}>{user.notes}</p>
+              </div>
+            )}
           </div>
         </div>
         </Link>
@@ -382,6 +389,13 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
                   {user.loanId || 'N/A'} {user.loanType && `• ${formatLoanType(user.loanType as string)}`}
                 </span>
                 <div className="text-[11px] text-gray-500 truncate max-w-full">{user.email}</div>
+                
+                {user.notes && (
+                  <div className="text-[10px] text-gray-600 truncate mt-0.5 max-w-full" title={user.notes}>
+                    <span className="font-semibold mr-1">Notes:</span>
+                    {user.notes}
+                  </div>
+                )}
                 
                 {user.organization?.name && (
                   <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-medium lg:hidden mt-1.5">
