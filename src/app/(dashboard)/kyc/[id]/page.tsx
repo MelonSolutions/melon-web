@@ -53,6 +53,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const { openModal, closeModal } = useModal();
   const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
+  const isSycamore = organization?.name?.toLowerCase().includes('sycamore');
 
   const { user, loading, refetch } = useKYCUser(userId);
   const [updating, setUpdating] = useState(false);
@@ -66,7 +67,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
 
-      await makeVerificationDecision(userId, true, undefined, addressIndex, undefined);
+      await makeVerificationDecision(userId, 'approved', undefined, addressIndex, undefined);
       await refetch();
 
       addToast({
@@ -87,6 +88,33 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     }
   };
 
+  const handleVerificationNotApproved = async (addressIndex: number) => {
+    try {
+      setUpdating(true);
+
+      const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
+
+      await makeVerificationDecision(userId, 'not_approved', undefined, addressIndex, undefined);
+      await refetch();
+
+      addToast({
+        type: 'success',
+        title: 'Address Not Approved',
+        message: `${addressLabel} has been marked as Not Approved.`,
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Update Failed',
+          message: error.message,
+        });
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const handleVerificationRejection = async (addressIndex: number) => {
     if (rejectionReason.trim().length < 10) {
       return;
@@ -98,7 +126,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
 
       // Pass rejectionReason as Note as well since it's the detailed text
-      await makeVerificationDecision(userId, false, undefined, addressIndex, rejectionReason);
+      await makeVerificationDecision(userId, 'rejected', undefined, addressIndex, rejectionReason);
       await refetch();
 
       addToast({
@@ -506,6 +534,13 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Date Submitted</div>
                     <div className="text-sm text-gray-900">{format(new Date(user.submittedAt), 'PPP')}</div>
                   </div>
+
+                  {user.notes && (
+                    <div className="md:col-span-2">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">General Instructions / Notes</div>
+                      <div className="text-sm text-gray-900 whitespace-pre-wrap">{user.notes}</div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -529,7 +564,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 shrink-0 w-full sm:w-auto">
                           <Button
                             variant="success"
                             size="sm"
@@ -537,9 +572,23 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             disabled={updating}
                             icon={<CheckCircle className="w-4 h-4" />}
                             className="flex-1 sm:flex-none"
+                            title="Approved & Verified (Agent Gets Paid)"
                           >
                             Approve
                           </Button>
+                          {isSycamore && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleVerificationNotApproved(index)}
+                              disabled={updating}
+                              icon={<AlertTriangle className="w-4 h-4" />}
+                              className="flex-1 sm:flex-none text-yellow-700 bg-yellow-100 hover:bg-yellow-200 border-yellow-200"
+                              title="Not Approved (Agent Gets Paid)"
+                            >
+                              Not Approved
+                            </Button>
+                          )}
                           <Button
                             variant="danger"
                             size="sm"
@@ -547,6 +596,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             disabled={updating}
                             icon={<XCircle className="w-4 h-4" />}
                             className="flex-1 sm:flex-none"
+                            title="Rejection (Agent Not Paid)"
                           >
                             Reject
                           </Button>
@@ -581,6 +631,13 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             <div className="text-sm text-gray-900 font-mono">
                               {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
                             </div>
+                          </div>
+                        )}
+
+                        {address.notes && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Instructions / Notes</div>
+                            <div className="text-sm text-gray-900 whitespace-pre-wrap">{address.notes}</div>
                           </div>
                         )}
                       </div>

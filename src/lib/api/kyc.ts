@@ -134,17 +134,17 @@ export async function updateKYCUser(
 
 export async function makeVerificationDecision(
   id: string,
-  approved: boolean,
+  decision: 'approved' | 'not_approved' | 'rejected',
   rejectionReason?: string,
   addressIndex?: number,
   rejectionNote?: string
 ): Promise<{ message: string }> {
   const payload: any = { 
-    approved: approved.toString(),
-    rejectionNote: rejectionNote // Now required by backend
+    decision,
+    rejectionNote // Required by backend for rejections
   };
   
-  if (!approved && rejectionReason) {
+  if (decision === 'rejected' && rejectionReason) {
     payload.rejectionReason = rejectionReason;
   }
   
