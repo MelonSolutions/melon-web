@@ -809,17 +809,28 @@ function KYCContent() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
-            <Link href="/map-view?layer=kyc" prefetch={false}>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 h-9"
-                icon={<MapPin className="w-4 h-4" />}
-              >
-                <span className="hidden xs:inline">Mapping Spread</span>
-                <span className="xs:hidden">Map</span>
-              </Button>
-            </Link>
+            {(() => {
+              const mapUrl = new URLSearchParams();
+              mapUrl.append('layer', 'kyc');
+              if (organizationId) mapUrl.append('orgId', organizationId);
+              if (monthFilter) mapUrl.append('month', monthFilter);
+              if (dateRange?.startDate) mapUrl.append('startDate', dateRange.startDate);
+              if (dateRange?.endDate) mapUrl.append('endDate', dateRange.endDate);
+              
+              return (
+                <Link href={`/map-view?${mapUrl.toString()}`} prefetch={false}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 h-9"
+                    icon={<MapPin className="w-4 h-4" />}
+                  >
+                    <span className="hidden xs:inline">Mapping Spread</span>
+                    <span className="xs:hidden">Map</span>
+                  </Button>
+                </Link>
+              );
+            })()}
             <Button
               variant="ghost"
               size="sm"
