@@ -54,6 +54,10 @@ export default function MapViewPage() {
   const focusId = searchParams.get('focus');
   const focalLat = searchParams.get('lat');
   const focalLng = searchParams.get('lng');
+  const orgId = searchParams.get('orgId') || undefined;
+  const month = searchParams.get('month') || undefined;
+  const startDate = searchParams.get('startDate') || undefined;
+  const endDate = searchParams.get('endDate') || undefined;
   
   const [selectedProject, setSelectedProject] = useState<ProjectLocation | null>(null);
   const [sidebarView, setSidebarView] = useState<'analytics' | 'details'>('analytics');
@@ -72,7 +76,11 @@ export default function MapViewPage() {
     if (kycLayerRequested && !kycLoadedRef.current) {
       const fetchKYCData = async () => {
         try {
-          const stats = await getKYCDashboardStats();
+          const stats = await getKYCDashboardStats(orgId, {
+            month,
+            startDate,
+            endDate
+          });
           if (stats.locations && stats.locations.length > 0) {
             kycLoadedRef.current = true;
             const kycPoints = stats.locations.map((loc: any, index: number) => ({
