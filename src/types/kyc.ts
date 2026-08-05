@@ -14,7 +14,8 @@ export type DocumentType =
   | 'ID_CARD' 
   | 'PROOF_OF_ADDRESS' 
   | 'PASSPORT_PHOTO' 
-  | 'UTILITY_BILL';
+  | 'UTILITY_BILL'
+  | 'OTHER';
 
 export type LoanType = 'PERSONAL' | 'BUSINESS' | 'DOCUMENT_VERIFICATION' | 'NEW_CUSTOMER';
 
@@ -297,6 +298,7 @@ export const DOCUMENT_TYPE_DISPLAY_NAMES: Record<DocumentType, string> = {
   PROOF_OF_ADDRESS: 'Proof of Address',
   PASSPORT_PHOTO: 'Passport Photo',
   UTILITY_BILL: 'Utility Bill',
+  OTHER: 'Other Document',
 };
 
 export const getStatusDisplayName = (status: VerificationStatus): string => {

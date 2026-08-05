@@ -711,7 +711,7 @@ export default function AddKYCUserPage() {
                 <ul className="space-y-2 mb-4">
                   {formData.documents.map((doc, i) => (
                     <li key={i} className="flex items-center justify-between p-2 bg-white border rounded">
-                      <span className="text-sm truncate">{doc.fileName} ({doc.documentType})</span>
+                      <span className="text-sm truncate">{doc.fileName}</span>
                       <Button
                         variant="ghost"
                         size="sm"
