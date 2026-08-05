@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, UploadCloud, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createKYCUser, uploadImageToCloudinary, ApiError } from '@/lib/api/kyc';
 import { apiClient } from '@/lib/api/auth';
@@ -113,6 +113,7 @@ export default function AddKYCUserPage() {
   const [creating, setCreating] = useState(false);
   const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
   const [needsRelog, setNeedsRelog] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
 
@@ -729,44 +730,70 @@ export default function AddKYCUserPage() {
                 </ul>
               )}
 
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <Input
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.pdf"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
+              <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors relative cursor-pointer group">
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  disabled={isUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
 
-                      try {
-                        const url = await uploadImageToCloudinary(file);
-                        setFormData(prev => ({
-                          ...prev,
-                          documents: [
-                            ...prev.documents,
-                            {
-                              fileName: file.name,
-                              fileUrl: url,
-                              fileType: file.type,
-                              documentType: 'OTHER'
-                            }
-                          ]
-                        }));
-                        addToast({
-                          type: 'success',
-                          title: 'Upload Successful',
-                          message: `${file.name} uploaded successfully.`
-                        });
-                      } catch (err: any) {
-                        addToast({
-                          type: 'error',
-                          title: 'Upload Failed',
-                          message: err.message || 'Failed to upload document'
-                        });
-                      }
-                      e.target.value = '';
-                    }}
-                  />
+                    setIsUploading(true);
+                    try {
+                      const url = await uploadImageToCloudinary(file);
+                      setFormData(prev => ({
+                        ...prev,
+                        documents: [
+                          ...prev.documents,
+                          {
+                            fileName: file.name,
+                            fileUrl: url,
+                            fileType: file.type,
+                            documentType: 'OTHER'
+                          }
+                        ]
+                      }));
+                      addToast({
+                        type: 'success',
+                        title: 'Upload Successful',
+                        message: `${file.name} uploaded successfully.`
+                      });
+                    } catch (err: any) {
+                      addToast({
+                        type: 'error',
+                        title: 'Upload Failed',
+                        message: err.message || 'Failed to upload document'
+                      });
+                    } finally {
+                      setIsUploading(false);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+                
+                <div className="flex flex-col items-center justify-center text-center space-y-2">
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                      <p className="text-sm font-medium text-gray-700">Uploading document...</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-white rounded-full shadow-sm group-hover:scale-105 transition-transform">
+                        <UploadCloud className="w-8 h-8 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Click or drag file to this area to upload
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Supports JPG, PNG and PDF formats
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
