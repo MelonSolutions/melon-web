@@ -395,6 +395,50 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            {user.status === 'VERIFIED' && (
+              <Card className="border-2 border-emerald-200 bg-emerald-50">
+                <CardHeader>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div className="w-full">
+                      <CardTitle className="text-emerald-800 mb-1">Approved & Verified</CardTitle>
+                      <div className="text-sm text-emerald-700 space-y-1">
+                        <p>Sycamore is satisfied with the job. The submissions, comments and verification have been approved.</p>
+                        <p className="text-xs text-emerald-600 font-medium">Agent gets paid ✓</p>
+                        {user.verificationDate && (
+                          <p className="text-xs text-emerald-600">Decision made: {format(new Date(user.verificationDate), 'PPp')}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+
+            {user.status === 'NOT_APPROVED' && (
+              <Card className="border-2 border-amber-200 bg-amber-50">
+                <CardHeader>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div className="w-full">
+                      <CardTitle className="text-amber-800 mb-1">Not Approved</CardTitle>
+                      <div className="text-sm text-amber-700 space-y-1">
+                        <p>The agent went to the field and did the required job, but the risk team is not convinced to proceed in onboarding the customer.</p>
+                        <p className="text-xs text-amber-600 font-medium">Agent still gets paid ✓</p>
+                        {user.verificationDate && (
+                          <p className="text-xs text-amber-600">Decision made: {format(new Date(user.verificationDate), 'PPp')}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+
             {user.status === 'REJECTED' && (
               <Card className="border-2 border-error-light/50 bg-error-light/10">
                 <CardHeader>
@@ -405,8 +449,13 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     <div className="w-full">
                       <CardTitle className="text-error mb-1">Verification Rejected</CardTitle>
                       <div className="text-sm text-error/90 space-y-2">
+                        <p>The verification submission was not convincing. The verification was not done properly.</p>
+                        <p className="text-xs text-red-600 font-medium">Agent does not get paid ✗</p>
+                        {user.verificationDate && (
+                          <p className="text-xs text-red-500">Decision made: {format(new Date(user.verificationDate), 'PPp')}</p>
+                        )}
                         {user.rejectionReason && (
-                          <div className="font-medium text-base">
+                          <div className="font-medium text-base mt-2">
                             Reason: {user.rejectionReason}
                           </div>
                         )}
@@ -576,19 +625,17 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                           >
                             Approve
                           </Button>
-                          {isSycamore && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleVerificationNotApproved(index)}
-                              disabled={updating}
-                              icon={<AlertTriangle className="w-4 h-4" />}
-                              className="flex-1 sm:flex-none text-yellow-700 bg-yellow-100 hover:bg-yellow-200 border-yellow-200"
-                              title="Not Approved (Agent Gets Paid)"
-                            >
-                              Not Approved
-                            </Button>
-                          )}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleVerificationNotApproved(index)}
+                            disabled={updating}
+                            icon={<AlertTriangle className="w-4 h-4" />}
+                            className="flex-1 sm:flex-none text-amber-700 bg-amber-100 hover:bg-amber-200 border-amber-200"
+                            title="Not Approved (Agent Gets Paid)"
+                          >
+                            Not Approved
+                          </Button>
                           <Button
                             variant="danger"
                             size="sm"
@@ -841,21 +888,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               </CardContent>
             </Card>
 
-            {user.status === 'REJECTED' && user.rejectionReason && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-red-900 mb-1">
-                      Verification Rejected
-                    </h3>
-                    <p className="text-sm text-red-700">{user.rejectionReason}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
 
           <div className="space-y-6">
@@ -965,11 +998,59 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     </div>
                   </div>
 
-                  {user.verificationDate && (
+                  {user.assignedAt && (
                     <div className="flex gap-3">
-                      <div className="w-2 h-2 mt-2 rounded-full bg-success shrink-0"></div>
+                      <div className="w-2 h-2 mt-2 rounded-full bg-purple-500 shrink-0"></div>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">Verified</div>
+                        <div className="text-sm font-medium text-gray-900">Agent Assigned</div>
+                        <div className="text-xs text-gray-500">
+                          {format(new Date(user.assignedAt), 'PPp')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {user.verifiedAt && (
+                    <div className="flex gap-3">
+                      <div className="w-2 h-2 mt-2 rounded-full bg-indigo-500 shrink-0"></div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Agent Submitted</div>
+                        <div className="text-xs text-gray-500">
+                          {format(new Date(user.verifiedAt), 'PPp')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {user.status === 'VERIFIED' && user.verificationDate && (
+                    <div className="flex gap-3">
+                      <div className="w-2 h-2 mt-2 rounded-full bg-emerald-500 shrink-0"></div>
+                      <div>
+                        <div className="text-sm font-medium text-emerald-700">Approved & Verified</div>
+                        <div className="text-xs text-gray-500">
+                          {format(new Date(user.verificationDate), 'PPp')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {user.status === 'NOT_APPROVED' && user.verificationDate && (
+                    <div className="flex gap-3">
+                      <div className="w-2 h-2 mt-2 rounded-full bg-amber-500 shrink-0"></div>
+                      <div>
+                        <div className="text-sm font-medium text-amber-700">Not Approved</div>
+                        <div className="text-xs text-gray-500">
+                          {format(new Date(user.verificationDate), 'PPp')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {user.status === 'REJECTED' && user.verificationDate && (
+                    <div className="flex gap-3">
+                      <div className="w-2 h-2 mt-2 rounded-full bg-red-500 shrink-0"></div>
+                      <div>
+                        <div className="text-sm font-medium text-red-700">Rejected</div>
                         <div className="text-xs text-gray-500">
                           {format(new Date(user.verificationDate), 'PPp')}
                         </div>

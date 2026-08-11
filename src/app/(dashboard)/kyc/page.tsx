@@ -688,6 +688,7 @@ function KYCContent() {
     { id: 'IN_REVIEW', label: 'In Review' },
     { id: 'VERIFICATION_SUBMITTED', label: 'Pending Approval' },
     { id: 'VERIFIED', label: 'Verified' },
+    { id: 'NOT_APPROVED', label: 'Not Approved' },
     { id: 'REJECTED', label: 'Rejected' },
   ];
 

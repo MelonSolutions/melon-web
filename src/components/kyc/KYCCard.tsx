@@ -333,8 +333,14 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
               </div>
               <div className="flex flex-col">
                 <span className="text-gray-400">Decision</span>
-                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                  {user.verificationDate ? format(new Date(user.verificationDate), 'MM/dd, HH:mm') : 'Pending'}
+                <span className={`font-medium whitespace-nowrap overflow-hidden text-ellipsis ${
+                  user.status === 'VERIFIED' ? 'text-emerald-600' :
+                  user.status === 'NOT_APPROVED' ? 'text-amber-600' :
+                  user.status === 'REJECTED' ? 'text-red-600' : 'text-gray-700'
+                }`}>
+                  {(user.status === 'VERIFIED' || user.status === 'NOT_APPROVED' || user.status === 'REJECTED') && user.verificationDate
+                    ? format(new Date(user.verificationDate), 'MM/dd, HH:mm')
+                    : 'Pending'}
                 </span>
               </div>
             </div>
@@ -536,8 +542,14 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
 
           {/* Column 7: Decision (Desktop-only) */}
           <div className="hidden lg:block text-center">
-            <div className={`text-[11px] font-medium ${(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate ? 'text-gray-900' : 'text-gray-300 italic'}`}>
-              {(user.status === 'VERIFIED' || user.status === 'REJECTED') && user.verificationDate
+            <div className={`text-[11px] font-medium ${
+              (user.status === 'VERIFIED' || user.status === 'NOT_APPROVED' || user.status === 'REJECTED') && user.verificationDate
+                ? user.status === 'VERIFIED' ? 'text-emerald-600'
+                  : user.status === 'NOT_APPROVED' ? 'text-amber-600'
+                  : 'text-red-600'
+                : 'text-gray-300 italic'
+            }`}>
+              {(user.status === 'VERIFIED' || user.status === 'NOT_APPROVED' || user.status === 'REJECTED') && user.verificationDate
                 ? format(new Date(user.verificationDate as string), 'MM/dd, HH:mm')
                 : 'Pending'}
             </div>
