@@ -39,7 +39,7 @@ const mabryPro = localFont({
 
 // Match FigoRisk's approach - simpler, direct application
 const dmSans = DM_Sans({
-  subsets: ['latin-ext'],
+  subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
 });
 
