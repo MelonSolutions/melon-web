@@ -426,9 +426,15 @@ export default function ReportDetailsPage() {
                         <textarea
                           value={question.title}
                           onChange={(e) => handleQuestionUpdate(question.id, { title: e.target.value })}
-                          className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full text-gray-900 resize-none overflow-hidden"
+                          className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full text-gray-900 resize-none overflow-hidden whitespace-pre-wrap"
                           placeholder="Question title"
                           rows={1}
+                          ref={(el) => {
+                            if (el) {
+                              el.style.height = 'auto';
+                              el.style.height = `${el.scrollHeight}px`;
+                            }
+                          }}
                           onInput={(e) => {
                             const target = e.target as HTMLTextAreaElement;
                             target.style.height = 'auto';
