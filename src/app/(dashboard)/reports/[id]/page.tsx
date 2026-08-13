@@ -423,12 +423,17 @@ export default function ReportDetailsPage() {
                   <div className="p-6 border-b border-gray-100">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
-                        <input
-                          type="text"
+                        <textarea
                           value={question.title}
                           onChange={(e) => handleQuestionUpdate(question.id, { title: e.target.value })}
-                          className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full text-gray-900"
+                          className="text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 p-0 w-full text-gray-900 resize-none overflow-hidden"
                           placeholder="Question title"
+                          rows={1}
+                          onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement;
+                            target.style.height = 'auto';
+                            target.style.height = `${target.scrollHeight}px`;
+                          }}
                         />
                         <textarea
                           value={question.description || ''}
