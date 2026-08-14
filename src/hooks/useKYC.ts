@@ -145,6 +145,7 @@ export function useKYCUsers(
     loading,
     error,
     refetch: async () => { 
+      setLoading(true);
       const result = await fetchData(true);
       if (result) {
         const { response, statsData } = result;
@@ -156,6 +157,7 @@ export function useKYCUsers(
         }
         setDashboardStats(statsData);
       }
+      setLoading(false);
     },
     setPage,
   };
