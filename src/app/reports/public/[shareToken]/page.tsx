@@ -146,7 +146,9 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       return {
         questionId,
-        answer: Array.isArray(value) ? value.join(', ') : value.toString()
+        answer: Array.isArray(value) 
+          ? value.join(', ') 
+          : (typeof value === 'object' && value !== null ? value : value?.toString() || '')
       };
     });
 

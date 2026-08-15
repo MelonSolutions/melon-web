@@ -9,6 +9,7 @@ const LocationMapAnalytics = dynamic(() => import('./LocationMapAnalytics'), {
   ssr: false,
   loading: () => <div className="h-[400px] w-full bg-gray-100 rounded-lg animate-pulse" />
 });
+import MatrixAnalytics from './MatrixAnalytics';
 
 interface QuestionAnalyticsCardProps {
   analytics: QuestionAnalytics;
@@ -176,6 +177,15 @@ export default function QuestionAnalyticsCard({
             <p className="text-2xl font-bold text-gray-900">{analytics.locationStats.length}</p>
           </div>
           <LocationMapAnalytics locations={analytics.locationStats} height={400} />
+        </div>
+      );
+    }
+
+    // For matrix questions
+    if (analytics.matrixStats && analytics.matrixStats.length > 0) {
+      return (
+        <div className="space-y-4">
+          <MatrixAnalytics stats={analytics.matrixStats} />
         </div>
       );
     }
