@@ -352,6 +352,7 @@ export interface QuestionAnalytics {
   numericStats?: NumericStats;
   textStats?: TextStats;
   timeDistribution?: TimeDistribution[];
+  locationStats?: Array<{ lat: number; lng: number }>;
 }
 
 export interface ResponseOverTime {
