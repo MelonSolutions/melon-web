@@ -70,6 +70,7 @@ export default function ReportDetailsPage() {
     { value: 'MATRIX', label: 'Matrix / Likert', icon: '📋' },
     { value: 'DATE', label: 'Date', icon: '📅' },
     { value: 'TIME', label: 'Time', icon: '🕐' },
+    { value: 'GPS_LOCATION', label: 'GPS Location', icon: '📍' },
   ];
 
   useEffect(() => {
@@ -690,6 +691,13 @@ export default function ReportDetailsPage() {
                           disabled
                           className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
                         />
+                      </div>
+                    )}
+
+                    {question.type === 'GPS_LOCATION' && (
+                      <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 w-fit">
+                        <span className="text-sm">📍</span>
+                        <span className="text-sm">Capture GPS Location</span>
                       </div>
                     )}
                   </div>
