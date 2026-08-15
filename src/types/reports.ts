@@ -24,6 +24,7 @@ export type QuestionType =
   | 'EMAIL'
   | 'PHONE'
   | 'NUMBER'
+  | 'GPS_LOCATION'
   | 'IMPACT_METRIC';
 
 export interface QuestionSettings {
@@ -151,6 +152,7 @@ export const QUESTION_TYPE_DISPLAY_NAMES: Record<QuestionType, string> = {
   EMAIL: 'Email',
   PHONE: 'Phone',
   NUMBER: 'Number',
+  GPS_LOCATION: 'GPS Location',
   IMPACT_METRIC: 'Impact Metric',
 };
 
