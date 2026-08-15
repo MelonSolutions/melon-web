@@ -3,6 +3,12 @@
 import { QuestionAnalytics } from '@/lib/api/reports';
 import BarChartComponent from '../charts/BarChartComponent';
 import PieChartComponent from '../charts/PieChartComponent';
+import dynamic from 'next/dynamic';
+
+const LocationMapAnalytics = dynamic(() => import('./LocationMapAnalytics'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full bg-gray-100 rounded-lg animate-pulse" />
+});
 
 interface QuestionAnalyticsCardProps {
   analytics: QuestionAnalytics;
@@ -158,6 +164,19 @@ export default function QuestionAnalyticsCard({
           title="Time Distribution"
           height={250}
         />
+      );
+    }
+
+    // For location questions
+    if (analytics.locationStats && analytics.locationStats.length > 0) {
+      return (
+        <div className="space-y-4">
+          <div className="p-4 bg-blue-50 rounded-lg max-w-xs">
+            <p className="text-xs text-gray-600 mb-1">Total Locations Captured</p>
+            <p className="text-2xl font-bold text-gray-900">{analytics.locationStats.length}</p>
+          </div>
+          <LocationMapAnalytics locations={analytics.locationStats} height={400} />
+        </div>
       );
     }
 
