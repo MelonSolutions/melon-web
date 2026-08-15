@@ -353,6 +353,7 @@ export interface QuestionAnalytics {
   textStats?: TextStats;
   timeDistribution?: TimeDistribution[];
   locationStats?: Array<{ lat: number; lng: number }>;
+  matrixStats?: Array<{ row: string; counts: Array<{ column: string; count: number }> }>;
 }
 
 export interface ResponseOverTime {
