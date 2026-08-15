@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { Send, CheckCircle, Clock, Info } from 'lucide-react';
+import { Send, CheckCircle, Clock, Info, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/Progress';
 import { Badge } from '@/components/ui/Badge';
@@ -18,8 +18,9 @@ interface Question {
   title: string;
   description?: string;
   required: boolean;
-  options?: string[];
+  options?: string[] | [string[], string[]];
   impactMetricId?: string;
+  settings?: any;
 }
 
 interface Report {
@@ -348,6 +349,107 @@ const handleSubmit = async (e: React.FormEvent) => {
             placeholder="Enter numeric value"
             min="0"
           />
+        );
+
+      case 'matrix':
+      case 'MATRIX':
+        let rows: string[] = [];
+        let cols: string[] = [];
+
+        if (question.settings?.rows && question.settings?.columns) {
+          rows = question.settings.rows;
+          cols = question.settings.columns;
+        } else if (Array.isArray(question.options) && Array.isArray(question.options[0])) {
+          rows = question.options[0] as string[];
+          cols = question.options[1] as string[];
+        }
+
+        const matrixValue = (value as unknown as Record<string, string>) || {};
+
+        return (
+          <div className="overflow-x-auto w-full">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="p-2 border-b border-gray-100"></th>
+                  {cols.map((col, cIdx) => (
+                    <th key={cIdx} className="p-2 border-b border-gray-100 text-sm font-medium text-gray-500 text-center min-w-[100px]">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-3 border-b border-gray-50 text-sm text-gray-700 min-w-[150px]">
+                      {row}
+                    </td>
+                    {cols.map((col, cIdx) => (
+                      <td key={cIdx} className="p-3 border-b border-gray-50 text-center">
+                        <label className="flex items-center justify-center w-full h-full cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`${question.id}_${rIdx}`}
+                            value={col}
+                            checked={matrixValue[row] === col}
+                            onChange={(e) => {
+                              handleResponseChange(question.id, {
+                                ...matrixValue,
+                                [row]: e.target.value
+                              } as any);
+                            }}
+                            className="cursor-pointer w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] border-gray-300"
+                          />
+                        </label>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'gps_location':
+      case 'GPS_LOCATION':
+        const gpsValue = value as unknown as { lat: number; lng: number } | null;
+        return (
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => {
+                if ('geolocation' in navigator) {
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      handleResponseChange(question.id, {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                      } as any);
+                    },
+                    (error) => {
+                      alert('Error capturing GPS: ' + error.message);
+                    }
+                  );
+                } else {
+                  alert('Geolocation is not supported by your browser.');
+                }
+              }}
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 hover:bg-white hover:border-[#5B94E5]/50 transition-all cursor-pointer font-medium"
+            >
+              <MapPin className="w-5 h-5 text-[#5B94E5]" />
+              {gpsValue ? 'Recapture GPS Location' : 'Capture GPS Location'}
+            </button>
+            
+            {gpsValue && (
+              <div className="px-4 py-3 bg-green-50 border border-green-100 rounded-xl flex items-center justify-between">
+                <span className="text-sm font-medium text-green-700">Location captured successfully</span>
+                <span className="text-xs text-green-600 font-mono bg-green-100 px-2 py-1 rounded-md">
+                  {gpsValue.lat.toFixed(6)}, {gpsValue.lng.toFixed(6)}
+                </span>
+              </div>
+            )}
+          </div>
         );
 
       default:
