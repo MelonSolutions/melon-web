@@ -109,9 +109,22 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
         const responseData = responseArray.find((r: any) => r.questionId === q.id);
 
         if (responseData) {
-          const value = responseData.actualValue !== undefined
+          let value = responseData.actualValue !== undefined
             ? responseData.actualValue
             : responseData.answer || '';
+            
+          if (value && typeof value === 'object') {
+            if ('lat' in value && 'lng' in value) {
+              value = `${value.lat}, ${value.lng}`;
+            } else if (!Array.isArray(value)) {
+              value = Object.entries(value).map(([k, v]) => `${k}: ${v}`).join(' | ');
+            }
+          }
+          
+          if (Array.isArray(value)) {
+            value = value.join(', ');
+          }
+          
           row.push(String(value));
         } else {
           row.push('');
@@ -476,9 +489,18 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
                           </h4>
                           <div className="bg-gray-50 p-3 rounded-lg">
                             <p className="text-gray-900">
-                              {(response as any)?.actualValue !== undefined
-                                ? `Value: ${(response as any).actualValue}`
-                                : (response as any)?.answer || 'No response'}
+                              {(() => {
+                                const val = (response as any)?.actualValue !== undefined
+                                  ? `Value: ${(response as any).actualValue}`
+                                  : (response as any)?.answer;
+                                if (!val) return 'No response';
+                                if (typeof val === 'object') {
+                                  if ('lat' in val && 'lng' in val) return `${val.lat}, ${val.lng}`;
+                                  if (Array.isArray(val)) return val.join(', ');
+                                  return Object.entries(val).map(([k, v]) => `${k}: ${v}`).join(' | ');
+                                }
+                                return String(val);
+                              })()}
                             </p>
                           </div>
                         </div>
