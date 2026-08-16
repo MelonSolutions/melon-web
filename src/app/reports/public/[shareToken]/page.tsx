@@ -4,10 +4,11 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { Send, CheckCircle, Clock, Info, MapPin } from 'lucide-react';
+import { Send, CheckCircle, Clock, Info, MapPin, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FileUploadField from '@/components/reports/FileUploadField';
 import { Progress } from '@/components/ui/Progress';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ui/Toast';
@@ -453,6 +454,19 @@ const handleSubmit = async (e: React.FormEvent) => {
             )}
           </div>
         );
+
+      case 'file_upload':
+      case 'FILE_UPLOAD': {
+        const imageUrl = value as string;
+
+        return (
+          <FileUploadField
+            questionId={question.id}
+            currentValue={imageUrl}
+            onUpload={(qId, url) => handleResponseChange(qId, url)}
+          />
+        );
+      }
 
       default:
         return (

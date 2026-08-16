@@ -10,6 +10,7 @@ const LocationMapAnalytics = dynamic(() => import('./LocationMapAnalytics'), {
   loading: () => <div className="h-[400px] w-full bg-gray-100 rounded-lg animate-pulse" />
 });
 import MatrixAnalytics from './MatrixAnalytics';
+import ImageGalleryAnalytics from './ImageGalleryAnalytics';
 
 interface QuestionAnalyticsCardProps {
   analytics: QuestionAnalytics;
@@ -186,6 +187,14 @@ export default function QuestionAnalyticsCard({
       return (
         <div className="space-y-4">
           <MatrixAnalytics stats={analytics.matrixStats} />
+        </div>
+      );
+    }
+    // For file upload questions
+    if (analytics.imageStats) {
+      return (
+        <div className="space-y-4">
+          <ImageGalleryAnalytics stats={analytics.imageStats} />
         </div>
       );
     }
