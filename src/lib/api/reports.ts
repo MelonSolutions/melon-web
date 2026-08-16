@@ -354,6 +354,7 @@ export interface QuestionAnalytics {
   timeDistribution?: TimeDistribution[];
   locationStats?: Array<{ lat: number; lng: number }>;
   matrixStats?: Array<{ row: string; counts: Array<{ column: string; count: number }> }>;
+  imageStats?: { urls: string[]; totalUploads: number };
 }
 
 export interface ResponseOverTime {
