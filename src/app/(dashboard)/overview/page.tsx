@@ -47,6 +47,7 @@ interface QuickAction {
   description: string;
   href: string;
   icon: React.ElementType;
+  external?: boolean;
 }
 
 // Helper for rendering unified time range options (Relative Periods + Specific Months)
@@ -876,6 +877,13 @@ export default function OverviewPage() {
       href: '/map-view',
       icon: MapPin,
     },
+    {
+      title: 'Partner Onboarding Docs',
+      description: 'API & Dashboard Overview guide',
+      href: 'https://docs.google.com/document/d/1PlHuAmveWWKn_fxkmAN3XBtZnGUbHlnVb8GBBuTh_48/edit?tab=t.0',
+      icon: FileText,
+      external: true,
+    },
   ];
 
   if (loading && !dashboardStats) {
@@ -1100,7 +1108,11 @@ export default function OverviewPage() {
                 {quickActions.map((action, index) => {
                   const Icon = action.icon;
                   return (
-                    <Link key={index} href={action.href}>
+                    <Link 
+                      key={index} 
+                      href={action.href}
+                      {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    >
                       <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[var(--color-primary)] hover:bg-gray-50 transition-colors group">
                         <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-[var(--color-primary-light)] transition-colors">
                           <Icon className="w-4 h-4 text-gray-600 group-hover:text-[var(--color-primary)]" />
