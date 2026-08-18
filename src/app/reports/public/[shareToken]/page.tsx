@@ -49,6 +49,36 @@ export default function PublicFormPage() {
   const [respondentName, setRespondentName] = useState('');
   const [respondentEmail, setRespondentEmail] = useState('');
 
+  const storageKey = `melon_draft_${shareToken}`;
+
+  // Load draft from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && shareToken) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.responses) setResponses(parsed.responses);
+          if (parsed.respondentName) setRespondentName(parsed.respondentName);
+          if (parsed.respondentEmail) setRespondentEmail(parsed.respondentEmail);
+        } catch (e) {
+          console.error('Failed to parse draft from localStorage', e);
+        }
+      }
+    }
+  }, [shareToken, storageKey]);
+
+  // Save draft to localStorage whenever fields change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && shareToken) {
+      const draft = { responses, respondentName, respondentEmail };
+      // Only save if there's actual data to avoid overwriting with empty defaults prematurely
+      if (Object.keys(responses).length > 0 || respondentName || respondentEmail) {
+        localStorage.setItem(storageKey, JSON.stringify(draft));
+      }
+    }
+  }, [responses, respondentName, respondentEmail, shareToken, storageKey]);
+
   useEffect(() => {
     if (shareToken) {
       fetchPublicReport();
@@ -181,6 +211,9 @@ const handleSubmit = async (e: React.FormEvent) => {
     }
 
     setSubmitted(true);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(storageKey);
+    }
   } catch (err) {
     console.error('Error submitting response:', err);
     const errorMessage = err instanceof Error ? err.message : 'Failed to submit response';
