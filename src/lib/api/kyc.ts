@@ -158,6 +158,13 @@ export async function makeVerificationDecision(
   });
 }
 
+export async function reviveExpiredJob(id: string): Promise<any> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/${id}/revive`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
 export async function deleteKYCUser(id: string): Promise<void> {
   return fetchWithAuth(`${API_BASE_URL}/kyc/delete/${id}`, {
     method: 'DELETE',

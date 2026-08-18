@@ -16,7 +16,8 @@ import {
   CheckCircle,
   XCircle,
   Edit2,
-  ShieldAlert
+  ShieldAlert,
+  RotateCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
@@ -32,6 +33,7 @@ import {
   uploadDocument,
   deleteDocument,
   makeVerificationDecision,
+  reviveExpiredJob,
   ApiError
 } from '@/lib/api/kyc';
 import { format } from 'date-fns';
@@ -142,6 +144,28 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
         addToast({
           type: 'error',
           title: 'Rejection Failed',
+          message: error.message,
+        });
+      }
+    } finally {
+    }
+  };
+
+  const handleReviveJob = async () => {
+    try {
+      setUpdating(true);
+      await reviveExpiredJob(userId);
+      await refetch();
+      addToast({
+        type: 'success',
+        title: 'Job Revived',
+        message: 'The job has been successfully revived and is pending.',
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Failed to Revive Job',
           message: error.message,
         });
       }
@@ -367,6 +391,18 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+            {isMelonAdmin && user.status === 'EXPIRED' && (
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<RotateCcw className="w-4 h-4" />}
+                onClick={handleReviveJob}
+                loading={updating}
+                className="flex-1 sm:flex-none"
+              >
+                Revive Job
+              </Button>
+            )}
             {user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
               <Button
                 variant="danger"
