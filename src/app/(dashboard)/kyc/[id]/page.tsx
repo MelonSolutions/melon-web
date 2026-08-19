@@ -1034,7 +1034,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     </div>
                   </div>
 
-                  {user.assignedAt && (
+                  {user.assignedAt && (!user.verifiedAt || Math.abs(new Date(user.assignedAt).getTime() - new Date(user.verifiedAt).getTime()) >= 60000) && (
                     <div className="flex gap-3">
                       <div className="w-2 h-2 mt-2 rounded-full bg-purple-500 shrink-0"></div>
                       <div>
