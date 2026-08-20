@@ -338,8 +338,8 @@ export default function AddKYCUserPage() {
         } else if (error.code === 'DUPLICATE_USER' || error.message.includes('already exists')) {
           addToast({
             type: 'error',
-            title: 'User Already Exists',
-            message: 'A user with this email already exists in your organization.',
+            title: 'Request Already Exists',
+            message: error.message || 'A verification request with these details already exists in your organization.',
           });
         } else if (error.status === 403) {
           addToast({
