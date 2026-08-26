@@ -44,62 +44,89 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
   csvRows.push(headers.join(','));
 
   // CSV Data Rows
+  // For each user, output one row per address (or a single row if no addresses exist)
   users.forEach(user => {
     const userId = user.id || user._id;
     const assignedAgent = user.assignedAgent && typeof user.assignedAgent !== 'string'
       ? `${user.assignedAgent.firstName} ${user.assignedAgent.lastName} (${user.assignedAgent.email})`
       : '';
 
-    const distance = calculateDistance(
-      user.latitude,
-      user.longitude,
-      user.verificationData?.verifiedLatitude,
-      user.verificationData?.verifiedLongitude,
-    );
+    // Resolve addresses: use user.addresses if available, otherwise build a synthetic one from top-level fields
+    const addresses = (user.addresses && user.addresses.length > 0)
+      ? user.addresses
+      : [
+          {
+            label: 'Primary',
+            streetNumber: user.streetNumber,
+            streetName: user.streetName,
+            landmark: user.landmark,
+            city: user.city,
+            lga: user.lga,
+            state: user.state,
+            country: user.country,
+            latitude: user.latitude,
+            longitude: user.longitude,
+            verificationData: user.verificationData,
+            notes: user.notes,
+          },
+        ];
 
-    // Get photos from either top-level verificationData or from the first address if multi-address is used
-    const verificationPhotos = user.verificationData?.verificationPhotos || 
-                             user.addresses?.[0]?.verificationData?.verificationPhotos || 
-                             [];
+    addresses.forEach((addr) => {
+      // Resolve verificationData: prefer address-level, fall back to top-level
+      const vd = addr.verificationData || user.verificationData;
 
-    const row = [
-      escapeCSV(userId || ''),
-      escapeCSV(user.firstName),
-      escapeCSV(user.lastName),
-      escapeCSV(user.email),
-      escapeCSV(user.phone),
-      escapeCSV(user.loanId || ''),
-      escapeCSV(formatLoanType(user.loanType) || ''),
-      escapeCSV(user.organization?.name || ''),
-      escapeCSV(user.status),
-      escapeCSV(user.streetNumber || ''),
-      escapeCSV(user.streetName || ''),
-      escapeCSV(user.landmark || ''),
-      escapeCSV(user.city || ''),
-      escapeCSV(user.lga || ''),
-      escapeCSV(user.state || ''),
-      escapeCSV(user.country || ''),
-      user.latitude?.toFixed(6) || '',
-      user.longitude?.toFixed(6) || '',
-      user.verificationData?.verifiedLatitude?.toFixed(6) || '',
-      user.verificationData?.verifiedLongitude?.toFixed(6) || '',
-      escapeCSV(user.verificationData?.verifiedAddress || ''),
-      distance,
-      escapeCSV(user.verificationData?.agentNotes || ''),
-      escapeCSV(user.notes || ''),
-      escapeCSV(extractUrls(verificationPhotos)),
-      user.documents?.length || 0,
-      escapeCSV(extractUrls(user.documents?.map(doc => doc.fileUrl) || [])),
-      escapeCSV(extractUrls(user.rejectionEvidence || [])),
-      escapeCSV(assignedAgent),
-      escapeCSV(user.rejectionReason || ''),
-      new Date(user.submittedAt).toISOString(),
-      user.verificationData?.verifiedAt
-        ? new Date(user.verificationData.verifiedAt).toISOString()
-        : '',
-      escapeCSV(user.mobileJobId || ''),
-    ];
-    csvRows.push(row.join(','));
+      const origLat = addr.latitude ?? user.latitude;
+      const origLng = addr.longitude ?? user.longitude;
+
+      const distance = calculateDistance(
+        origLat,
+        origLng,
+        vd?.verifiedLatitude,
+        vd?.verifiedLongitude,
+      );
+
+      // Get photos from either address-level or top-level verificationData
+      const verificationPhotos = vd?.verificationPhotos || [];
+
+      const row = [
+        escapeCSV(userId || ''),
+        escapeCSV(user.firstName),
+        escapeCSV(user.lastName),
+        escapeCSV(user.email),
+        escapeCSV(user.phone),
+        escapeCSV(user.loanId || ''),
+        escapeCSV(formatLoanType(user.loanType) || ''),
+        escapeCSV(user.organization?.name || ''),
+        escapeCSV(addr.status || user.status),
+        escapeCSV(addr.streetNumber || user.streetNumber || ''),
+        escapeCSV(addr.streetName || user.streetName || ''),
+        escapeCSV(addr.landmark || user.landmark || ''),
+        escapeCSV(addr.city || user.city || ''),
+        escapeCSV(addr.lga || user.lga || ''),
+        escapeCSV(addr.state || user.state || ''),
+        escapeCSV(addr.country || user.country || ''),
+        origLat?.toFixed(6) || '',
+        origLng?.toFixed(6) || '',
+        vd?.verifiedLatitude?.toFixed(6) || '',
+        vd?.verifiedLongitude?.toFixed(6) || '',
+        escapeCSV(vd?.verifiedAddress || ''),
+        distance,
+        escapeCSV(vd?.agentNotes || user.verificationData?.agentNotes || ''),
+        escapeCSV(addr.notes || user.notes || ''),
+        escapeCSV(extractUrls(verificationPhotos)),
+        user.documents?.length || 0,
+        escapeCSV(extractUrls(user.documents?.map(doc => doc.fileUrl) || [])),
+        escapeCSV(extractUrls(user.rejectionEvidence || addr.rejectionEvidence || [])),
+        escapeCSV(assignedAgent),
+        escapeCSV(addr.rejectionReason || user.rejectionReason || ''),
+        new Date(user.submittedAt).toISOString(),
+        vd?.verifiedAt
+          ? new Date(vd.verifiedAt).toISOString()
+          : '',
+        escapeCSV(addr.mobileJobId || user.mobileJobId || ''),
+      ];
+      csvRows.push(row.join(','));
+    });
   });
 
   const csvContent = csvRows.join('\n');
