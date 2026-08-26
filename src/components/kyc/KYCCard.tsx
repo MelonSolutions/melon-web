@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { MoreHorizontal, Eye, FileText, Trash2, Loader2, Download, Save, ShieldAlert, Building2, Clock, User, MapPin } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
@@ -27,6 +27,19 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
+  const desktopBtnRef = useRef<HTMLButtonElement>(null);
+
+  // When the desktop dropdown opens, check if there's enough room below
+  const handleDesktopToggle = useCallback(() => {
+    if (!showDropdown && desktopBtnRef.current) {
+      const rect = desktopBtnRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // Dropdown is roughly 320px tall (7-8 menu items × ~40px each)
+      setOpenUpward(spaceBelow < 320);
+    }
+    setShowDropdown(!showDropdown);
+  }, [showDropdown]);
   const { addToast } = useToast();
   const { openModal, closeModal, openConfirmModal } = useModal();
   const { organization } = useAuthContext();
@@ -558,7 +571,8 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
           {/* Column 8: Actions (Desktop-only) */}
           <div className="hidden lg:flex justify-end relative">
             <button
-              onClick={() => setShowDropdown(!showDropdown)}
+              ref={desktopBtnRef}
+              onClick={handleDesktopToggle}
               className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
               disabled={loading || downloading}
             >
@@ -566,8 +580,8 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
             </button>
             {showDropdown && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-20">
+                <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
+                <div className={`absolute right-0 w-48 bg-white rounded-lg border border-gray-200 shadow-lg z-50 ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                   <div className="py-1">
                     <button
                       onClick={() => {
