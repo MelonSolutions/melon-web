@@ -55,7 +55,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const { openModal, closeModal } = useModal();
   const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
-  const isSycamore = organization?.name?.toLowerCase().includes('sycamore');
+
 
   const { user, loading, refetch } = useKYCUser(userId);
   const [updating, setUpdating] = useState(false);
@@ -441,7 +441,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     <div className="w-full">
                       <CardTitle className="text-emerald-800 mb-1">Approved & Verified</CardTitle>
                       <div className="text-sm text-emerald-700 space-y-1">
-                        <p>Sycamore is satisfied with the job. The submissions, comments and verification have been approved.</p>
+                        <p>{organization?.name || 'The client'} is satisfied with the job. The submissions, comments and verification have been approved.</p>
                         <p className="text-xs text-emerald-600 font-medium">Agent gets paid ✓</p>
                         {user.verificationDate && (
                           <p className="text-xs text-emerald-600">Decision made: {format(new Date(user.verificationDate), 'PPp')}</p>
