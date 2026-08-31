@@ -17,7 +17,12 @@ import {
   XCircle,
   Edit2,
   ShieldAlert,
-  RotateCcw
+  RotateCcw,
+  Eye,
+  Download,
+  ZoomIn,
+  ZoomOut,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
@@ -62,6 +67,31 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [uploading, setUploading] = useState(false);
   const [rejectingIndex, setRejectingIndex] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [previewDocument, setPreviewDocument] = useState<KYCDocument | null>(null);
+  const [viewerZoom, setViewerZoom] = useState(100);
+
+  const isImageDoc = (fileName?: string, fileType?: string, fileUrl?: string) => {
+    const name = (fileName || fileUrl || '').toLowerCase();
+    return (
+      ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => name.endsWith(`.${ext}`)) ||
+      fileType?.startsWith('image/')
+    );
+  };
+
+  const isPdfDoc = (fileName?: string, fileType?: string, fileUrl?: string) => {
+    const name = (fileName || fileUrl || '').toLowerCase();
+    return name.endsWith('.pdf') || fileType === 'application/pdf' || (fileUrl && fileUrl.toLowerCase().includes('.pdf'));
+  };
+
+  const formatDocDate = (dateStr?: string | Date) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? '' : format(d, 'MMM d, yyyy');
+    } catch {
+      return '';
+    }
+  };
 
   const handleVerificationApproval = async (addressIndex: number) => {
     try {
@@ -865,52 +895,77 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               <CardContent>
                 {user.documents && user.documents.length > 0 ? (
                   <div className="space-y-3">
-                    {user.documents.map((doc: KYCDocument) => (
-                      <div
-                        key={doc._id || doc.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0">
-                            <FileText className="w-5 h-5 text-gray-400" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="font-medium text-gray-900 text-sm truncate">
-                                {doc.fileName}
-                              </div>
-                              <Badge variant="neutral" size="sm">
-                                {getDocumentTypeDisplayName(doc.documentType)}
-                              </Badge>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {(doc.fileSize / 1024).toFixed(1)} KB • {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 ml-3">
-                          <a
-                            href={doc.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 text-gray-400 hover:text-primary hover:bg-white rounded-lg transition-colors"
-                            title="View document"
+                    {user.documents.map((doc: KYCDocument) => {
+                      const docDate = formatDocDate(doc.uploadedAt);
+                      const fileSizeStr = doc.fileSize
+                        ? `${(doc.fileSize / 1024).toFixed(1)} KB`
+                        : '';
+                      return (
+                        <div
+                          key={doc._id || doc.id}
+                          className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div
+                            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                            onClick={() => {
+                              setPreviewDocument(doc);
+                              setViewerZoom(100);
+                            }}
                           >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                          {canUploadDocuments && (
-                            <button
-                              onClick={() => handleDeleteDocument(doc._id || doc.id || '')}
-                              className="p-2 text-gray-400 hover:text-error hover:bg-white rounded-lg transition-colors"
-                              title="Delete document"
+                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0 border border-gray-200 shadow-sm">
+                              <FileText className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <div className="font-medium text-gray-900 text-sm truncate hover:text-primary transition-colors">
+                                  {doc.fileName}
+                                </div>
+                                <Badge variant="neutral" size="sm">
+                                  {getDocumentTypeDisplayName(doc.documentType)}
+                                </Badge>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {fileSizeStr && `${fileSizeStr} • `}
+                                {docDate || 'Uploaded'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 ml-3">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={<Eye className="w-4 h-4" />}
+                              onClick={() => {
+                                setPreviewDocument(doc);
+                                setViewerZoom(100);
+                              }}
+                              className="text-xs py-1 px-2.5"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
+                              Preview
+                            </Button>
+                            <a
+                              href={doc.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-gray-400 hover:text-primary hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200"
+                              title="Open in new tab"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                            {canUploadDocuments && (
+                              <button
+                                onClick={() => handleDeleteDocument(doc._id || doc.id || '')}
+                                className="p-2 text-gray-400 hover:text-error hover:bg-white rounded-lg transition-colors border border-transparent hover:border-error-light/30"
+                                title="Delete document"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12 text-gray-500">
@@ -1187,6 +1242,131 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               >
                 Confirm Rejection
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Viewer Modal */}
+      {previewDocument && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-sm truncate">
+                    {previewDocument.fileName}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                    <span className="font-medium text-gray-700">
+                      {getDocumentTypeDisplayName(previewDocument.documentType)}
+                    </span>
+                    {previewDocument.fileSize ? (
+                      <>
+                        <span>•</span>
+                        <span>{(previewDocument.fileSize / 1024).toFixed(1)} KB</span>
+                      </>
+                    ) : null}
+                    {previewDocument.uploadedAt ? (
+                      <>
+                        <span>•</span>
+                        <span>{formatDocDate(previewDocument.uploadedAt)}</span>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 ml-4">
+                {isImageDoc(previewDocument.fileName, previewDocument.fileType, previewDocument.fileUrl) && (
+                  <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
+                    <button
+                      onClick={() => setViewerZoom(Math.max(50, viewerZoom - 25))}
+                      className="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition-colors"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs text-gray-600 px-2 font-medium">
+                      {viewerZoom}%
+                    </span>
+                    <button
+                      onClick={() => setViewerZoom(Math.min(200, viewerZoom + 25))}
+                      className="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition-colors"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <a
+                  href={previewDocument.fileUrl}
+                  download={previewDocument.fileName}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 hover:bg-white text-gray-600 hover:text-primary rounded-lg border border-gray-200 bg-white transition-colors shadow-sm"
+                  title="Download / Open Original"
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+                <button
+                  onClick={() => {
+                    setPreviewDocument(null);
+                    setViewerZoom(100);
+                  }}
+                  className="p-2 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 bg-gray-100 flex items-center justify-center min-h-[500px]">
+              {isImageDoc(previewDocument.fileName, previewDocument.fileType, previewDocument.fileUrl) ? (
+                <div className="flex items-center justify-center min-h-full">
+                  <img
+                    src={previewDocument.fileUrl}
+                    alt={previewDocument.fileName}
+                    style={{ transform: `scale(${viewerZoom / 100})` }}
+                    className="max-w-full max-h-[75vh] object-contain rounded transition-transform shadow-md"
+                  />
+                </div>
+              ) : isPdfDoc(previewDocument.fileName, previewDocument.fileType, previewDocument.fileUrl) ? (
+                <iframe
+                  src={
+                    previewDocument.fileUrl.startsWith('http')
+                      ? `https://docs.google.com/viewer?url=${encodeURIComponent(previewDocument.fileUrl)}&embedded=true`
+                      : previewDocument.fileUrl
+                  }
+                  className="w-full h-full min-h-[650px] border border-gray-200 rounded-lg bg-white shadow-inner"
+                  title={previewDocument.fileName}
+                />
+              ) : (
+                <div className="text-center py-12 bg-white p-8 rounded-xl border border-gray-200 shadow-sm max-w-md">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3 text-gray-400">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-base font-semibold text-gray-900 mb-1">
+                    {previewDocument.fileName}
+                  </h4>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Preview is not supported directly for this file format. You can download or view it in a new window.
+                  </p>
+                  <a
+                    href={previewDocument.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open File
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

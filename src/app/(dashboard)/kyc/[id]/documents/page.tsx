@@ -143,20 +143,36 @@ export default function KYCDocumentsPage({ params }: PageProps) {
     setViewerZoom(100);
   };
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) {
+  const isImageFile = (fileName?: string, fileUrl?: string, fileType?: string) => {
+    const name = (fileName || fileUrl || '').toLowerCase();
+    return (
+      ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => name.endsWith(`.${ext}`)) ||
+      fileType?.startsWith('image/')
+    );
+  };
+
+  const isPdfFile = (fileName?: string, fileUrl?: string, fileType?: string) => {
+    const name = (fileName || fileUrl || '').toLowerCase();
+    return name.endsWith('.pdf') || fileType === 'application/pdf' || (fileUrl && fileUrl.toLowerCase().includes('.pdf'));
+  };
+
+  const getFileIcon = (fileName?: string, fileUrl?: string, fileType?: string) => {
+    if (isImageFile(fileName, fileUrl, fileType)) {
       return <ImageIcon className="w-5 h-5" />;
-    } else if (extension === 'pdf') {
+    } else if (isPdfFile(fileName, fileUrl, fileType)) {
       return <FileText className="w-5 h-5" />;
     }
     return <File className="w-5 h-5" />;
   };
 
-  const isImageFile = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '');
+  const formatDocDate = (dateStr?: string | Date) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? '' : format(d, 'MMM d, yyyy');
+    } catch {
+      return '';
+    }
   };
 
   if (loading) {
@@ -282,8 +298,8 @@ export default function KYCDocumentsPage({ params }: PageProps) {
                       className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-white"
                     >
                       {/* Preview */}
-                      <div className="relative bg-gray-50 h-48 flex items-center justify-center">
-                        {isImageFile(doc.fileName) ? (
+                      <div className="relative bg-gray-50 h-48 flex items-center justify-center cursor-pointer" onClick={() => handleViewDocument(doc)}>
+                        {isImageFile(doc.fileName, doc.fileUrl, doc.fileType) ? (
                           <img
                             src={doc.fileUrl}
                             alt={doc.fileName}
@@ -291,9 +307,9 @@ export default function KYCDocumentsPage({ params }: PageProps) {
                           />
                         ) : (
                           <div className="text-gray-400 flex flex-col items-center">
-                            {getFileIcon(doc.fileName)}
-                            <div className="text-xs mt-2">
-                              {doc.fileName.split('.').pop()?.toUpperCase()}
+                            {getFileIcon(doc.fileName, doc.fileUrl, doc.fileType)}
+                            <div className="text-xs mt-2 font-medium">
+                              {doc.fileName?.split('.').pop()?.toUpperCase() || 'DOCUMENT'}
                             </div>
                           </div>
                         )}
@@ -311,7 +327,8 @@ export default function KYCDocumentsPage({ params }: PageProps) {
                           {doc.fileName}
                         </h3>
                         <div className="text-xs text-gray-500 mb-3">
-                          {(doc.fileSize / 1024).toFixed(1)} KB • {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
+                          {doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB • ` : ''}
+                          {formatDocDate(doc.uploadedAt) || 'Uploaded'}
                         </div>
 
                         {/* OCR Info */}
@@ -411,7 +428,7 @@ export default function KYCDocumentsPage({ params }: PageProps) {
               </div>
               
               <div className="flex items-center gap-2">
-                {isImageFile(selectedDocument.fileName) && (
+                {isImageFile(selectedDocument.fileName, selectedDocument.fileUrl, selectedDocument.fileType) && (
                   <>
                     <button
                       onClick={() => setViewerZoom(Math.max(50, viewerZoom - 25))}
@@ -433,6 +450,8 @@ export default function KYCDocumentsPage({ params }: PageProps) {
                 <a
                   href={selectedDocument.fileUrl}
                   download={selectedDocument.fileName}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="p-2 hover:bg-gray-100 rounded transition-colors"
                 >
                   <Download className="w-5 h-5" />
@@ -446,20 +465,24 @@ export default function KYCDocumentsPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-4 bg-gray-50">
-              {isImageFile(selectedDocument.fileName) ? (
+            <div className="flex-1 overflow-auto p-4 bg-gray-50 flex items-center justify-center min-h-[500px]">
+              {isImageFile(selectedDocument.fileName, selectedDocument.fileUrl, selectedDocument.fileType) ? (
                 <div className="flex items-center justify-center min-h-full">
                   <img
                     src={selectedDocument.fileUrl}
                     alt={selectedDocument.fileName}
                     style={{ transform: `scale(${viewerZoom / 100})` }}
-                    className="max-w-full transition-transform"
+                    className="max-w-full max-h-[75vh] object-contain rounded transition-transform"
                   />
                 </div>
-              ) : selectedDocument.fileName.endsWith('.pdf') ? (
+              ) : isPdfFile(selectedDocument.fileName, selectedDocument.fileUrl, selectedDocument.fileType) ? (
                 <iframe
-                  src={selectedDocument.fileUrl}
-                  className="w-full h-full min-h-[600px] border-0"
+                  src={
+                    selectedDocument.fileUrl.startsWith('http')
+                      ? `https://docs.google.com/viewer?url=${encodeURIComponent(selectedDocument.fileUrl)}&embedded=true`
+                      : selectedDocument.fileUrl
+                  }
+                  className="w-full h-full min-h-[650px] border border-gray-200 rounded-lg bg-white shadow-inner"
                   title={selectedDocument.fileName}
                 />
               ) : (
@@ -468,15 +491,12 @@ export default function KYCDocumentsPage({ params }: PageProps) {
                   
                   <a
                     href={selectedDocument.fileUrl}
-                    download={selectedDocument.fileName}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors"
                   >
-                    <Button
-                      variant="primary"
-                      size="md"
-                      icon={<Download className="w-4 h-4" />}
-                    >
-                      Download File
-                    </Button>
+                    <Download className="w-4 h-4" />
+                    Open / Download File
                   </a>
                 </div>
               )}
