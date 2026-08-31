@@ -83,6 +83,21 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     return name.endsWith('.pdf') || fileType === 'application/pdf' || (fileUrl && fileUrl.toLowerCase().includes('.pdf'));
   };
 
+  const getDocumentPreviewUrl = (url?: string) => {
+    if (!url) return '';
+    if (url.includes('res.cloudinary.com') && url.includes('/image/upload/') && url.toLowerCase().endsWith('.pdf')) {
+      return url.replace(/\.pdf$/i, '.png');
+    }
+    return url;
+  };
+
+  const isRenderableAsImage = (fileName?: string, fileType?: string, fileUrl?: string) => {
+    if (fileUrl && fileUrl.includes('res.cloudinary.com') && fileUrl.includes('/image/upload/')) {
+      return true;
+    }
+    return isImageDoc(fileName, fileType, fileUrl);
+  };
+
   const formatDocDate = (dateStr?: string | Date) => {
     if (!dateStr) return '';
     try {
@@ -1281,7 +1296,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               </div>
 
               <div className="flex items-center gap-2 shrink-0 ml-4">
-                {isImageDoc(previewDocument.fileName, previewDocument.fileType, previewDocument.fileUrl) && (
+                {isRenderableAsImage(previewDocument.fileName, previewDocument.fileType, previewDocument.fileUrl) && (
                   <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
                     <button
                       onClick={() => setViewerZoom(Math.max(50, viewerZoom - 25))}
@@ -1303,7 +1318,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   </div>
                 )}
                 <a
-                  href={previewDocument.fileUrl}
+                  href={getDocumentPreviewUrl(previewDocument.fileUrl)}
                   download={previewDocument.fileName}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1326,10 +1341,10 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
             </div>
 
             <div className="flex-1 overflow-auto p-4 bg-gray-100 flex items-center justify-center min-h-[500px]">
-              {isImageDoc(previewDocument.fileName, previewDocument.fileType, previewDocument.fileUrl) ? (
+              {isRenderableAsImage(previewDocument.fileName, previewDocument.fileType, previewDocument.fileUrl) ? (
                 <div className="flex items-center justify-center min-h-full">
                   <img
-                    src={previewDocument.fileUrl}
+                    src={getDocumentPreviewUrl(previewDocument.fileUrl)}
                     alt={previewDocument.fileName}
                     style={{ transform: `scale(${viewerZoom / 100})` }}
                     className="max-w-full max-h-[75vh] object-contain rounded transition-transform shadow-md"
