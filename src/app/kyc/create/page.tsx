@@ -32,6 +32,7 @@ interface UploadedDocument {
   fileName: string;
   fileUrl: string;
   fileType: string;
+  fileSize?: number;
   documentType: string;
 }
 
@@ -751,6 +752,7 @@ export default function AddKYCUserPage() {
                             fileName: file.name,
                             fileUrl: url,
                             fileType: file.type,
+                            fileSize: file.size,
                             documentType: 'OTHER'
                           }
                         ]
