@@ -327,12 +327,18 @@ export default function AddKYCUserPage() {
       setCreating(false);
 
       if (error instanceof ApiError) {
-        if (error.message === 'EMAIL_EXISTS_NEEDS_REASON' || error.message === 'DUPLICATE_EXISTS_NEEDS_REASON') {
+        if (
+          error.message === 'EMAIL_EXISTS_NEEDS_REASON' ||
+          error.message === 'DUPLICATE_EXISTS_NEEDS_REASON' ||
+          error.message.includes('relogReason')
+        ) {
           setNeedsRelog(true);
           addToast({
             type: 'warning',
             title: 'Existing Record Found',
-            message: error.message === 'EMAIL_EXISTS_NEEDS_REASON'
+            message: error.message.includes('relogReason')
+              ? error.message
+              : error.message === 'EMAIL_EXISTS_NEEDS_REASON'
               ? 'An active or rejected job already exists for this email. Please provide a reason to relog.'
               : 'A duplicate record (Loan ID, Phone, or Name) already exists. Please provide a reason to relog.',
           });
