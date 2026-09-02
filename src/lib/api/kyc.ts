@@ -513,3 +513,13 @@ export function downloadKYCTemplate(): void {
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
+export interface NigeriaLocationsData {
+  states: string[];
+  stateLgas: Record<string, string[]>;
+  cityStateMap: Record<string, string>;
+}
+
+export async function getNigeriaLocations(): Promise<NigeriaLocationsData> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/locations/nigeria`);
+}

@@ -45,7 +45,9 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
         try {
           setFetchingOrgs(true);
           const data = await apiClient.getOrganizations();
-          const orgList = Array.isArray(data) ? data : (data as any).data || [];
+          const orgList = (Array.isArray(data) ? data : (data as any).data || []).filter(
+            (o: any) => !o.name?.toLowerCase().startsWith('trial-')
+          );
           setOrganizations(orgList.map((o: any) => ({ id: o.id || o._id, name: o.name })));
         } catch (error) {
           console.error('Failed to fetch organizations:', error);
