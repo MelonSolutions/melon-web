@@ -335,7 +335,17 @@ export default function IntegrationsSettingsPage() {
               <Key className="w-5 h-5 text-[#5B94E5]" />
             </div>
             <div>
-              <h2 className="text-lg font-medium text-gray-900">API Keys</h2>
+              <h2 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                API Keys
+                <a
+                  href="https://docs.melon.ng/api-reference"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 font-normal bg-blue-50 px-2 py-1 rounded-full transition-colors"
+                >
+                  View Documentation <ExternalLink className="w-3 h-3" />
+                </a>
+              </h2>
               <p className="text-sm text-gray-500">Manage your keys for programmatic access</p>
             </div>
           </div>
