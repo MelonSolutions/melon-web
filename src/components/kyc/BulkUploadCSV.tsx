@@ -33,7 +33,9 @@ export function BulkUploadCSV() {
       try {
         setLoadingOrgs(true);
         const data = await apiClient.getOrganizations();
-        const orgList = Array.isArray(data) ? data : (data as any)?.data || [];
+        const orgList = (Array.isArray(data) ? data : (data as any)?.data || []).filter(
+          (org: any) => !org.name?.toLowerCase().startsWith('trial-')
+        );
         setOrganizations(orgList);
         
         const chotaOrg = orgList.find((org: any) => org.name.toLowerCase().includes('chota'));

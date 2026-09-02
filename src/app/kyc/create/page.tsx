@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Plus, Trash2, UploadCloud, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { useNigeriaLocations } from '@/lib/nigeria-locations';
 
 interface AddressData {
   id: string;
@@ -114,9 +116,16 @@ export default function AddKYCUserPage() {
   const [creating, setCreating] = useState(false);
   const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
   const [needsRelog, setNeedsRelog] = useState<boolean>(false);
+  const [cityStateWarnings, setCityStateWarnings] = useState<Record<string, string | undefined>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
+
+  const { states, stateLgas, validateCityState, loading: locationsLoading } = useNigeriaLocations();
+
+  const stateOptions = useMemo(() => {
+    return states.map(state => ({ value: state, label: state }));
+  }, [states]);
 
   const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
 
@@ -128,7 +137,8 @@ export default function AddKYCUserPage() {
         setLoadingOrgs(true);
         const data = await apiClient.getOrganizations();
         const orgList = Array.isArray(data) ? data : (data as any)?.data || [];
-        setOrganizations(orgList);
+        const filteredOrgs = orgList.filter((org: any) => !org.name?.toLowerCase().startsWith('trial-'));
+        setOrganizations(filteredOrgs);
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
       } finally {
@@ -210,6 +220,48 @@ export default function AddKYCUserPage() {
       ...prev,
       addresses: prev.addresses.filter(addr => addr.id !== addressId),
     }));
+
+    setCityStateWarnings(prev => {
+      const updated = { ...prev };
+      delete updated[addressId];
+      return updated;
+    });
+  };
+
+  const handleStateChange = (addressId: string, newState: string, currentCity: string) => {
+    setFormData(prev => ({
+      ...prev,
+      addresses: prev.addresses.map(addr =>
+        addr.id === addressId
+          ? { ...addr, state: newState, lga: '' }
+          : addr
+      ),
+    }));
+
+    const warning = validateCityState(currentCity, newState);
+    setCityStateWarnings(prev => ({
+      ...prev,
+      [addressId]: warning,
+    }));
+  };
+
+  const handleCityChange = (addressId: string, newCity: string, currentState: string) => {
+    handleAddressFieldUpdate(addressId, 'city', newCity);
+    if (cityStateWarnings[addressId]) {
+      const warning = validateCityState(newCity, currentState);
+      setCityStateWarnings(prev => ({
+        ...prev,
+        [addressId]: warning,
+      }));
+    }
+  };
+
+  const handleCityBlur = (addressId: string, city: string, state: string) => {
+    const warning = validateCityState(city, state);
+    setCityStateWarnings(prev => ({
+      ...prev,
+      [addressId]: warning,
+    }));
   };
 
   const handleAddressFieldUpdate = (addressId: string, field: keyof AddressData, value: string) => {
@@ -282,6 +334,30 @@ export default function AddKYCUserPage() {
           type: 'error',
           title: 'Instructions Required',
           message: 'Please provide instructions for the agent for each address.',
+        });
+        setCreating(false);
+        return;
+      }
+
+      // City-State cross-validation guard
+      const newWarnings: Record<string, string | undefined> = {};
+      let hasMismatch = false;
+      for (const addr of formData.addresses) {
+        if (addr.city && addr.state) {
+          const warning = validateCityState(addr.city, addr.state);
+          if (warning) {
+            newWarnings[addr.id] = warning;
+            hasMismatch = true;
+          }
+        }
+      }
+
+      if (hasMismatch || Object.values(cityStateWarnings).some(w => !!w)) {
+        setCityStateWarnings(prev => ({ ...prev, ...newWarnings }));
+        addToast({
+          type: 'error',
+          title: 'Location Mismatch',
+          message: 'Please resolve the city and state mismatch before submitting.',
         });
         setCreating(false);
         return;
@@ -425,7 +501,7 @@ export default function AddKYCUserPage() {
               size="md"
               onClick={handleSave}
               loading={creating}
-              disabled={creating || !!phoneError}
+              disabled={creating || !!phoneError || Object.values(cityStateWarnings).some(w => !!w)}
               icon={<Save className="w-4 h-4" />}
             >
               Create Request
@@ -654,27 +730,37 @@ export default function AddKYCUserPage() {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input
-                    label="City/Town"
-                    value={address.city}
-                    onChange={(e) => handleAddressFieldUpdate(address.id, 'city', e.target.value)}
-                    placeholder="e.g., Surulere"
+                  <SearchableSelect
+                    label="State"
+                    value={address.state}
+                    onChange={(val) => handleStateChange(address.id, val, address.city)}
+                    options={stateOptions}
+                    placeholder={locationsLoading ? 'Loading states...' : 'Select state'}
+                    allowOther
+                    otherPlaceholder="Enter custom state..."
                   />
 
-                  <Input
+                  <SearchableSelect
+                    key={`lga-${address.id}-${address.state}`}
                     label="LGA"
                     value={address.lga}
-                    onChange={(e) => handleAddressFieldUpdate(address.id, 'lga', e.target.value)}
-                    placeholder="e.g., Surulere"
+                    onChange={(val) => handleAddressFieldUpdate(address.id, 'lga', val)}
+                    options={(stateLgas[address.state] || []).map(lga => ({ value: lga, label: lga }))}
+                    placeholder={address.state ? 'Select LGA' : 'Select state first'}
+                    disabled={!address.state}
+                    allowOther
+                    otherPlaceholder="Enter custom LGA..."
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label="State"
-                    value={address.state}
-                    onChange={(e) => handleAddressFieldUpdate(address.id, 'state', e.target.value)}
-                    placeholder="e.g., Lagos"
+                    label="City/Town"
+                    value={address.city}
+                    onChange={(e) => handleCityChange(address.id, e.target.value, address.state)}
+                    onBlur={() => handleCityBlur(address.id, address.city, address.state)}
+                    placeholder="e.g., Surulere"
+                    error={cityStateWarnings[address.id]}
                   />
 
                   <Input
