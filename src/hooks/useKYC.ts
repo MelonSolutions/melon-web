@@ -197,7 +197,24 @@ export function useKYCUser(id: string): UseKYCUserResult {
 
   useEffect(() => {
     fetchUser();
-  }, [fetchUser]);
+
+    const handleFocus = () => {
+      getKYCUser(id).then(data => setUser(data)).catch(() => {});
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    const interval = setInterval(() => {
+      getKYCUser(id).then(data => setUser(data)).catch(() => {});
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+      clearInterval(interval);
+    };
+  }, [fetchUser, id]);
 
   return {
     user,
