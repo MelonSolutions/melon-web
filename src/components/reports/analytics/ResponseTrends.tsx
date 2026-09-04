@@ -6,14 +6,30 @@ import { getReportAnalytics, ReportAnalytics } from '@/lib/api/reports';
 
 interface ResponseTrendsProps {
   reportId: string;
+  initialData?: ReportAnalytics | null;
+  loading?: boolean;
 }
 
-export default function ResponseTrends({ reportId }: ResponseTrendsProps) {
-  const [analytics, setAnalytics] = useState<ReportAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ResponseTrends({
+  reportId,
+  initialData,
+  loading: parentLoading,
+}: ResponseTrendsProps) {
+  const [analytics, setAnalytics] = useState<ReportAnalytics | null>(
+    initialData !== undefined ? initialData : null,
+  );
+  const [loading, setLoading] = useState(
+    initialData !== undefined ? !!parentLoading : true,
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialData !== undefined) {
+      setAnalytics(initialData);
+      setLoading(parentLoading ?? false);
+      return;
+    }
+
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
@@ -31,7 +47,7 @@ export default function ResponseTrends({ reportId }: ResponseTrendsProps) {
     if (reportId) {
       fetchAnalytics();
     }
-  }, [reportId]);
+  }, [reportId, initialData, parentLoading]);
 
   if (error) {
     return (

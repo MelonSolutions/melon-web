@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useReport } from '@/hooks/useReports';
-import { useReportResponses, useResponseAnalytics, useImpactMetricsProgress } from '@/hooks/useResponses';
+import { useReportResponses, useImpactMetricsProgress } from '@/hooks/useResponses';
 import { getResponsesByReport } from '@/lib/api/responses';
+import { getReportAnalytics, ReportAnalytics } from '@/lib/api/reports';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import OverviewStats from '@/components/reports/analytics/OverviewStats';
@@ -40,10 +41,29 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
     pageSize: 20,
     currentPage,
   });
-  const { analytics, loading: analyticsLoading } = useResponseAnalytics(reportId);
   const { progress, loading: progressLoading } = useImpactMetricsProgress(reportId);
   
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'impact'>('overview');
+  const [reportAnalytics, setReportAnalytics] = useState<ReportAnalytics | null>(null);
+  const [reportAnalyticsLoading, setReportAnalyticsLoading] = useState(false);
+  const [analyticsFetched, setAnalyticsFetched] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'analytics' && !analyticsFetched && reportId) {
+      setReportAnalyticsLoading(true);
+      getReportAnalytics(reportId)
+        .then((data) => {
+          setReportAnalytics(data);
+          setAnalyticsFetched(true);
+        })
+        .catch((err) => {
+          console.error('Failed to load report analytics:', err);
+        })
+        .finally(() => {
+          setReportAnalyticsLoading(false);
+        });
+    }
+  }, [activeTab, analyticsFetched, reportId]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -523,8 +543,16 @@ export default function ReportResponsesPage({}: ResponsesPageProps) {
 
         {activeTab === 'analytics' && (
           <div className="space-y-6">
-            <OverviewStats reportId={reportId} />
-            <ResponseTrends reportId={reportId} />
+            <OverviewStats
+              reportId={reportId}
+              initialData={reportAnalytics}
+              loading={reportAnalyticsLoading}
+            />
+            <ResponseTrends
+              reportId={reportId}
+              initialData={reportAnalytics}
+              loading={reportAnalyticsLoading}
+            />
             <QuestionBreakdown reportId={reportId} />
           </div>
         )}

@@ -88,3 +88,63 @@ export const revokeApiKey = async (keyId: string): Promise<void> => {
   }
 };
 
+export interface ApiLog {
+  _id: string;
+  requestId: string;
+  method: string;
+  path: string;
+  url: string;
+  statusCode: number;
+  responseTime: number;
+  environment: 'live' | 'sandbox';
+  ipAddress?: string;
+  userAgent?: string;
+  errorCode?: string;
+  requestBody?: Record<string, any>;
+  responseBody?: Record<string, any>;
+  requestHeaders?: Record<string, string>;
+  createdAt: string;
+}
+
+export interface ApiLogsResponse {
+  logs: ApiLog[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export const getApiLogs = async (params: {
+  page?: number;
+  limit?: number;
+  environment?: string;
+  method?: string;
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+} = {}): Promise<ApiLogsResponse> => {
+  try {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.environment) searchParams.set('environment', params.environment);
+    if (params.method) searchParams.set('method', params.method);
+    if (params.status) searchParams.set('status', params.status);
+    if (params.search) searchParams.set('search', params.search);
+    if (params.startDate) searchParams.set('startDate', params.startDate);
+    if (params.endDate) searchParams.set('endDate', params.endDate);
+
+    const response = await fetch(`${API_BASE_URL}/api-keys/logs?${searchParams.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw await response.json();
+    }
+
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};

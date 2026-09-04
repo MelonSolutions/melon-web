@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
-  ArrowLeft, Plus, Key, Eye, EyeOff, CheckCircle, Zap, Globe, Bell, FileText, Trash2, ExternalLink, Play, RefreshCw, ChevronDown, ChevronUp, Send, Copy
+  ArrowLeft, Plus, Key, Eye, EyeOff, CheckCircle, Zap, Globe, Bell, FileText, Trash2, ExternalLink, Play, RefreshCw, ChevronDown, ChevronUp, Send, Copy, Search, Filter, Clock, Activity
 } from 'lucide-react';
-import { listApiKeys, createApiKey, revokeApiKey, rotateApiKey, ApiKey } from '@/lib/api/api-keys';
+import { listApiKeys, createApiKey, revokeApiKey, rotateApiKey, ApiKey, getApiLogs, ApiLog, ApiLogsResponse } from '@/lib/api/api-keys';
 import { getEndpoints, createEndpoint, deleteEndpoint, rotateEndpointSecret, getEndpointHistory, testEndpoint, replayEvent, WebhookEndpoint, WebhookEventLog } from '@/lib/api/webhooks';
+import RequestLogsSection from '@/components/settings/RequestLogsSection';
 
 const AVAILABLE_EVENTS_INFO = [
   { id: 'verification.completed', label: 'verification.completed', description: 'Triggered when a KYC verification check successfully completes and passes.' },
@@ -997,6 +998,9 @@ export default function IntegrationsSettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Request Logs Section */}
+      <RequestLogsSection />
 
       {/* Other Integrations */}
       <div>
