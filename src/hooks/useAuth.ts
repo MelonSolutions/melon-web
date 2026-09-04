@@ -78,6 +78,22 @@ export function useAuth(): AuthState & AuthActions {
         const token = localStorage.getItem('authToken');
         
         if (token) {
+          // Optimistically hydrate cached user data so user is not blocked on a blank loading screen
+          const cachedUserData = localStorage.getItem('userData');
+          if (cachedUserData) {
+            try {
+              const parsedUser = JSON.parse(cachedUserData) as User;
+              setState(prev => ({
+                ...prev,
+                user: parsedUser,
+                isAuthenticated: true,
+                isLoading: false,
+              }));
+            } catch {
+              // Ignore parse error and proceed to network fetch
+            }
+          }
+
           try {
             // Get fresh user data
             const { userData, orgData } = await fetchAuthData();

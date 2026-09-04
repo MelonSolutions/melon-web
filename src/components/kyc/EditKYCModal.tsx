@@ -80,7 +80,23 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
 
         try {
             setLoading(true);
-            await updateKYCUser((user.id || user._id)!, formData);
+            const payload: UpdateKYCUserRequest = {
+                ...formData,
+                addresses: formData.addresses?.map((addr) => ({
+                    label: addr.label,
+                    streetNumber: addr.streetNumber,
+                    streetName: addr.streetName,
+                    landmark: addr.landmark,
+                    city: addr.city,
+                    lga: addr.lga,
+                    state: addr.state,
+                    country: addr.country,
+                    notes: addr.notes,
+                    latitude: addr.latitude,
+                    longitude: addr.longitude,
+                })),
+            };
+            await updateKYCUser((user.id || user._id)!, payload);
             addToast({
                 type: 'success',
                 title: 'Success',

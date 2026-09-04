@@ -7,14 +7,30 @@ import { getReportAnalytics, ReportAnalytics } from '@/lib/api/reports';
 
 interface OverviewStatsProps {
   reportId: string;
+  initialData?: ReportAnalytics | null;
+  loading?: boolean;
 }
 
-export default function OverviewStats({ reportId }: OverviewStatsProps) {
-  const [analytics, setAnalytics] = useState<ReportAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function OverviewStats({
+  reportId,
+  initialData,
+  loading: parentLoading,
+}: OverviewStatsProps) {
+  const [analytics, setAnalytics] = useState<ReportAnalytics | null>(
+    initialData !== undefined ? initialData : null,
+  );
+  const [loading, setLoading] = useState(
+    initialData !== undefined ? !!parentLoading : true,
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialData !== undefined) {
+      setAnalytics(initialData);
+      setLoading(parentLoading ?? false);
+      return;
+    }
+
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
@@ -32,7 +48,7 @@ export default function OverviewStats({ reportId }: OverviewStatsProps) {
     if (reportId) {
       fetchAnalytics();
     }
-  }, [reportId]);
+  }, [reportId, initialData, parentLoading]);
 
   if (error) {
     return (
