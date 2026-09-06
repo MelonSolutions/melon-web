@@ -90,6 +90,7 @@ export const revokeApiKey = async (keyId: string): Promise<void> => {
 
 export interface ApiLog {
   _id: string;
+  organization?: { _id: string; name: string; domain?: string } | string;
   requestId: string;
   method: string;
   path: string;
@@ -122,6 +123,7 @@ export const getApiLogs = async (params: {
   search?: string;
   startDate?: string;
   endDate?: string;
+  organizationId?: string;
 } = {}): Promise<ApiLogsResponse> => {
   try {
     const searchParams = new URLSearchParams();
@@ -133,6 +135,7 @@ export const getApiLogs = async (params: {
     if (params.search) searchParams.set('search', params.search);
     if (params.startDate) searchParams.set('startDate', params.startDate);
     if (params.endDate) searchParams.set('endDate', params.endDate);
+    if (params.organizationId) searchParams.set('organizationId', params.organizationId);
 
     const response = await fetch(`${API_BASE_URL}/api-keys/logs?${searchParams.toString()}`, {
       headers: getAuthHeaders(),
