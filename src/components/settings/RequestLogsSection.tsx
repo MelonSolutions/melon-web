@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Search, Filter, Clock, Activity, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, FileText, ExternalLink
+  Search, Filter, Clock, Activity, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, FileText, ExternalLink, Building2, Radio
 } from 'lucide-react';
 import { getApiLogs, ApiLog, ApiLogsResponse } from '@/lib/api/api-keys';
+import { useAuthContext } from '@/context/AuthContext';
+import { getOrganizations } from '@/lib/api/kyc';
 
 const METHOD_COLORS: Record<string, string> = {
   GET: 'bg-emerald-100 text-emerald-700',
@@ -36,6 +38,14 @@ function formatTimestamp(iso: string): string {
   });
 }
 
+function getOrgLabel(org: any): string {
+  if (!org) return '';
+  if (typeof org === 'object') {
+    return org.name || org.domain || '';
+  }
+  return String(org);
+}
+
 function JsonViewer({ data, label }: { data: any; label: string }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -64,12 +74,23 @@ function JsonViewer({ data, label }: { data: any; label: string }) {
 }
 
 export default function RequestLogsSection() {
+  const { user, isMelonAdmin } = useAuthContext();
+  const isMelon =
+    (isMelonAdmin && isMelonAdmin()) ||
+    user?.email?.toLowerCase() === 'dev@melon.ng' ||
+    user?.email?.toLowerCase().endsWith('@melon.ng');
+
   const [logs, setLogs] = useState<ApiLog[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
+  // Multi-org monitoring state for Melon Admin
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(0);
 
   // Filters
   const [envFilter, setEnvFilter] = useState<string>('');
@@ -78,20 +99,30 @@ export default function RequestLogsSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // Load organizations for Melon admin
+  useEffect(() => {
+    if (isMelon) {
+      getOrganizations(true)
+        .then((orgs) => setOrganizations(orgs || []))
+        .catch((err) => console.error('Failed to load organizations for request logs:', err));
+    }
+  }, [isMelon]);
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const fetchLogs = useCallback(async () => {
-    setIsLoading(true);
+  const fetchLogs = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
     try {
       const params: any = { page, limit: 20 };
       if (envFilter) params.environment = envFilter;
       if (methodFilter) params.method = methodFilter;
       if (statusFilter) params.status = statusFilter;
       if (debouncedSearch) params.search = debouncedSearch;
+      if (isMelon && selectedOrgId) params.organizationId = selectedOrgId;
 
       const data = await getApiLogs(params);
       setLogs(data.logs);
@@ -100,23 +131,32 @@ export default function RequestLogsSection() {
     } catch {
       // Silent fail — logs are non-critical
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
-  }, [page, envFilter, methodFilter, statusFilter, debouncedSearch]);
+  }, [page, envFilter, methodFilter, statusFilter, debouncedSearch, isMelon, selectedOrgId]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
 
+  // Auto-refresh interval for live monitoring on the go
+  useEffect(() => {
+    if (autoRefreshInterval <= 0) return;
+    const timer = setInterval(() => {
+      fetchLogs(false);
+    }, autoRefreshInterval * 1000);
+    return () => clearInterval(timer);
+  }, [autoRefreshInterval, fetchLogs]);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [envFilter, methodFilter, statusFilter, debouncedSearch]);
+  }, [envFilter, methodFilter, statusFilter, debouncedSearch, selectedOrgId]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-purple-100 rounded-lg">
             <Activity className="w-5 h-5 text-purple-600" />
@@ -127,22 +167,69 @@ export default function RequestLogsSection() {
               <span className="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                 {total} total
               </span>
+              {isMelon && (
+                <span className="text-[11px] font-medium bg-purple-50 text-purple-700 border border-purple-200/60 px-2 py-0.5 rounded-full">
+                  Melon Admin Monitoring
+                </span>
+              )}
             </h2>
-            <p className="text-sm text-gray-500">View a history of API requests and their responses</p>
+            <p className="text-sm text-gray-500">
+              {isMelon
+                ? 'Monitor partner API requests and responses in real time'
+                : 'View a history of API requests and their responses'}
+            </p>
           </div>
         </div>
-        <button
-          onClick={() => fetchLogs()}
-          disabled={isLoading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+
+        <div className="flex items-center gap-2.5">
+          {/* Live Auto-Refresh Selector */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200">
+            <Radio className={`w-3.5 h-3.5 ${autoRefreshInterval > 0 ? 'text-green-500 animate-pulse' : 'text-gray-400'}`} />
+            <span className="hidden sm:inline font-medium">Live:</span>
+            <select
+              value={autoRefreshInterval}
+              onChange={(e) => setAutoRefreshInterval(Number(e.target.value))}
+              className="bg-transparent border-none text-xs text-gray-800 font-semibold focus:ring-0 cursor-pointer p-0 pr-1"
+              title="Auto-refresh interval"
+            >
+              <option value={0}>Off</option>
+              <option value={10}>10s</option>
+              <option value={30}>30s</option>
+            </select>
+          </div>
+
+          <button
+            onClick={() => fetchLogs(true)}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+        {/* Organization Filter - Melon Admin Only */}
+        {isMelon && (
+          <div className="flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+            <select
+              value={selectedOrgId}
+              onChange={(e) => setSelectedOrgId(e.target.value)}
+              className="px-3 py-1.5 text-sm border border-purple-200 bg-purple-50/50 font-medium text-purple-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            >
+              <option value="">🌐 All Partner Organizations</option>
+              {organizations.map((org) => (
+                <option key={org._id} value={org._id}>
+                  {org.name} {org.domain ? `(${org.domain})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Environment Filter */}
         <select
           value={envFilter}
@@ -203,7 +290,7 @@ export default function RequestLogsSection() {
           <Activity className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-sm font-medium text-gray-500 mb-1">No API requests found</p>
           <p className="text-xs text-gray-400">
-            {envFilter || methodFilter || statusFilter || debouncedSearch
+            {envFilter || methodFilter || statusFilter || debouncedSearch || selectedOrgId
               ? 'Try adjusting your filters to see more results.'
               : 'Make your first API call using one of your API keys to see request logs here.'}
           </p>
@@ -211,24 +298,41 @@ export default function RequestLogsSection() {
       ) : (
         <div className="space-y-0">
           {/* Table Header */}
-          <div className="hidden sm:grid grid-cols-[100px_70px_1fr_70px_80px_80px] gap-3 px-3 py-2 text-[11px] font-medium text-gray-400 uppercase tracking-wider border-b border-gray-100">
-            <span>Timestamp</span>
-            <span>Method</span>
-            <span>Path</span>
-            <span>Status</span>
-            <span>Duration</span>
-            <span>Env</span>
-          </div>
+          {isMelon ? (
+            <div className="hidden sm:grid grid-cols-[100px_120px_65px_1fr_65px_75px_75px] gap-3 px-3 py-2 text-[11px] font-medium text-gray-400 uppercase tracking-wider border-b border-gray-100">
+              <span>Timestamp</span>
+              <span>Organization</span>
+              <span>Method</span>
+              <span>Path</span>
+              <span>Status</span>
+              <span>Duration</span>
+              <span>Env</span>
+            </div>
+          ) : (
+            <div className="hidden sm:grid grid-cols-[100px_70px_1fr_70px_80px_80px] gap-3 px-3 py-2 text-[11px] font-medium text-gray-400 uppercase tracking-wider border-b border-gray-100">
+              <span>Timestamp</span>
+              <span>Method</span>
+              <span>Path</span>
+              <span>Status</span>
+              <span>Duration</span>
+              <span>Env</span>
+            </div>
+          )}
 
           {/* Log Rows */}
           {logs.map((log) => {
             const isExpanded = expandedLogId === log._id;
+            const orgName = getOrgLabel(log.organization);
 
             return (
               <div key={log._id} className="border-b border-gray-50 last:border-0">
                 <button
                   onClick={() => setExpandedLogId(isExpanded ? null : log._id)}
-                  className={`w-full grid grid-cols-1 sm:grid-cols-[100px_70px_1fr_70px_80px_80px] gap-2 sm:gap-3 px-3 py-2.5 text-left hover:bg-gray-50/80 transition-colors ${
+                  className={`w-full grid grid-cols-1 ${
+                    isMelon
+                      ? 'sm:grid-cols-[100px_120px_65px_1fr_65px_75px_75px]'
+                      : 'sm:grid-cols-[100px_70px_1fr_70px_80px_80px]'
+                  } gap-2 sm:gap-3 px-3 py-2.5 text-left hover:bg-gray-50/80 transition-colors ${
                     isExpanded ? 'bg-blue-50/40' : ''
                   }`}
                 >
@@ -236,6 +340,15 @@ export default function RequestLogsSection() {
                   <span className="text-[11px] text-gray-500 font-mono tabular-nums">
                     {formatTimestamp(log.createdAt)}
                   </span>
+
+                  {/* Organization (Melon Admin Only) */}
+                  {isMelon && (
+                    <span className="truncate" title={orgName}>
+                      <span className="inline-block px-1.5 py-0.5 text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200/60 rounded truncate max-w-[110px]">
+                        {orgName || 'Melon'}
+                      </span>
+                    </span>
+                  )}
 
                   {/* Method */}
                   <span>
@@ -278,6 +391,12 @@ export default function RequestLogsSection() {
                   <div className="px-3 pb-4 pt-1 bg-gray-50/30 space-y-3">
                     {/* Metadata Row */}
                     <div className="flex flex-wrap gap-x-6 gap-y-1 text-[11px] text-gray-500">
+                      {isMelon && orgName && (
+                        <span>
+                          <span className="text-gray-400">Organization:</span>{' '}
+                          <span className="font-semibold text-purple-700">{orgName}</span>
+                        </span>
+                      )}
                       {log.requestId && (
                         <span>
                           <span className="text-gray-400">Request ID:</span>{' '}

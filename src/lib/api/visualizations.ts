@@ -445,13 +445,23 @@ export const getSharedChartData = async (shareToken: string): Promise<any> => {
   }
 };
 
-export const createDataSourceFromKYC = async (data: {
+export interface CreateDataSourceFromKYCData {
   name: string;
   description?: string;
+  limit?: number;
+  organizationId?: string;
+  targetOrganizationName?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
   kycDataSourceConfig: {
     availableFields: string[];
   };
-}): Promise<DataSource> => {
+}
+
+export const createDataSourceFromKYC = async (
+  data: CreateDataSourceFromKYCData,
+): Promise<DataSource> => {
   try {
     return await apiRequest('/visualizations/data-sources/from-kyc', {
       method: 'POST',
