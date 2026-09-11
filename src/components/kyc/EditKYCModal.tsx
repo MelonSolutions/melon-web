@@ -83,6 +83,7 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
             const payload: UpdateKYCUserRequest = {
                 ...formData,
                 addresses: formData.addresses?.map((addr) => ({
+                    ...addr,
                     label: addr.label,
                     streetNumber: addr.streetNumber,
                     streetName: addr.streetName,
