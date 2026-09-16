@@ -138,6 +138,15 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
     });
   };
 
+  const rejectionReasonDisplay =
+    user.rejectionReason ||
+    user.rejectionNote ||
+    user.addresses?.[0]?.rejectionReason ||
+    user.addresses?.[0]?.rejectionNote;
+
+  const rejectionNoteDisplay =
+    user.rejectionNote || user.addresses?.[0]?.rejectionNote;
+
   if (view === 'grid') {
     return (
       <div className="relative">
@@ -317,11 +326,13 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
           </div>
 
           <div className="space-y-3 pt-4 border-t border-gray-100">
-            {user.status === 'REJECTED' && user.rejectionReason && (
+            {user.status === 'REJECTED' && rejectionReasonDisplay && (
               <div className="bg-error-light/10 border border-error-light/50 rounded-lg p-3 mb-2">
                 <span className="text-[10px] font-bold text-error uppercase tracking-wider block mb-1">Rejection Reason</span>
-                <p className="text-xs text-error font-medium leading-tight">{user.rejectionReason}</p>
-                {user.rejectionNote && <p className="text-[10px] text-error/70 mt-1 line-clamp-2">{user.rejectionNote}</p>}
+                <p className="text-xs text-error font-medium leading-tight">{rejectionReasonDisplay}</p>
+                {rejectionNoteDisplay && rejectionNoteDisplay !== rejectionReasonDisplay && (
+                  <p className="text-[10px] text-error/70 mt-1 line-clamp-2">{rejectionNoteDisplay}</p>
+                )}
               </div>
             )}
 
@@ -510,9 +521,9 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
               )}
             </div>
             <StatusBadge status={user.status} size="sm" />
-            {user.status === 'REJECTED' && user.rejectionReason && (
-              <span className="text-[9px] text-error font-bold leading-tight line-clamp-1 max-w-[80px]" title={user.rejectionReason}>
-                {user.rejectionReason}
+            {user.status === 'REJECTED' && rejectionReasonDisplay && (
+              <span className="text-[9px] text-error font-bold leading-tight line-clamp-1 max-w-[80px]" title={rejectionReasonDisplay}>
+                {rejectionReasonDisplay}
               </span>
             )}
           </div>
@@ -525,9 +536,9 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
           {/* Column 3: Status (Desktop-only) */}
           <div className="hidden lg:flex flex-col items-start gap-1 shrink-0">
             <StatusBadge status={user.status} size="sm" />
-            {user.status === 'REJECTED' && user.rejectionReason && (
-              <span className="text-[10px] text-error font-semibold leading-tight line-clamp-1" title={user.rejectionReason}>
-                {user.rejectionReason}
+            {user.status === 'REJECTED' && rejectionReasonDisplay && (
+              <span className="text-[10px] text-error font-semibold leading-tight line-clamp-1" title={rejectionReasonDisplay}>
+                {rejectionReasonDisplay}
               </span>
             )}
           </div>
