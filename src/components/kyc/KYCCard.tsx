@@ -147,6 +147,11 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
   const rejectionNoteDisplay =
     user.rejectionNote || user.addresses?.[0]?.rejectionNote;
 
+  const addresses = user.addresses || [];
+  const hasMultipleAddresses = addresses.length > 1;
+  const totalAddresses = addresses.length;
+  const verifiedAddressesCount = addresses.filter((a) => a.status === 'VERIFIED').length;
+
   if (view === 'grid') {
     return (
       <div className="relative">
@@ -321,8 +326,23 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
             )}
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 flex items-center gap-2 flex-wrap">
             <StatusBadge status={user.status} size="sm" />
+            {hasMultipleAddresses && (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                  verifiedAddressesCount === totalAddresses
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : verifiedAddressesCount > 0
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+                title={addresses.map((a, i) => `${a.label || `Address ${i + 1}`}: ${a.status || 'PENDING'}`).join('\n')}
+              >
+                <MapPin className="w-3 h-3 shrink-0" />
+                {verifiedAddressesCount}/{totalAddresses} Approved
+              </span>
+            )}
           </div>
 
           <div className="space-y-3 pt-4 border-t border-gray-100">
@@ -371,7 +391,21 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
 
             <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-100">
               <span className="text-gray-500">Addresses:</span>
-              <span className="text-gray-900 font-bold">{user.addresses?.length || 1}</span>
+              {hasMultipleAddresses ? (
+                <span
+                  className={`font-semibold ${
+                    verifiedAddressesCount === totalAddresses
+                      ? 'text-emerald-600'
+                      : verifiedAddressesCount > 0
+                      ? 'text-amber-600'
+                      : 'text-gray-900'
+                  }`}
+                >
+                  {verifiedAddressesCount} of {totalAddresses} Approved
+                </span>
+              ) : (
+                <span className="text-gray-900 font-bold">1</span>
+              )}
             </div>
             
             {user.notes && (
@@ -415,9 +449,26 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
                 {user.firstName} {user.lastName}
               </div>
               <div className="flex flex-col gap-0.5 mt-0.5">
-                <span className="text-[10px] font-bold text-primary uppercase whitespace-nowrap overflow-hidden text-ellipsis">
-                  {user.loanId || 'N/A'} {user.loanType && `• ${formatLoanType(user.loanType as string)}`}
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-primary uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                    {user.loanId || 'N/A'} {user.loanType && `• ${formatLoanType(user.loanType as string)}`}
+                  </span>
+                  {hasMultipleAddresses && (
+                    <span
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold border ${
+                        verifiedAddressesCount === totalAddresses
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : verifiedAddressesCount > 0
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-gray-100 text-gray-700 border-gray-200'
+                      }`}
+                      title={addresses.map((a, i) => `${a.label || `Address ${i + 1}`}: ${a.status || 'PENDING'}`).join('\n')}
+                    >
+                      <MapPin className="w-2.5 h-2.5 shrink-0" />
+                      {totalAddresses} Locations ({verifiedAddressesCount}/{totalAddresses} Approved)
+                    </span>
+                  )}
+                </div>
                 <div className="text-[11px] text-gray-500 truncate max-w-full">{user.email}</div>
                 
                 {user.notes && (
@@ -521,6 +572,19 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
               )}
             </div>
             <StatusBadge status={user.status} size="sm" />
+            {hasMultipleAddresses && (
+              <span
+                className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${
+                  verifiedAddressesCount === totalAddresses
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : verifiedAddressesCount > 0
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                {verifiedAddressesCount}/{totalAddresses} Approved
+              </span>
+            )}
             {user.status === 'REJECTED' && rejectionReasonDisplay && (
               <span className="text-[9px] text-error font-bold leading-tight line-clamp-1 max-w-[80px]" title={rejectionReasonDisplay}>
                 {rejectionReasonDisplay}
@@ -536,6 +600,21 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
           {/* Column 3: Status (Desktop-only) */}
           <div className="hidden lg:flex flex-col items-start gap-1 shrink-0">
             <StatusBadge status={user.status} size="sm" />
+            {hasMultipleAddresses && (
+              <span
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                  verifiedAddressesCount === totalAddresses
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : verifiedAddressesCount > 0
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+                title={addresses.map((a, i) => `${a.label || `Address ${i + 1}`}: ${a.status || 'PENDING'}`).join('\n')}
+              >
+                <MapPin className="w-2.5 h-2.5 shrink-0" />
+                {verifiedAddressesCount}/{totalAddresses} Approved
+              </span>
+            )}
             {user.status === 'REJECTED' && rejectionReasonDisplay && (
               <span className="text-[10px] text-error font-semibold leading-tight line-clamp-1" title={rejectionReasonDisplay}>
                 {rejectionReasonDisplay}
