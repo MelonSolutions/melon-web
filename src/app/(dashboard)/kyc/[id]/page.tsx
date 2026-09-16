@@ -172,8 +172,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
 
-      // Pass rejectionReason as Note as well since it's the detailed text
-      await makeVerificationDecision(userId, 'rejected', undefined, addressIndex, rejectionReason);
+      // Pass rejectionReason as both reason and note so both fields are populated
+      await makeVerificationDecision(userId, 'rejected', rejectionReason, addressIndex, rejectionReason);
       await refetch();
 
       addToast({
@@ -535,14 +535,14 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                         {user.verificationDate && (
                           <p className="text-xs text-red-500">Decision made: {format(new Date(user.verificationDate), 'PPp')}</p>
                         )}
-                        {user.rejectionReason && (
+                        {(user.rejectionReason || user.addresses?.[0]?.rejectionReason || user.rejectionNote || user.addresses?.[0]?.rejectionNote) && (
                           <div className="font-medium text-base mt-2">
-                            Reason: {user.rejectionReason}
+                            Reason: {user.rejectionReason || user.addresses?.[0]?.rejectionReason || user.rejectionNote || user.addresses?.[0]?.rejectionNote}
                           </div>
                         )}
-                        {user.rejectionNote && (
+                        {(user.rejectionNote || user.addresses?.[0]?.rejectionNote) && (
                           <div className="whitespace-pre-wrap text-error/80">
-                            {user.rejectionNote}
+                            {user.rejectionNote || user.addresses?.[0]?.rejectionNote}
                           </div>
                         )}
                         {user.rejectionEvidence && user.rejectionEvidence.length > 0 && (
