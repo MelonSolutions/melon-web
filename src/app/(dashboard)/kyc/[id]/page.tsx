@@ -23,6 +23,7 @@ import {
   ZoomIn,
   ZoomOut,
   X,
+  MapPin,
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
@@ -418,6 +419,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   }];
 
   const canUploadDocuments = user.status === 'PENDING';
+  const isMultiAddressRequest = addresses.length > 1;
+  const verifiedAddressesCount = addresses.filter((a) => a.status === 'VERIFIED').length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -674,6 +677,46 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {isMultiAddressRequest && (
+              <Card className="border border-blue-200 bg-gradient-to-r from-blue-50/70 via-indigo-50/30 to-white shadow-sm mb-6">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+                        <MapPin className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          Multi-Address Verification ({verifiedAddressesCount} of {addresses.length} Approved)
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          Each address is verified and approved individually. Approving one address does not approve other addresses.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {addresses.map((addr, idx) => (
+                        <span
+                          key={idx}
+                          className={`text-[10px] font-semibold px-2 py-1 rounded-md border ${
+                            addr.status === 'VERIFIED'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : addr.status === 'VERIFICATION_SUBMITTED'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : addr.status === 'REJECTED' || addr.status === 'NOT_APPROVED'
+                              ? 'bg-red-50 text-red-700 border-red-200'
+                              : 'bg-gray-50 text-gray-600 border-gray-200'
+                          }`}
+                        >
+                          {addr.label || `Addr ${idx + 1}`}: {addr.status === 'VERIFIED' ? 'Approved ✓' : addr.status}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {addresses.map((address, index) => (
               <div key={index} className="space-y-6">
