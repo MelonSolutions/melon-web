@@ -23,34 +23,46 @@ export const StatCard: React.FC<StatCardProps> = ({
   className,
 }) => {
   return (
-    <Card padding="md" className={cn('', className)}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
-          {description && (
-            <p className="text-sm text-gray-500">{description}</p>
-          )}
-          {trend && (
-            <div className="flex items-center gap-1 mt-2">
-              <span
-                className={cn(
-                  'text-sm font-medium',
-                  trend.isPositive ? 'text-success' : 'text-error'
-                )}
-              >
-                {trend.isPositive ? '↑' : '↓'} {trend.value}
-              </span>
-              <span className="text-sm text-gray-500">from last period</span>
-            </div>
-          )}
-        </div>
+    <Card
+      padding="none"
+      className={cn(
+        'p-3 sm:p-3.5 rounded-xl border border-gray-200/90 bg-white hover:border-gray-300 hover:shadow-sm transition-all flex flex-col justify-between min-h-[104px]',
+        className
+      )}
+    >
+      <div className="flex items-start justify-between gap-1.5 mb-2">
+        <span
+          className="text-xs font-medium text-gray-600 leading-snug break-words"
+          title={label}
+        >
+          {label}
+        </span>
         {icon && (
-          <div className="ml-4 p-2.5 bg-gray-50 rounded-lg text-gray-600">
+          <div className="p-1 rounded-md bg-gray-50 text-gray-500 shrink-0 [&>svg]:w-4 [&>svg]:h-4 mt-0.5">
             {icon}
           </div>
         )}
       </div>
+      <div className="flex items-baseline justify-between gap-2 mt-auto pt-1">
+        <p className="text-2xl font-bold text-gray-900 tracking-tight leading-none">{value}</p>
+        {trend && (
+          <div className="flex items-center gap-1 shrink-0">
+            <span
+              className={cn(
+                'text-xs font-medium',
+                trend.isPositive ? 'text-emerald-600' : 'text-red-600'
+              )}
+            >
+              {trend.isPositive ? '↑' : '↓'} {trend.value}
+            </span>
+          </div>
+        )}
+      </div>
+      {description && (
+        <p className="text-[11px] text-gray-400 mt-1 leading-tight" title={description}>
+          {description}
+        </p>
+      )}
     </Card>
   );
 };

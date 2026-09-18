@@ -53,16 +53,16 @@ export const KYCStatusChart: React.FC<KYCStatusChartProps> = ({ data }) => {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="w-full h-52 relative">
+    <div className="flex flex-col items-center justify-between h-full">
+      <div className="w-full h-48 relative">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={55}
-              outerRadius={80}
+              innerRadius={48}
+              outerRadius={72}
               paddingAngle={3}
               dataKey="value"
               stroke="none"
@@ -75,7 +75,7 @@ export const KYCStatusChart: React.FC<KYCStatusChartProps> = ({ data }) => {
               formatter={(value: number, name: string) => [value, name]}
               contentStyle={{
                 backgroundColor: '#FFF',
-                border: 'none',
+                border: '1px solid #E5E7EB',
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 fontSize: '13px',
@@ -86,13 +86,13 @@ export const KYCStatusChart: React.FC<KYCStatusChartProps> = ({ data }) => {
         {/* Center label */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            <p className="text-2xl font-bold text-gray-900">{data.total}</p>
-            <p className="text-xs text-gray-500">Total</p>
+            <p className="text-2xl font-bold text-gray-900 leading-none">{data.total}</p>
+            <p className="text-[11px] font-medium text-gray-400 mt-0.5">Total</p>
           </div>
         </div>
       </div>
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+      <div className="flex flex-wrap justify-center gap-x-3.5 gap-y-1.5 pt-2">
         {chartData.map((entry, index) => (
           <div key={index} className="flex items-center gap-1.5">
             <div
