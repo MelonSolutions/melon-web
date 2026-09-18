@@ -891,12 +891,14 @@ export default function OverviewPage() {
       <div className="space-y-6">
         <div className="h-20 bg-white rounded-xl border border-gray-200 p-5 animate-pulse"></div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3">
           {[...Array(7)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg border border-gray-200 p-5">
-              <div className="h-3 w-20 bg-gray-200 rounded animate-pulse mb-3"></div>
-              <div className="h-7 w-14 bg-gray-200 rounded animate-pulse mb-2"></div>
-              <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+            <div key={i} className="bg-white rounded-xl border border-gray-200/90 p-3 sm:p-3.5 min-h-[104px] flex flex-col justify-between">
+              <div className="flex items-start justify-between mb-2">
+                <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-7 w-12 bg-gray-200 rounded animate-pulse mt-auto"></div>
             </div>
           ))}
         </div>
@@ -933,14 +935,14 @@ export default function OverviewPage() {
   return (
     <div className="space-y-6">
       {/* Unified Global Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Global metrics control bar — use individual component filter buttons below for localized drill-downs
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Real-time summary of impact metrics, survey data, and verification progress
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
           {isMelonAdmin && (
             <div className="w-full sm:w-56">
               <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">
@@ -984,41 +986,41 @@ export default function OverviewPage() {
 
       {/* Key Metrics — 7 cards */}
       {dashboardStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3">
           <StatCard
             label={dashboardStats.totalPrograms?.description || 'Total Programs'}
             value={dashboardStats.totalPrograms?.value || '0'}
-            icon={<Target className="w-5 h-5" />}
+            icon={<Target className="text-blue-600" />}
           />
           <StatCard
             label={dashboardStats.activeProjects?.description || 'Active Projects'}
             value={dashboardStats.activeProjects?.value || '0'}
-            icon={<Activity className="w-5 h-5" />}
+            icon={<Activity className="text-emerald-600" />}
           />
           <StatCard
             label={dashboardStats.beneficiaries?.description || 'Beneficiaries'}
             value={dashboardStats.beneficiaries?.value || '0'}
-            icon={<Users className="w-5 h-5" />}
+            icon={<Users className="text-purple-600" />}
           />
           <StatCard
             label={dashboardStats.verifiedUsers?.description || 'Verified Customers'}
             value={dashboardStats.verifiedUsers?.value || '0'}
-            icon={<CheckCircle2 className="w-5 h-5" />}
+            icon={<CheckCircle2 className="text-teal-600" />}
           />
           <StatCard
             label={dashboardStats.pendingKYC?.description || 'Pending KYC'}
             value={dashboardStats.pendingKYC?.value || '0'}
-            icon={<Shield className="w-5 h-5" />}
+            icon={<Shield className="text-amber-600" />}
           />
           <StatCard
             label={dashboardStats.totalSurveys?.description || 'Surveys Created'}
             value={dashboardStats.totalSurveys?.value || '0'}
-            icon={<ClipboardList className="w-5 h-5" />}
+            icon={<ClipboardList className="text-indigo-600" />}
           />
           <StatCard
             label={dashboardStats.totalResponses?.description || 'Survey Responses'}
             value={dashboardStats.totalResponses?.value || '0'}
-            icon={<MessageSquare className="w-5 h-5" />}
+            icon={<MessageSquare className="text-sky-600" />}
           />
         </div>
       )}

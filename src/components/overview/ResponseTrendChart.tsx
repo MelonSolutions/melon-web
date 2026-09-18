@@ -41,19 +41,28 @@ export const ResponseTrendChart: React.FC<ResponseTrendChartProps> = ({ data }) 
     }
   };
 
-  const maxCount = Math.max(...data.map(d => d.count));
+  const maxCount = Math.max(...data.map(d => d.count), 0);
+
+  const getYAxisUpperDomain = (max: number) => {
+    if (max <= 5) return 5;
+    const padded = max * 1.25; // 25% headroom so peaks don't hit the top boundary
+    if (padded <= 20) return Math.ceil(padded / 5) * 5;
+    if (padded <= 100) return Math.ceil(padded / 10) * 10;
+    if (padded <= 500) return Math.ceil(padded / 50) * 50;
+    return Math.ceil(padded / 100) * 100;
+  };
 
   return (
     <div className="w-full h-64">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
-          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+          margin={{ top: 16, right: 16, left: 6, bottom: 4 }}
         >
           <defs>
             <linearGradient id="colorResponses" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#6366F1" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+              <stop offset="5%" stopColor="#5B94E5" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="#5B94E5" stopOpacity={0.01} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
@@ -69,16 +78,16 @@ export const ResponseTrendChart: React.FC<ResponseTrendChartProps> = ({ data }) 
             axisLine={false}
             tickLine={false}
             tick={{ fontSize: 11, fill: '#9CA3AF' }}
-            width={30}
+            width={40}
             allowDecimals={false}
-            domain={[0, Math.max(maxCount + 1, 5)]}
+            domain={[0, getYAxisUpperDomain(maxCount)]}
           />
           <Tooltip
             labelFormatter={formatDate}
             formatter={(value: number) => [value, 'Responses']}
             contentStyle={{
               backgroundColor: '#FFF',
-              border: 'none',
+              border: '1px solid #E5E7EB',
               borderRadius: '8px',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               fontSize: '13px',
@@ -87,12 +96,12 @@ export const ResponseTrendChart: React.FC<ResponseTrendChartProps> = ({ data }) 
           <Area
             type="monotone"
             dataKey="count"
-            stroke="#6366F1"
+            stroke="#5B94E5"
             strokeWidth={2.5}
             fillOpacity={1}
             fill="url(#colorResponses)"
             dot={false}
-            activeDot={{ r: 4, fill: '#6366F1', stroke: '#FFF', strokeWidth: 2 }}
+            activeDot={{ r: 4, fill: '#5B94E5', stroke: '#FFF', strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>
