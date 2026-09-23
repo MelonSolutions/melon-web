@@ -111,20 +111,14 @@ export default function DashboardLayout({
   });
 
   const SidebarLogo = () => {
-    if (organization?.isWhiteLabel && (organization?.logoUrl || organization?.brandName)) {
+    if (organization?.isWhiteLabel && organization?.logoUrl) {
       return (
         <div className="flex items-center gap-2 h-8">
-          {organization.logoUrl ? (
-            <img
-              src={organization.logoUrl}
-              alt={organization.brandName || organization.name}
-              className="max-h-8 max-w-[160px] object-contain"
-            />
-          ) : (
-            <span className="text-xl font-bold text-[var(--color-primary)]">
-              {organization.brandName || organization.name}
-            </span>
-          )}
+          <img
+            src={organization.logoUrl}
+            alt={organization.brandName || organization.name}
+            className="max-h-8 max-w-[160px] object-contain"
+          />
         </div>
       );
     }

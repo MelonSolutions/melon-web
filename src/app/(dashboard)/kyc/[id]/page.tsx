@@ -1140,9 +1140,9 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   <div className="flex gap-3">
                     <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 shrink-0"></div>
                     <div>
-                      <div className="text-sm font-medium text-gray-900">Submitted</div>
+                      <div className="text-sm font-medium text-gray-900">Created</div>
                       <div className="text-xs text-gray-500">
-                        {format(new Date(user.submittedAt), 'PPp')}
+                        {format(new Date(user.createdAt || user.submittedAt), 'PPp')}
                       </div>
                     </div>
                   </div>
