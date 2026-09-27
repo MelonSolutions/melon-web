@@ -36,13 +36,13 @@ import {
   formatLoanType
 } from '@/types/kyc';
 import {
-  uploadDocument,
-  deleteDocument,
+  ApiError,
   makeVerificationDecision,
   reviveExpiredJob,
   deleteKYCUser,
+  uploadDocument,
+  deleteDocument,
   downloadKYCReport,
-  ApiError
 } from '@/lib/api/kyc';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/Toast';
