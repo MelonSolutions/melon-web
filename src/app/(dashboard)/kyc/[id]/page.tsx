@@ -60,7 +60,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const userId = resolvedParams.id;
   const router = useRouter();
   const { addToast } = useToast();
-  const { openModal, closeModal } = useModal();
+  const { openModal, closeModal, openConfirmModal } = useModal();
   const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
@@ -251,6 +251,10 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleViewOnMap = () => {
+    router.push(`/map-view?layer=kyc&focus=${userId}&lat=${userLat}&lng=${userLng}`);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
