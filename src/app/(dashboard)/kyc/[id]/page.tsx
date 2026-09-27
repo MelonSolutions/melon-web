@@ -36,11 +36,13 @@ import {
   formatLoanType
 } from '@/types/kyc';
 import {
-  uploadDocument,
-  deleteDocument,
+  ApiError,
   makeVerificationDecision,
   reviveExpiredJob,
-  ApiError
+  deleteKYCUser,
+  uploadDocument,
+  deleteDocument,
+  downloadKYCReport,
 } from '@/lib/api/kyc';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/Toast';
@@ -58,7 +60,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const userId = resolvedParams.id;
   const router = useRouter();
   const { addToast } = useToast();
-  const { openModal, closeModal } = useModal();
+  const { openModal, closeModal, openConfirmModal } = useModal();
   const { organization } = useAuthContext();
   const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
 
@@ -70,6 +72,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [rejectionReason, setRejectionReason] = useState('');
   const [previewDocument, setPreviewDocument] = useState<KYCDocument | null>(null);
   const [viewerZoom, setViewerZoom] = useState(100);
+  const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const isImageDoc = (fileName?: string, fileType?: string, fileUrl?: string) => {
     const name = (fileName || fileUrl || '').toLowerCase();
@@ -218,6 +222,85 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleDownloadReport = async () => {
+    try {
+      setDownloading(true);
+      await downloadKYCReport(userId);
+
+      addToast({
+        type: 'success',
+        title: 'Report Downloaded',
+        message: 'The verification report has been downloaded successfully.',
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Download Failed',
+          message: error.message,
+        });
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Download Failed',
+          message: 'Failed to download the report. Please try again.',
+        });
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleViewOnMap = () => {
+    router.push(`/map-view?layer=kyc&focus=${userId}&lat=${userLat}&lng=${userLng}`);
+  };
+
+  const handleViewDocuments = () => {
+    router.push(`/kyc/${userId}/documents`);
+  };
+
+  const handleDelete = () => {
+    if (!user) return;
+
+    openConfirmModal({
+      title: 'Delete Verification Request',
+      description: `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setDeleting(true);
+          await deleteKYCUser(userId);
+
+          addToast({
+            type: 'success',
+            title: 'Request Deleted',
+            message: 'The verification request has been deleted successfully.',
+          });
+
+          router.push('/kyc');
+        } catch (error) {
+          if (error instanceof ApiError) {
+            addToast({
+              type: 'error',
+              title: 'Delete Failed',
+              message: error.message,
+            });
+          } else {
+            addToast({
+              type: 'error',
+              title: 'Delete Failed',
+              message: 'Failed to delete the request. Please try again.',
+            });
+          }
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -421,6 +504,10 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const canUploadDocuments = user.status === 'PENDING';
   const isMultiAddressRequest = addresses.length > 1;
   const verifiedAddressesCount = addresses.filter((a) => a.status === 'VERIFIED').length;
+
+  const userLat = user.latitude ?? user.addresses?.[0]?.latitude;
+  const userLng = user.longitude ?? user.addresses?.[0]?.longitude;
+  const canDelete = user.status === 'PENDING';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1058,6 +1145,59 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Overall Status</span>
                     <StatusBadge status={user.status} size="sm" />
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-4 mt-4">
+                    <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Actions</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Download className="w-4 h-4" />}
+                        onClick={handleDownloadReport}
+                        loading={downloading}
+                        disabled={downloading}
+                        className="w-full"
+                      >
+                        Download
+                      </Button>
+
+                      {userLat && userLng && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<MapPin className="w-4 h-4" />}
+                          onClick={handleViewOnMap}
+                          className="w-full"
+                        >
+                          View Map
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<FileText className="w-4 h-4" />}
+                        onClick={handleViewDocuments}
+                        className="w-full"
+                      >
+                        Documents
+                      </Button>
+
+                      {isMelonAdmin && canDelete && (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          icon={<Trash2 className="w-4 h-4" />}
+                          onClick={handleDelete}
+                          loading={deleting}
+                          disabled={deleting}
+                          className="w-full"
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
