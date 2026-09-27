@@ -426,6 +426,10 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const isMultiAddressRequest = addresses.length > 1;
   const verifiedAddressesCount = addresses.filter((a) => a.status === 'VERIFIED').length;
 
+  const userLat = user.latitude || user.addresses?.[0]?.latitude;
+  const userLng = user.longitude || user.addresses?.[0]?.longitude;
+  const canDelete = user.status === 'PENDING';
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
