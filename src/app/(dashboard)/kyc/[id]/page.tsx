@@ -257,6 +257,10 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     router.push(`/map-view?layer=kyc&focus=${userId}&lat=${userLat}&lng=${userLng}`);
   };
 
+  const handleViewDocuments = () => {
+    router.push(`/kyc/${userId}/documents`);
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
