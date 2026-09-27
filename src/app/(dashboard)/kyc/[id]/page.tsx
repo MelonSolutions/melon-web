@@ -40,6 +40,8 @@ import {
   deleteDocument,
   makeVerificationDecision,
   reviveExpiredJob,
+  deleteKYCUser,
+  downloadKYCReport,
   ApiError
 } from '@/lib/api/kyc';
 import { format } from 'date-fns';
@@ -70,6 +72,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [rejectionReason, setRejectionReason] = useState('');
   const [previewDocument, setPreviewDocument] = useState<KYCDocument | null>(null);
   const [viewerZoom, setViewerZoom] = useState(100);
+  const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const isImageDoc = (fileName?: string, fileType?: string, fileUrl?: string) => {
     const name = (fileName || fileUrl || '').toLowerCase();
