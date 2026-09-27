@@ -224,6 +224,35 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     }
   };
 
+  const handleDownloadReport = async () => {
+    try {
+      setDownloading(true);
+      await downloadKYCReport(userId);
+
+      addToast({
+        type: 'success',
+        title: 'Report Downloaded',
+        message: 'The verification report has been downloaded successfully.',
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({
+          type: 'error',
+          title: 'Download Failed',
+          message: error.message,
+        });
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Download Failed',
+          message: 'Failed to download the report. Please try again.',
+        });
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
