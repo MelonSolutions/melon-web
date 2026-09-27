@@ -261,6 +261,48 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     router.push(`/kyc/${userId}/documents`);
   };
 
+  const handleDelete = () => {
+    if (!user) return;
+
+    openConfirmModal({
+      title: 'Delete Verification Request',
+      description: `Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          setDeleting(true);
+          await deleteKYCUser(userId);
+
+          addToast({
+            type: 'success',
+            title: 'Request Deleted',
+            message: 'The verification request has been deleted successfully.',
+          });
+
+          router.push('/kyc');
+        } catch (error) {
+          if (error instanceof ApiError) {
+            addToast({
+              type: 'error',
+              title: 'Delete Failed',
+              message: error.message,
+            });
+          } else {
+            addToast({
+              type: 'error',
+              title: 'Delete Failed',
+              message: 'Failed to delete the request. Please try again.',
+            });
+          }
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
