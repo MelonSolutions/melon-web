@@ -1146,6 +1146,59 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     <span className="text-gray-500">Overall Status</span>
                     <StatusBadge status={user.status} size="sm" />
                   </div>
+
+                  <div className="border-t border-gray-200 pt-4 mt-4">
+                    <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Actions</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Download className="w-4 h-4" />}
+                        onClick={handleDownloadReport}
+                        loading={downloading}
+                        disabled={downloading}
+                        className="w-full"
+                      >
+                        Download
+                      </Button>
+
+                      {userLat && userLng && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<MapPin className="w-4 h-4" />}
+                          onClick={handleViewOnMap}
+                          className="w-full"
+                        >
+                          View Map
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<FileText className="w-4 h-4" />}
+                        onClick={handleViewDocuments}
+                        className="w-full"
+                      >
+                        Documents
+                      </Button>
+
+                      {isMelonAdmin && canDelete && (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          icon={<Trash2 className="w-4 h-4" />}
+                          onClick={handleDelete}
+                          loading={deleting}
+                          disabled={deleting}
+                          className="w-full"
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
