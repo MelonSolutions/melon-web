@@ -35,7 +35,8 @@ import {
   KYCDocument,
   getDocumentTypeDisplayName,
   formatLoanType,
-  formatCustomerType
+  formatCustomerType,
+  isSycamoreOrganization
 } from '@/types/kyc';
 import {
   ApiError,
@@ -66,6 +67,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const { openModal, closeModal, openConfirmModal } = useModal();
   const { user: authUser, organization } = useAuthContext();
   const isMelonAdmin = isMelonPlatformUser(authUser, organization);
+  const showCustomerType = isMelonAdmin || isSycamoreOrganization(organization);
 
 
   const { user, loading, refetch } = useKYCUser(userId);
@@ -727,10 +729,12 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     <div className="text-sm text-gray-900">{user.occupation || <span className="text-gray-400 italic">Not provided</span>}</div>
                   </div>
 
-                  <div>
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Customer Type</div>
-                    <div className="text-sm text-gray-900">{formatCustomerType(user.customerType) || <span className="text-gray-400 italic">Not specified</span>}</div>
-                  </div>
+                  {showCustomerType && (
+                    <div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Customer Type</div>
+                      <div className="text-sm text-gray-900">{formatCustomerType(user.customerType) || <span className="text-gray-400 italic">Not specified</span>}</div>
+                    </div>
+                  )}
 
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Phone Number</div>

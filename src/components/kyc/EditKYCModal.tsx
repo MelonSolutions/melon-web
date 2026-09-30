@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { Save, X, Plus, Trash2 } from 'lucide-react';
-import { KYCUser, UpdateKYCUserRequest, LoanType, CUSTOMER_TYPE_OPTIONS } from '@/types/kyc';
+import { KYCUser, UpdateKYCUserRequest, LoanType, CUSTOMER_TYPE_OPTIONS, isSycamoreOrganization } from '@/types/kyc';
 import { updateKYCUser, ApiError } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 
 interface EditKYCModalProps {
     user: KYCUser;
@@ -34,6 +36,8 @@ const LOAN_TYPES = [
 
 export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
     const { addToast } = useToast();
+    const { user: authUser, organization } = useAuthContext();
+    const showCustomerType = isMelonPlatformUser(authUser, organization) || isSycamoreOrganization(organization);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState<UpdateKYCUserRequest>({
         firstName: user.firstName,
@@ -148,15 +152,17 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
                             required
                             placeholder="e.g. Banker, Trader"
                         />
-                        <div className="space-y-1">
-                            <label className="block text-sm font-medium text-gray-700">Customer Type</label>
-                            <CustomSelect
-                                value={formData.customerType || ''}
-                                onChange={(value) => handleInputChange('customerType', value)}
-                                options={CUSTOMER_TYPE_OPTIONS}
-                                placeholder="Select customer type"
-                            />
-                        </div>
+                        {showCustomerType && (
+                            <div className="space-y-1">
+                                <label className="block text-sm font-medium text-gray-700">Customer Type</label>
+                                <CustomSelect
+                                    value={formData.customerType || ''}
+                                    onChange={(value) => handleInputChange('customerType', value)}
+                                    options={CUSTOMER_TYPE_OPTIONS}
+                                    placeholder="Select customer type"
+                                />
+                            </div>
+                        )}
                         <Input
                             label="Email Address"
                             type="email"
