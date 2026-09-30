@@ -174,6 +174,7 @@ export default function AddKYCUserPage() {
     ? organizations.find(org => (org._id || org.id) === formData.organizationId)
     : user?.organization ?? { name: user?.organizationName };
   const requiresCustomerType = isSycamoreOrganization(targetOrganization);
+  const showCustomerType = requiresCustomerType || isMelonAdmin;
 
   const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
     schema: {
@@ -392,7 +393,7 @@ export default function AddKYCUserPage() {
         phone: formData.phone,
         ...(formData.loanId && { loanId: formData.loanId }),
         ...(formData.occupation && { occupation: formData.occupation }),
-        ...(requiresCustomerType && formData.customerType && { customerType: formData.customerType as any }),
+        ...(showCustomerType && formData.customerType && { customerType: formData.customerType as any }),
         ...(formData.bvn && { bvn: formData.bvn }),
         ...(formData.nin && { nin: formData.nin }),
         ...(formData.passportNumber && { passportNumber: formData.passportNumber }),
@@ -477,6 +478,7 @@ export default function AddKYCUserPage() {
 
   const handleFieldUpdate = (field: keyof Omit<CreateKYCFormData, 'addresses'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'organizationId') setCustomerTypeError(undefined);
     if (needsRelog && ['firstName', 'lastName', 'email', 'loanId', 'phone'].includes(field)) {
       setNeedsRelog(false);
     }
@@ -651,10 +653,14 @@ export default function AddKYCUserPage() {
                 helperText="Enter customer's primary occupation or business description"
               />
 
-              {requiresCustomerType && (
+              {showCustomerType && (
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700">
-                    Customer Type <span className="text-red-500">*</span>
+                    {requiresCustomerType ? (
+                      <>Customer Type <span className="text-red-500">*</span></>
+                    ) : (
+                      'Customer Type (Optional)'
+                    )}
                   </label>
                   <CustomSelect
                     value={formData.customerType}
