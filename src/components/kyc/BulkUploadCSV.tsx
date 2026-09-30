@@ -5,6 +5,7 @@ import { Upload, Download, FileText, CheckCircle, XCircle, AlertTriangle } from 
 import { bulkUploadKYC, downloadKYCTemplate, BulkUploadResult } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 import { apiClient } from '@/lib/api/auth';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
@@ -24,7 +25,7 @@ export function BulkUploadCSV() {
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [organizationId, setOrganizationId] = useState<string>('');
 
-  const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
+  const isMelonAdmin = isMelonPlatformUser(user);
 
   useEffect(() => {
     if (!isMelonAdmin) return;

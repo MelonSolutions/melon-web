@@ -13,6 +13,7 @@ import { EditKYCModal } from './EditKYCModal';
 import { RejectKYCModal } from './RejectKYCModal';
 import { getUserId } from '@/lib/utils';
 import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 
 interface KYCCardProps {
   user: KYCUser;
@@ -42,8 +43,8 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
   }, [showDropdown]);
   const { addToast } = useToast();
   const { openModal, closeModal, openConfirmModal } = useModal();
-  const { organization } = useAuthContext();
-  const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
+  const { user: authUser, organization } = useAuthContext();
+  const isMelonAdmin = isMelonPlatformUser(authUser, organization);
 
   const userId = getUserId(user);
   const userLat = user.latitude || (user.addresses && user.addresses[0]?.latitude);

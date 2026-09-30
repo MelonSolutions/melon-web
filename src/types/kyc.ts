@@ -31,6 +31,23 @@ export function formatLoanType(loanType?: string): string {
   return LOAN_TYPE_LABELS[loanType] || loanType.toLowerCase();
 }
 
+export type CustomerType = 'FIRST_TIME' | 'RETURNING';
+
+export const CUSTOMER_TYPE_OPTIONS: { value: CustomerType; label: string }[] = [
+  { value: 'FIRST_TIME', label: 'First time customer' },
+  { value: 'RETURNING', label: 'Return customer' },
+];
+
+export function formatCustomerType(customerType?: string): string {
+  return CUSTOMER_TYPE_OPTIONS.find((o) => o.value === customerType)?.label || '';
+}
+
+export function isSycamoreOrganization(organization?: { name?: string; domain?: string } | null): boolean {
+  const name = (organization?.name || '').toLowerCase();
+  const domain = (organization?.domain || '').toLowerCase();
+  return name.includes('sycamore') || domain.includes('sycamore');
+}
+
 export interface VerificationData {
   verifiedLatitude?: number;
   verifiedLongitude?: number;
@@ -75,6 +92,7 @@ export interface KYCUser {
   email: string;
   phone: string;
   occupation: string;
+  customerType?: CustomerType;
   bvn?: string;
   nin?: string;
   passportNumber?: string;
@@ -222,6 +240,7 @@ export interface CreateKYCUserRequest {
   email?: string;
   phone: string;
   occupation?: string;
+  customerType?: CustomerType;
   bvn?: string;
   nin?: string;
   relogReason?: string;
@@ -245,6 +264,7 @@ export interface UpdateKYCUserRequest {
   email?: string;
   phone?: string;
   occupation?: string;
+  customerType?: CustomerType;
   loanId?: string;
   loanType?: LoanType;
   bvn?: string;

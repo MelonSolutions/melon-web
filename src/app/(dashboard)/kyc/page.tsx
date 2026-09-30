@@ -41,6 +41,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 import Input from '@/components/ui/Input';
 import { exportKYCToCSV } from '@/lib/exportKYCToCSV';
 import { Pagination } from '@/components/ui/Pagination';
@@ -537,10 +538,11 @@ function KYCContent() {
     }
   }, [loading, monthFilter, dashboardStats?.availableMonths]);
 
-  const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
+  const isMelonAdmin = isMelonPlatformUser(user, organization);
 
   useEffect(() => {
     async function fetchOrgs() {
+      if (!isMelonAdmin) return;
       try {
         const orgs = await getOrganizations(isMelonAdmin);
         setOrganizations(orgs);

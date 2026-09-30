@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { createKYCUser, uploadImageToCloudinary, ApiError } from '@/lib/api/kyc';
 import { apiClient } from '@/lib/api/auth';
 import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 import { useToast } from '@/components/ui/Toast';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +17,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { useNigeriaLocations } from '@/lib/nigeria-locations';
+import { CUSTOMER_TYPE_OPTIONS, isSycamoreOrganization } from '@/types/kyc';
 
 interface AddressData {
   id: string;
@@ -46,6 +48,7 @@ interface CreateKYCFormData {
   email: string;
   phone: string;
   occupation: string;
+  customerType: string;
   bvn: string;
   nin: string;
   passportNumber: string;
@@ -120,6 +123,7 @@ export default function AddKYCUserPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [customerTypeError, setCustomerTypeError] = useState<string | undefined>(undefined);
 
   const { states, stateLgas, validateCityState, loading: locationsLoading } = useNigeriaLocations();
 
@@ -127,7 +131,7 @@ export default function AddKYCUserPage() {
     return states.map(state => ({ value: state, label: state }));
   }, [states]);
 
-  const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
+  const isMelonAdmin = isMelonPlatformUser(user);
 
   useEffect(() => {
     if (!isMelonAdmin) return;
@@ -156,6 +160,7 @@ export default function AddKYCUserPage() {
     email: '',
     phone: '',
     occupation: '',
+    customerType: '',
     bvn: '',
     nin: '',
     passportNumber: '',
@@ -164,6 +169,11 @@ export default function AddKYCUserPage() {
     relogReason: '',
     documents: [],
   });
+
+  const targetOrganization = isMelonAdmin && formData.organizationId
+    ? organizations.find(org => (org._id || org.id) === formData.organizationId)
+    : user?.organization ?? { name: user?.organizationName };
+  const requiresCustomerType = isSycamoreOrganization(targetOrganization);
 
   const { handleSubmit, isSubmitting, getFieldError, handleFieldChange, handleFieldBlur } = useFormValidation({
     schema: {
@@ -328,6 +338,17 @@ export default function AddKYCUserPage() {
         return;
       }
 
+      if (requiresCustomerType && !formData.customerType) {
+        setCustomerTypeError('Customer type is required');
+        addToast({
+          type: 'error',
+          title: 'Customer Type Required',
+          message: 'Please select whether this is a first time or return customer.',
+        });
+        setCreating(false);
+        return;
+      }
+
       const missingInstructions = formData.addresses.some(addr => !addr.notes || !addr.notes.trim());
       if (missingInstructions) {
         addToast({
@@ -371,6 +392,7 @@ export default function AddKYCUserPage() {
         phone: formData.phone,
         ...(formData.loanId && { loanId: formData.loanId }),
         ...(formData.occupation && { occupation: formData.occupation }),
+        ...(requiresCustomerType && formData.customerType && { customerType: formData.customerType as any }),
         ...(formData.bvn && { bvn: formData.bvn }),
         ...(formData.nin && { nin: formData.nin }),
         ...(formData.passportNumber && { passportNumber: formData.passportNumber }),
@@ -628,6 +650,26 @@ export default function AddKYCUserPage() {
                 placeholder="e.g. Civil Servant, Banker, Spare Parts Dealer..."
                 helperText="Enter customer's primary occupation or business description"
               />
+
+              {requiresCustomerType && (
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Customer Type <span className="text-red-500">*</span>
+                  </label>
+                  <CustomSelect
+                    value={formData.customerType}
+                    onChange={(value) => {
+                      handleFieldUpdate('customerType', value);
+                      setCustomerTypeError(undefined);
+                    }}
+                    options={CUSTOMER_TYPE_OPTIONS}
+                    placeholder="Select customer type"
+                  />
+                  {customerTypeError && (
+                    <p className="text-sm text-red-600">{customerTypeError}</p>
+                  )}
+                </div>
+              )}
 
               <Input
                 label="BVN (Optional)"
