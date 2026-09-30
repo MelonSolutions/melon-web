@@ -30,10 +30,12 @@ import { StatusBadge } from '@/components/kyc/StatusBadge';
 import { EditKYCModal } from '@/components/kyc/EditKYCModal';
 import { RejectKYCModal } from '@/components/kyc/RejectKYCModal';
 import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 import {
   KYCDocument,
   getDocumentTypeDisplayName,
-  formatLoanType
+  formatLoanType,
+  formatCustomerType
 } from '@/types/kyc';
 import {
   ApiError,
@@ -62,8 +64,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const router = useRouter();
   const { addToast } = useToast();
   const { openModal, closeModal, openConfirmModal } = useModal();
-  const { organization } = useAuthContext();
-  const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
+  const { user: authUser, organization } = useAuthContext();
+  const isMelonAdmin = isMelonPlatformUser(authUser, organization);
 
 
   const { user, loading, refetch } = useKYCUser(userId);
@@ -723,6 +725,11 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   <div>
                     <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Occupation</div>
                     <div className="text-sm text-gray-900">{user.occupation || <span className="text-gray-400 italic">Not provided</span>}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Customer Type</div>
+                    <div className="text-sm text-gray-900">{formatCustomerType(user.customerType) || <span className="text-gray-400 italic">Not specified</span>}</div>
                   </div>
 
                   <div>

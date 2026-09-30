@@ -8,6 +8,7 @@ import Input from '@/components/ui/Input';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useToast } from '@/components/ui/Toast';
 import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 import { downloadDailyOrganizationReport } from '@/lib/api/kyc';
 import { apiClient } from '@/lib/api/auth';
 
@@ -37,7 +38,7 @@ export function DailyReportModal({ isOpen, onClose }: DailyReportModalProps) {
     return () => setMounted(false);
   }, []);
  
-  const isMelonAdmin = user?.email?.endsWith('@melon.ng') || user?.organization?.name?.toLowerCase().includes('melon');
+  const isMelonAdmin = isMelonPlatformUser(user);
  
   useEffect(() => {
     if (isOpen && isMelonAdmin) {

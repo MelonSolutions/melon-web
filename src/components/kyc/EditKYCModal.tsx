@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Save, X, Plus, Trash2 } from 'lucide-react';
-import { KYCUser, UpdateKYCUserRequest, LoanType } from '@/types/kyc';
+import { KYCUser, UpdateKYCUserRequest, LoanType, CUSTOMER_TYPE_OPTIONS } from '@/types/kyc';
 import { updateKYCUser, ApiError } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
@@ -41,6 +41,7 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
         email: user.email,
         phone: user.phone,
         occupation: user.occupation,
+        customerType: user.customerType,
         loanId: user.loanId,
         loanType: user.loanType,
         bvn: user.bvn,
@@ -147,6 +148,15 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
                             required
                             placeholder="e.g. Banker, Trader"
                         />
+                        <div className="space-y-1">
+                            <label className="block text-sm font-medium text-gray-700">Customer Type</label>
+                            <CustomSelect
+                                value={formData.customerType || ''}
+                                onChange={(value) => handleInputChange('customerType', value)}
+                                options={CUSTOMER_TYPE_OPTIONS}
+                                placeholder="Select customer type"
+                            />
+                        </div>
                         <Input
                             label="Email Address"
                             type="email"

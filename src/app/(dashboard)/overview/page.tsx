@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthContext } from '@/context/AuthContext';
+import { isMelonPlatformUser } from '@/lib/melon-admin';
 import {
   Target,
   FileText,
@@ -811,7 +812,7 @@ function RegionalDistributionCardSection({
 export default function OverviewPage() {
   const router = useRouter();
   const { user, organization, isTrial, isLoading: authLoading } = useAuthContext();
-  const isMelonAdmin = organization?.name?.toLowerCase().includes('melon');
+  const isMelonAdmin = isMelonPlatformUser(user, organization);
 
   useEffect(() => {
     if (!authLoading && isTrial) {

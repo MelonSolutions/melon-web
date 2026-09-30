@@ -451,6 +451,7 @@ export function downloadKYCTemplate(): void {
     'country',
     'notes',
     'relogReason',
+    'customerType',
   ];
 
   const commentRow = [
@@ -473,6 +474,7 @@ export function downloadKYCTemplate(): void {
     'optional (Nigeria)',
     'optional',
     'optional',
+    'optional (FIRST_TIME/RETURNING)',
   ];
 
   const exampleRow = [
@@ -495,6 +497,7 @@ export function downloadKYCTemplate(): void {
     'Nigeria',
     'Example notes',
     '',
+    'FIRST_TIME',
   ];
 
   const csvContent = [
