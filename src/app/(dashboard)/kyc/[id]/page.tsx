@@ -45,6 +45,7 @@ import {
   downloadKYCReport,
 } from '@/lib/api/kyc';
 import { format } from 'date-fns';
+import { formatPhotoTag } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -985,8 +986,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                                           </div>
                                         </a>
                                         {tag && (
-                                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                                            {tag.replace(/_/g, ' ')}
+                                          <div className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">
+                                            {formatPhotoTag(tag)}
                                           </div>
                                         )}
                                       </div>

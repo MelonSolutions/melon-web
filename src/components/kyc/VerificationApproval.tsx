@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { VerificationData } from '@/types/kyc';
 import { format } from 'date-fns';
+import { formatPhotoTag } from '@/lib/utils';
 
 interface VerificationApprovalProps {
   verificationData: VerificationData;
@@ -213,7 +214,9 @@ export function VerificationApproval({
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {verificationData.verificationPhotos.map((photo, index) => {
-                const photoUrl = typeof photo === 'string' ? photo : photo.url;
+                const photoUrl = typeof photo === 'string' ? photo : (photo as any)?.url;
+                const photoTag = typeof photo === 'object' && photo ? (photo as any).tag : undefined;
+                if (!photoUrl) return null;
                 return (
                   <a
                     key={index}
@@ -224,21 +227,22 @@ export function VerificationApproval({
                   >
                     <img
                       src={photoUrl}
-                      alt={`Verification photo ${index + 1}`}
+                      alt={photoTag ? formatPhotoTag(photoTag) : `Verification photo ${index + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center">
-                    <span className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium transition-opacity duration-200">
-                      Click to view full size
-                    </span>
-                  </div>
-                  <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-                    Photo {index + 1}
-                  </div>
-                </a>
-              );
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 flex items-center justify-center">
+                      <span className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium transition-opacity duration-200">
+                        Click to view full size
+                      </span>
+                    </div>
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded max-w-[85%] truncate shadow font-medium">
+                      {photoTag ? formatPhotoTag(photoTag) : `Photo ${index + 1}`}
+                    </div>
+                  </a>
+                );
               })}
             </div>
+
           </CardContent>
         </Card>
       )}
