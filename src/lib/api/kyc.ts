@@ -132,6 +132,25 @@ export async function updateKYCUser(
   });
 }
 
+export type RevealableKYCField = 'bvn' | 'nin' | 'passportNumber';
+export type RevealReason = 'dispute' | 'client_request' | 'verification_recheck';
+
+/**
+ * Full value of one masked identifier. Owners/admins only; every call is
+ * audited on the server. Don't cache or store the result.
+ */
+export async function revealKYCIdentifier(
+  id: string,
+  field: RevealableKYCField,
+  reason: RevealReason
+): Promise<{ field: RevealableKYCField; value: string | null }> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/${id}/reveal`, {
+    method: 'POST',
+    body: JSON.stringify({ field, reason }),
+    cache: 'no-store',
+  });
+}
+
 export async function makeVerificationDecision(
   id: string,
   decision: 'approved' | 'not_approved' | 'rejected',
