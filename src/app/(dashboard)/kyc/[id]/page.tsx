@@ -28,6 +28,7 @@ import {
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
 import { EditKYCModal } from '@/components/kyc/EditKYCModal';
+import { RevealIdentifier } from '@/components/kyc/RevealIdentifier';
 import { RejectKYCModal } from '@/components/kyc/RejectKYCModal';
 import { useAuthContext } from '@/context/AuthContext';
 import { isMelonPlatformUser } from '@/lib/melon-admin';
@@ -742,24 +743,15 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   </div>
 
                   {user.bvn && (
-                    <div>
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">BVN</div>
-                      <div className="text-sm text-gray-900 font-mono">{user.bvn}</div>
-                    </div>
+                    <RevealIdentifier kycId={userId} field="bvn" label="BVN" maskedValue={user.bvn} />
                   )}
 
                   {user.nin && (
-                    <div>
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">NIN</div>
-                      <div className="text-sm text-gray-900 font-mono">{user.nin}</div>
-                    </div>
+                    <RevealIdentifier kycId={userId} field="nin" label="NIN" maskedValue={user.nin} />
                   )}
 
                   {user.passportNumber && (
-                    <div>
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Passport Number</div>
-                      <div className="text-sm text-gray-900 font-mono">{user.passportNumber}</div>
-                    </div>
+                    <RevealIdentifier kycId={userId} field="passportNumber" label="Passport Number" maskedValue={user.passportNumber} />
                   )}
 
                   <div>
