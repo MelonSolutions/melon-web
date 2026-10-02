@@ -48,9 +48,7 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
         customerType: user.customerType,
         loanId: user.loanId,
         loanType: user.loanType,
-        bvn: user.bvn,
-        nin: user.nin,
-        passportNumber: user.passportNumber,
+        // BVN/NIN/passport arrive masked (***1234); never send them back
         addresses: user.addresses || [],
     });
 
