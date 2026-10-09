@@ -44,8 +44,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', 'sans-serif'], // Direct, like FigoRisk
-        heading: ['var(--font-mabry)', 'DM Sans', 'system-ui', 'sans-serif'],
+        // Brand typeface: Metropolis (loaded in app/layout.tsx)
+        sans: ['var(--font-metropolis)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-metropolis)', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         xs: ['12px', { lineHeight: '1.5' }],
