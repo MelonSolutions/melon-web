@@ -1,46 +1,25 @@
 import localFont from 'next/font/local';
-import { DM_Sans } from 'next/font/google';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ModalProvider } from '@/components/ui/Modal';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/context/AuthContext';
 
-const mabryPro = localFont({
-  variable: '--font-mabry',
+// Brand typeface (Brand Identity Manual, Typography): Metropolis for all web copy.
+// Self-hosted latin subset so builds never fetch from Google Fonts.
+const metropolis = localFont({
+  variable: '--font-metropolis',
   src: [
-    {
-      path: '../../public/fonts/mabry-pro/MabryPro-Light.ttf',
-      weight: '300',
-      style: 'normal',
-    },
-    {
-      path: '../../public/fonts/mabry-pro/MabryPro-Regular.ttf',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../../public/fonts/mabry-pro/MabryPro-Medium.ttf',
-      weight: '500',
-      style: 'normal',
-    },
-    {
-      path: '../../public/fonts/mabry-pro/MabryPro-Bold.ttf',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../../public/fonts/mabry-pro/MabryPro-Black.ttf',
-      weight: '900',
-      style: 'normal',
-    },
+    { path: '../../public/fonts/metropolis/metropolis-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: '../../public/fonts/metropolis/metropolis-latin-400-italic.woff2', weight: '400', style: 'italic' },
+    { path: '../../public/fonts/metropolis/metropolis-latin-500-normal.woff2', weight: '500', style: 'normal' },
+    { path: '../../public/fonts/metropolis/metropolis-latin-500-italic.woff2', weight: '500', style: 'italic' },
+    { path: '../../public/fonts/metropolis/metropolis-latin-600-normal.woff2', weight: '600', style: 'normal' },
+    { path: '../../public/fonts/metropolis/metropolis-latin-700-normal.woff2', weight: '700', style: 'normal' },
+    { path: '../../public/fonts/metropolis/metropolis-latin-800-normal.woff2', weight: '800', style: 'normal' },
+    { path: '../../public/fonts/metropolis/metropolis-latin-900-normal.woff2', weight: '900', style: 'normal' },
   ],
-});
-
-// Match FigoRisk's approach - simpler, direct application
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -60,7 +39,7 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico?v=3" />
         <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
       </head>
-      <body className={`${dmSans.className} ${mabryPro.variable} antialiased`}>
+      <body className={`${metropolis.className} ${metropolis.variable} antialiased`}>
         <AuthProvider>
           <ToastProvider>
             <ModalProvider>

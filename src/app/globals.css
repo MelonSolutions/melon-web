@@ -67,8 +67,8 @@
   --radius-2xl: 16px;
   
   /* Typography */
-  --font-heading: var(--font-mabry);
-  --font-body: var(--font-dm-sans);
+  --font-heading: var(--font-metropolis);
+  --font-body: var(--font-metropolis);
   
   /* Font Sizes */
   --text-xs: 12px;
