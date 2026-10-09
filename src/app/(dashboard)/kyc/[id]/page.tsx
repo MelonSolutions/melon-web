@@ -241,18 +241,17 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       const { results } = await resyncMobileJobs(userId, { addressIndex: index, force });
       const result = results[0];
       await refetch();
+      const succeeded = result?.outcome === 'created' || result?.outcome === 'reopened';
       addToast({
-        type: result?.outcome === 'created' ? 'success' : result?.outcome === 'failed' ? 'error' : 'warning',
-        title:
-          result?.outcome === 'created'
-            ? 'Sent to Mobile App'
-            : result?.outcome === 'failed'
-              ? 'Mobile Push Failed'
-              : 'Not Sent',
-        message:
-          result?.outcome === 'created'
-            ? `${result.label} is now available to agents (mobile job ${result.mobileJobId}).`
-            : result?.detail || 'Nothing was sent.',
+        type: succeeded ? 'success' : result?.outcome === 'failed' ? 'error' : 'warning',
+        title: succeeded
+          ? 'Sent to Mobile App'
+          : result?.outcome === 'failed'
+            ? 'Mobile Push Failed'
+            : 'Not Sent',
+        message: succeeded
+          ? `${result.label} is available to agents again (mobile job #${result.mobileJobId}).`
+          : result?.detail || 'Nothing was sent.',
       });
     } catch (error) {
       if (error instanceof ApiError) {
@@ -269,9 +268,9 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       return;
     }
     openConfirmModal({
-      title: 'Re-push to Mobile App',
-      description: `"${label}" already has a mobile job on record. Only re-push if agents cannot see it (for example, it was deleted on mobile). The old job is retired and a new one is created.`,
-      confirmText: 'Re-push',
+      title: 'Re-open on Mobile App',
+      description: `"${label}" already has a mobile job. Re-opening refreshes its details and makes it claimable by agents again. Only do this if agents cannot see it.`,
+      confirmText: 'Re-open',
       cancelText: 'Cancel',
       variant: 'danger',
       onConfirm: () => runMobileResync(index, true),
@@ -937,6 +936,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       <div className="flex items-center gap-2">
                         {canPushToMobile &&
                           user.environment !== 'sandbox' &&
+                          user.status !== 'EXPIRED' &&
                           ['PENDING', 'ASSIGNED', 'IN_REVIEW'].includes(address.status || user.status) && (
                             <Button
                               variant="secondary"
@@ -955,7 +955,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                               {resyncingIndex === index
                                 ? 'Sending...'
                                 : address.mobileJobId
-                                  ? 'Re-push to Mobile'
+                                  ? 'Re-open on Mobile'
                                   : 'Push to Mobile'}
                             </Button>
                           )}
