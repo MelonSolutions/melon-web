@@ -184,6 +184,27 @@ export async function reviveExpiredJob(id: string): Promise<any> {
   });
 }
 
+export interface MobileResyncResult {
+  id: string;
+  results: {
+    index: number;
+    label: string;
+    outcome: 'created' | 'skipped' | 'failed';
+    detail?: string;
+    mobileJobId?: string;
+  }[];
+}
+
+export async function resyncMobileJobs(
+  id: string,
+  options: { addressIndex?: number; force?: boolean } = {},
+): Promise<MobileResyncResult> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/${id}/resync-mobile`, {
+    method: 'POST',
+    body: JSON.stringify(options),
+  });
+}
+
 export async function deleteKYCUser(id: string): Promise<void> {
   return fetchWithAuth(`${API_BASE_URL}/kyc/delete/${id}`, {
     method: 'DELETE',

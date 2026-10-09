@@ -284,9 +284,16 @@ export default function AddKYCUserPage() {
     }));
   };
 
+  // A reason only applies to the duplicate it was written for; once the box is
+  // hidden it must not be sent with a later submit.
+  const dismissRelog = () => {
+    setNeedsRelog(false);
+    setFormData(prev => ({ ...prev, relogReason: '' }));
+  };
+
   const handlePhoneChange = (value: string) => {
     setFormData(prev => ({ ...prev, phone: value }));
-    if (needsRelog) setNeedsRelog(false);
+    if (needsRelog) dismissRelog();
 
     if (value.trim()) {
       const error = validatePhoneNumber(value);
@@ -480,7 +487,7 @@ export default function AddKYCUserPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (field === 'organizationId') setCustomerTypeError(undefined);
     if (needsRelog && ['firstName', 'lastName', 'email', 'loanId', 'phone'].includes(field)) {
-      setNeedsRelog(false);
+      dismissRelog();
     }
     handleFieldChange(field, value);
   };
@@ -614,7 +621,7 @@ export default function AddKYCUserPage() {
                   value={formData.email}
                   onChange={(e) => {
                     handleFieldUpdate('email', e.target.value);
-                    if (needsRelog) setNeedsRelog(false);
+                    if (needsRelog) dismissRelog();
                   }}
                   onBlur={(e) => handleFieldBlur('email', e.target.value)}
                   error={getFieldError('email')}
@@ -626,7 +633,7 @@ export default function AddKYCUserPage() {
                     <div>
                       <h4 className="text-sm font-semibold text-orange-800">Existing Record Detected</h4>
                       <p className="text-sm text-orange-700 mt-1">
-                        A KYC request with these details (Email, Loan ID, Phone, or Name) already exists. To force re-creation, provide a solid relogging reason.
+                        A KYC request with these details (Email, Loan ID, Phone, or Name) at the same address already exists, either in progress or completed. To create it again, give the reason. It is saved on the new request.
                       </p>
                     </div>
                     <textarea
