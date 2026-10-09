@@ -189,7 +189,7 @@ export interface MobileResyncResult {
   results: {
     index: number;
     label: string;
-    outcome: 'created' | 'skipped' | 'failed';
+    outcome: 'created' | 'reopened' | 'skipped' | 'failed';
     detail?: string;
     mobileJobId?: string;
   }[];
