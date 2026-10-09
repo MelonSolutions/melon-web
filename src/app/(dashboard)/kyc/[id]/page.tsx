@@ -580,7 +580,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-            {isMelonAdmin && user.status === 'EXPIRED' && (
+            {isMelonAdmin && (user.status === 'EXPIRED' || user.addresses?.some((a) => a.status === 'EXPIRED')) && (
               <Button
                 variant="primary"
                 size="sm"
