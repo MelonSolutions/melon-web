@@ -24,6 +24,7 @@ import {
   ZoomOut,
   X,
   MapPin,
+  Smartphone,
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/kyc/StatusBadge';
@@ -43,6 +44,7 @@ import {
   ApiError,
   makeVerificationDecision,
   reviveExpiredJob,
+  resyncMobileJobs,
   deleteKYCUser,
   uploadDocument,
   deleteDocument,
@@ -68,6 +70,8 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const { openModal, closeModal, openConfirmModal } = useModal();
   const { user: authUser, organization } = useAuthContext();
   const isMelonAdmin = isMelonPlatformUser(authUser, organization);
+  // Pushing creates a paid agent job; only the dev account may do it (enforced server-side too)
+  const canPushToMobile = authUser?.email?.toLowerCase() === 'dev@melon.ng';
   const showCustomerType = isMelonAdmin || isSycamoreOrganization(organization);
 
 
@@ -80,6 +84,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const [viewerZoom, setViewerZoom] = useState(100);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resyncingIndex, setResyncingIndex] = useState<number | null>(null);
 
   const isImageDoc = (fileName?: string, fileType?: string, fileUrl?: string) => {
     const name = (fileName || fileUrl || '').toLowerCase();
@@ -228,6 +233,49 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const runMobileResync = async (index: number, force: boolean) => {
+    try {
+      setResyncingIndex(index);
+      const { results } = await resyncMobileJobs(userId, { addressIndex: index, force });
+      const result = results[0];
+      await refetch();
+      addToast({
+        type: result?.outcome === 'created' ? 'success' : result?.outcome === 'failed' ? 'error' : 'warning',
+        title:
+          result?.outcome === 'created'
+            ? 'Sent to Mobile App'
+            : result?.outcome === 'failed'
+              ? 'Mobile Push Failed'
+              : 'Not Sent',
+        message:
+          result?.outcome === 'created'
+            ? `${result.label} is now available to agents (mobile job ${result.mobileJobId}).`
+            : result?.detail || 'Nothing was sent.',
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({ type: 'error', title: 'Mobile Push Failed', message: error.message });
+      }
+    } finally {
+      setResyncingIndex(null);
+    }
+  };
+
+  const handleMobileResync = (index: number, label: string, hasMobileJob: boolean) => {
+    if (!hasMobileJob) {
+      runMobileResync(index, false);
+      return;
+    }
+    openConfirmModal({
+      title: 'Re-push to Mobile App',
+      description: `"${label}" already has a mobile job on record. Only re-push if agents cannot see it (for example, it was deleted on mobile). The old job is retired and a new one is created.`,
+      confirmText: 'Re-push',
+      cancelText: 'Cancel',
+      variant: 'danger',
+      onConfirm: () => runMobileResync(index, true),
+    });
   };
 
   const handleDownloadReport = async () => {
@@ -505,6 +553,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
     longitude: user.longitude,
     status: user.status,
     verificationData: user.verificationData,
+    mobileJobId: user.mobileJobId,
   }];
 
   const canUploadDocuments = user.status === 'PENDING';
@@ -685,6 +734,19 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       <div className="text-sm text-gray-700 mt-1">
                         <span className="font-medium">Reason for Re-logging:</span> {user.relogReason}
                       </div>
+                      {user.relogOf && user.relogOf.length > 0 && (
+                        <div className="text-sm text-gray-700 mt-1">
+                          <span className="font-medium">Duplicates:</span>{' '}
+                          {user.relogOf.map((prevId, i) => (
+                            <span key={prevId}>
+                              {i > 0 && ', '}
+                              <Link href={`/kyc/${prevId}`} className="text-primary hover:underline font-mono">
+                                {prevId}
+                              </Link>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -872,9 +934,35 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle>{address.label || `Address ${index + 1}`}</CardTitle>
-                      {address.status && (
-                        <StatusBadge status={address.status} size="sm" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        {canPushToMobile &&
+                          user.environment !== 'sandbox' &&
+                          ['PENDING', 'ASSIGNED', 'IN_REVIEW'].includes(address.status || user.status) && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                handleMobileResync(index, address.label || `Address ${index + 1}`, !!address.mobileJobId)
+                              }
+                              disabled={resyncingIndex !== null}
+                              icon={<Smartphone className="w-4 h-4" />}
+                              title={
+                                address.mobileJobId
+                                  ? `Mobile job ${address.mobileJobId}`
+                                  : 'This address never reached the mobile app'
+                              }
+                            >
+                              {resyncingIndex === index
+                                ? 'Sending...'
+                                : address.mobileJobId
+                                  ? 'Re-push to Mobile'
+                                  : 'Push to Mobile'}
+                            </Button>
+                          )}
+                        {address.status && (
+                          <StatusBadge status={address.status} size="sm" />
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>

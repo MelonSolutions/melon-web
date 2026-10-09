@@ -106,6 +106,9 @@ export interface KYCUser {
   country?: string;
   notes?: string;
   relogReason?: string;
+  // Earlier request(s) this one duplicates (set when created with a relogReason)
+  relogOf?: string[];
+  environment?: 'live' | 'sandbox';
   latitude?: number;
   longitude?: number;
   status: VerificationStatus;
