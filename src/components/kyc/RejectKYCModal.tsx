@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { X, Upload, Trash2, ShieldAlert } from 'lucide-react';
-import { KYCUser, UpdateKYCUserRequest } from '@/types/kyc';
+import { KYCUser, UpdateKYCUserRequest, RejectionCode, REJECTION_CODE_OPTIONS } from '@/types/kyc';
 import { updateKYCUser, ApiError, uploadDocument, uploadImageToCloudinary } from '@/lib/api/kyc';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import Image from 'next/image';
 
 interface RejectKYCModalProps {
@@ -20,6 +21,7 @@ export function RejectKYCModal({ user, onClose, onSuccess }: RejectKYCModalProps
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
 
+    const [code, setCode] = useState<RejectionCode | ''>('');
     const [reason, setReason] = useState('');
     const [note, setNote] = useState('');
     const [evidenceFiles, setEvidenceFiles] = useState<{ url: string; tag?: string; }[]>([]);
@@ -59,6 +61,15 @@ export function RejectKYCModal({ user, onClose, onSuccess }: RejectKYCModalProps
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user.id && !user._id) return;
+        if (!code) {
+            addToast({
+                type: 'error',
+                title: 'Validation Error',
+                message: 'Pick a rejection category.',
+            });
+            return;
+        }
+
         if (!reason.trim()) {
             addToast({
                 type: 'error',
@@ -82,6 +93,7 @@ export function RejectKYCModal({ user, onClose, onSuccess }: RejectKYCModalProps
 
             const payload: UpdateKYCUserRequest = {
                 status: 'REJECTED',
+                rejectionCode: code,
                 rejectionReason: reason,
                 rejectionNote: note,
                 rejectionEvidence: evidenceFiles
@@ -133,13 +145,21 @@ export function RejectKYCModal({ user, onClose, onSuccess }: RejectKYCModalProps
                         Please provide detail regarding the rejection so the client can understand why it failed or address the issues.
                     </p>
 
+                    <Select
+                        label="Category"
+                        options={REJECTION_CODE_OPTIONS}
+                        value={code}
+                        onChange={(e) => setCode(e.target.value as RejectionCode | '')}
+                        required
+                        autoFocus
+                    />
+
                     <Input
                         label="Rejection Reason"
                         placeholder="e.g. Invalid Address, Unreachable Customer"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         required
-                        autoFocus
                     />
 
                     <div className="space-y-1.5">

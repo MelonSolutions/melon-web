@@ -31,6 +31,8 @@ import { StatusBadge } from '@/components/kyc/StatusBadge';
 import { EditKYCModal } from '@/components/kyc/EditKYCModal';
 import { RevealIdentifier } from '@/components/kyc/RevealIdentifier';
 import { RejectKYCModal } from '@/components/kyc/RejectKYCModal';
+import { JobIssuesSection } from '@/components/kyc/issues/IssueThread';
+import { useIssuesForJob } from '@/hooks/useJobIssues';
 import { useAuthContext } from '@/context/AuthContext';
 import { isMelonPlatformUser } from '@/lib/melon-admin';
 import {
@@ -38,8 +40,12 @@ import {
   getDocumentTypeDisplayName,
   formatLoanType,
   formatCustomerType,
-  isSycamoreOrganization
+  isSycamoreOrganization,
+  RejectionCode,
+  REJECTION_CODE_LABELS,
+  REJECTION_CODE_OPTIONS,
 } from '@/types/kyc';
+import Select from '@/components/ui/Select';
 import {
   ApiError,
   makeVerificationDecision,
@@ -74,12 +80,13 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const canPushToMobile = authUser?.email?.toLowerCase() === 'dev@melon.ng';
   const showCustomerType = isMelonAdmin || isSycamoreOrganization(organization);
 
-
   const { user, loading, refetch } = useKYCUser(userId);
+  const { issues, refetch: issuesRefetch } = useIssuesForJob(userId);
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [rejectingIndex, setRejectingIndex] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionCode, setRejectionCode] = useState<RejectionCode | ''>('');
   const [previewDocument, setPreviewDocument] = useState<KYCDocument | null>(null);
   const [viewerZoom, setViewerZoom] = useState(100);
   const [downloading, setDownloading] = useState(false);
@@ -179,7 +186,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   };
 
   const handleVerificationRejection = async (addressIndex: number) => {
-    if (rejectionReason.trim().length < 10) {
+    if (!rejectionCode || rejectionReason.trim().length < 10) {
       return;
     }
 
@@ -189,7 +196,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       const addressLabel = addresses[addressIndex]?.label || `Address ${addressIndex + 1}`;
 
       // Pass rejectionReason as both reason and note so both fields are populated
-      await makeVerificationDecision(userId, 'rejected', rejectionReason, addressIndex, rejectionReason);
+      await makeVerificationDecision(userId, 'rejected', rejectionReason, addressIndex, rejectionReason, rejectionCode);
       await refetch();
 
       addToast({
@@ -200,6 +207,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
 
       setRejectingIndex(null);
       setRejectionReason('');
+      setRejectionCode('');
     } catch (error) {
       if (error instanceof ApiError) {
         addToast({
@@ -607,11 +615,20 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               variant="secondary"
               size="sm"
               icon={<Edit2 className="w-4 h-4" />}
-              onClick={() => openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={refetch} />, { size: 'xl' })}
+              onClick={() => openModal(<EditKYCModal user={user} onClose={closeModal} onSuccess={() => { refetch(); issuesRefetch(); }} />, { size: 'xl' })}
               className="flex-1 sm:flex-none"
             >
               Edit Request
             </Button>
+            {user.hasOpenIssue && (
+              <a
+                href="#issues"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors shrink-0"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                Issue reported
+              </a>
+            )}
             <StatusBadge status={user.status} size="md" className="shrink-0" />
           </div>
         </div>
@@ -620,6 +637,11 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            <JobIssuesSection
+              issues={issues}
+              onRefetch={issuesRefetch}
+              hasMultipleAddresses={(user.addresses?.length ?? 0) > 1}
+            />
             {user.status === 'VERIFIED' && (
               <Card className="border-2 border-emerald-200 bg-emerald-50">
                 <CardHeader>
@@ -678,6 +700,11 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                         <p className="text-xs text-red-600 font-medium">Agent does not get paid ✗</p>
                         {user.verificationDate && (
                           <p className="text-xs text-red-500">Decision made: {format(new Date(user.verificationDate), 'PPp')}</p>
+                        )}
+                        {(user.rejectionCode || user.addresses?.[0]?.rejectionCode) && (
+                          <div className="font-medium mt-2">
+                            Category: {REJECTION_CODE_LABELS[(user.rejectionCode || user.addresses?.[0]?.rejectionCode)!]}
+                          </div>
                         )}
                         {(user.rejectionReason || user.addresses?.[0]?.rejectionReason || user.rejectionNote || user.addresses?.[0]?.rejectionNote) && (
                           <div className="font-medium text-base mt-2">
@@ -1494,6 +1521,16 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
               </div>
             </div>
 
+            <div className="mb-4">
+              <Select
+                label="Category"
+                options={REJECTION_CODE_OPTIONS}
+                value={rejectionCode}
+                onChange={(e) => setRejectionCode(e.target.value as RejectionCode | '')}
+                required
+              />
+            </div>
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Rejection Reason <span className="text-error">*</span>
@@ -1517,6 +1554,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 onClick={() => {
                   setRejectingIndex(null);
                   setRejectionReason('');
+                  setRejectionCode('');
                 }}
                 fullWidth
               >
@@ -1527,7 +1565,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 size="md"
                 onClick={() => handleVerificationRejection(rejectingIndex)}
                 loading={updating}
-                disabled={rejectionReason.trim().length < 10 || updating}
+                disabled={!rejectionCode || rejectionReason.trim().length < 10 || updating}
                 fullWidth
               >
                 Confirm Rejection

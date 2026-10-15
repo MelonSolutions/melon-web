@@ -48,6 +48,51 @@ export function isSycamoreOrganization(organization?: { name?: string; domain?: 
   return name.includes('sycamore') || domain.includes('sycamore');
 }
 
+// Rejection category, stored next to the free-text rejectionReason
+export type RejectionCode =
+  | 'CUSTOMER_UNREACHABLE'
+  | 'ADDRESS_DOES_NOT_EXIST'
+  | 'FAKE_ADDRESS'
+  | 'CUSTOMER_NOT_AVAILABLE'
+  | 'INCORRECT_ADDRESS'
+  | 'DUPLICATE_REQUEST'
+  | 'CUSTOMER_WITHDREW'
+  | 'CUSTOMER_UNCOOPERATIVE'
+  | 'INCOMPLETE_DOCUMENTS'
+  | 'CUSTOMER_RELOCATED'
+  | 'AGENT_WRONG_LOCATION'
+  | 'AGENT_POOR_EVIDENCE'
+  | 'OUT_OF_COVERAGE'
+  | 'OTHER';
+
+export const REJECTION_CODE_LABELS: Record<RejectionCode, string> = {
+  // Agent's work (used when rejecting a submitted verification)
+  AGENT_WRONG_LOCATION: 'Agent verified wrong location',
+  AGENT_POOR_EVIDENCE: 'Agent evidence poor / incomplete',
+  // Customer
+  CUSTOMER_UNREACHABLE: 'Customer unreachable',
+  CUSTOMER_NOT_AVAILABLE: 'Customer not available',
+  CUSTOMER_UNCOOPERATIVE: 'Customer uncooperative',
+  CUSTOMER_RELOCATED: 'Customer relocated',
+  CUSTOMER_WITHDREW: 'Customer withdrew / loan cancelled',
+  // Request / address
+  INCORRECT_ADDRESS: 'Incorrect or incomplete address',
+  ADDRESS_DOES_NOT_EXIST: 'Address does not exist',
+  FAKE_ADDRESS: 'Fake address',
+  DUPLICATE_REQUEST: 'Duplicate request',
+  INCOMPLETE_DOCUMENTS: 'Incomplete documents',
+  OUT_OF_COVERAGE: 'Outside coverage / no agent available',
+  OTHER: 'Other',
+};
+
+export const REJECTION_CODE_OPTIONS = [
+  { value: '', label: 'Select a category' },
+  ...(Object.keys(REJECTION_CODE_LABELS) as RejectionCode[]).map((code) => ({
+    value: code,
+    label: REJECTION_CODE_LABELS[code],
+  })),
+];
+
 export interface VerificationData {
   verifiedLatitude?: number;
   verifiedLongitude?: number;
@@ -74,6 +119,7 @@ export interface AddressData {
   notes?: string;
   relogReason?: string;
   rejectionReason?: string;
+  rejectionCode?: RejectionCode;
   rejectionNote?: string;
   isDeleted?: boolean;
   rejectionEvidence?: {
@@ -112,9 +158,11 @@ export interface KYCUser {
   latitude?: number;
   longitude?: number;
   status: VerificationStatus;
+  hasOpenIssue?: boolean;
   documents: KYCDocument[];
   verificationDate?: string;
   rejectionReason?: string;
+  rejectionCode?: RejectionCode;
   rejectionNote?: string;
   rejectionEvidence?: {
     url: string;
@@ -288,6 +336,7 @@ export interface UpdateKYCUserRequest {
   latitude?: number;
   longitude?: number;
   rejectionReason?: string;
+  rejectionCode?: RejectionCode;
   rejectionNote?: string;
   rejectionEvidence?: {
     url: string;

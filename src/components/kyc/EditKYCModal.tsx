@@ -10,6 +10,7 @@ import Input from '@/components/ui/Input';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useAuthContext } from '@/context/AuthContext';
 import { isMelonPlatformUser } from '@/lib/melon-admin';
+import { notifyIssuesChanged } from '@/hooks/useJobIssues';
 
 interface EditKYCModalProps {
     user: KYCUser;
@@ -104,8 +105,11 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
             addToast({
                 type: 'success',
                 title: 'Success',
-                message: 'KYC request updated successfully.',
+                message: user.hasOpenIssue
+                    ? 'KYC request updated. The agent has been told to check it again.'
+                    : 'KYC request updated successfully.',
             });
+            notifyIssuesChanged();
             onSuccess();
             onClose();
         } catch (error) {

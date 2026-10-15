@@ -42,6 +42,7 @@ import { ResponseTrendChart } from '@/components/overview/ResponseTrendChart';
 import { KYCStatusChart } from '@/components/overview/KYCStatusChart';
 import { ActivityFeed } from '@/components/overview/ActivityFeed';
 import { getOrganizations } from '@/lib/api/kyc';
+import { IssueMetrics } from '@/components/kyc/issues/IssueMetrics';
 
 interface QuickAction {
   title: string;
@@ -1025,6 +1026,9 @@ export default function OverviewPage() {
           />
         </div>
       )}
+
+      {/* Agent issue metrics (all time; not affected by the time range filter) */}
+      <IssueMetrics organizationId={organizationId} />
 
       {/* Empty State - No Projects */}
       {!hasProjects && (

@@ -21,8 +21,10 @@ import {
   Bell,
   Menu,
   Bot,
-  Shield
+  Shield,
+  MessageSquare
 } from "lucide-react";
+import { useIssueCounts } from '@/hooks/useJobIssues';
 
 interface NavItem {
   name: string;
@@ -31,6 +33,7 @@ interface NavItem {
   disabled?: boolean;
   comingSoon?: boolean;
   requiresUpgrade?: boolean;
+  badge?: number;
 }
 
 export default function DashboardLayout({
@@ -40,6 +43,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { user, trialUser, organization, getInitials, getFullName, isLoading, isTrial, isOrg } = useAuthContext();
+  const { unread } = useIssueCounts({ skip: isTrial });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isMapView = pathname === '/map-view';
@@ -64,10 +68,16 @@ export default function DashboardLayout({
       href: '/portfolio',
       icon: <Briefcase className="h-5 w-5" />,
     },
-        {
+    {
       name: 'KYC',
       href: '/kyc',
       icon: <Shield className="h-5 w-5" />,
+    },
+    {
+      name: 'Messages',
+      href: '/messages',
+      icon: <MessageSquare className="h-5 w-5" />,
+      badge: unread,
     },
     {
       name: 'Impact Metrics',
@@ -238,7 +248,15 @@ export default function DashboardLayout({
         >
           {item.icon}
         </span>
-        {item.name}
+        <span>{item.name}</span>
+        {typeof item.badge === 'number' && item.badge > 0 && (
+          <span
+            className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center"
+            aria-label={`${item.badge} unread`}
+          >
+            {item.badge > 99 ? '99+' : item.badge}
+          </span>
+        )}
       </Link>
     );
   };
@@ -342,6 +360,7 @@ export default function DashboardLayout({
                 {pathname === '/profile' && 'Profile'}
                 {pathname === '/settings' && 'Settings'}
                 {pathname === '/kyc' && 'KYC Management'}
+                {pathname === '/messages' && 'Messages'}
               </h1>
             </div>
 
@@ -366,11 +385,18 @@ export default function DashboardLayout({
               <SearchModal />
 
               <div className="relative">
-                <button className="cursor-pointer p-1 rounded-full text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  <span className="sr-only">View notifications</span>
+                <Link
+                  href="/messages"
+                  className="cursor-pointer p-1 rounded-full text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 block"
+                >
+                  <span className="sr-only">
+                    {unread === 0 ? 'Messages' : `${unread} unread messages`}
+                  </span>
                   <Bell className="h-6 w-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                </button>
+                  {unread > 0 && (
+                    <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                  )}
+                </Link>
               </div>
 
               <ProfileDropdown />

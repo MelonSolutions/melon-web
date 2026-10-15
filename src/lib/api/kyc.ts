@@ -5,6 +5,7 @@ import {
   UpdateKYCUserRequest,
   KYCDashboardStats,
   AuditLog,
+  RejectionCode,
 } from '@/types/kyc';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
@@ -29,7 +30,7 @@ const getAuthHeaders = () => {
   };
 };
 
-async function fetchWithAuth(url: string, options: RequestInit = {}) {
+export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -156,7 +157,8 @@ export async function makeVerificationDecision(
   decision: 'approved' | 'not_approved' | 'rejected',
   rejectionReason?: string,
   addressIndex?: number,
-  rejectionNote?: string
+  rejectionNote?: string,
+  rejectionCode?: RejectionCode
 ): Promise<{ message: string }> {
   const payload: any = { 
     decision,
@@ -165,6 +167,10 @@ export async function makeVerificationDecision(
   
   if (decision === 'rejected' && rejectionReason) {
     payload.rejectionReason = rejectionReason;
+  }
+
+  if (decision === 'rejected' && rejectionCode) {
+    payload.rejectionCode = rejectionCode;
   }
   
   if (addressIndex !== undefined) {
