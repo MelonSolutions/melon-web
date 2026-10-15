@@ -329,6 +329,15 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
 
           <div className="mb-4 flex items-center gap-2 flex-wrap">
             <StatusBadge status={user.status} size="sm" />
+            {user.hasOpenIssue && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-medium text-red-700"
+                title="A field agent reported a problem with this request"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Issue reported
+              </span>
+            )}
             {hasMultipleAddresses && (
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
@@ -573,6 +582,15 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
               )}
             </div>
             <StatusBadge status={user.status} size="sm" />
+            {user.hasOpenIssue && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-medium text-red-700"
+                title="A field agent reported a problem with this request"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Issue reported
+              </span>
+            )}
             {hasMultipleAddresses && (
               <span
                 className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${
@@ -601,6 +619,15 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
           {/* Column 3: Status (Desktop-only) */}
           <div className="hidden lg:flex flex-col items-start gap-1 shrink-0">
             <StatusBadge status={user.status} size="sm" />
+            {user.hasOpenIssue && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-medium text-red-700"
+                title="A field agent reported a problem with this request"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Issue reported
+              </span>
+            )}
             {hasMultipleAddresses && (
               <span
                 className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${

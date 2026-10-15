@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { KYCEmpty } from '@/components/kyc/KYCEmpty';
 import KYCLoading from '@/components/kyc/KYCLoading';
 import { KYCCard } from '@/components/kyc/KYCCard';
+import { IssueMetrics } from '@/components/kyc/issues/IssueMetrics';
 import { DailyReportModal } from '@/components/kyc/DailyReportModal';
 import { VerificationTrends } from '@/components/kyc/analysis/VerificationTrends';
 import { GeographicDistribution } from '@/components/kyc/analysis/GeographicDistribution';
@@ -794,6 +795,9 @@ function KYCContent() {
           <div className="text-2xl font-bold text-red-600">{dashboardStats.rejected || 0}</div>
         </div>
       </div>
+
+      {/* Agent issue metrics (all time; not affected by the status/month filters) */}
+      <IssueMetrics organizationId={organizationId} />
 
       {/* Insights & Analysis Section */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all">
