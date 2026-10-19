@@ -1017,6 +1017,15 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                             <div className="text-sm text-gray-900 whitespace-pre-wrap">{address.notes}</div>
                           </div>
                         )}
+
+                        {(address.assignedAt || (hasMultipleAddresses && address.status && address.status !== 'PENDING' && user.assignedAt)) && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Assigned Date</div>
+                            <div className="text-sm text-gray-900">
+                              {format(new Date((address.assignedAt || user.assignedAt) as string), 'PPp')}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {address.verificationData && (
@@ -1406,7 +1415,21 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                     </div>
                   </div>
 
-                  {user.assignedAt && (!user.verifiedAt || Math.abs(new Date(user.assignedAt).getTime() - new Date(user.verifiedAt).getTime()) >= 60000) && (
+                  {hasMultipleAddresses && addresses.some(a => a.assignedAt) ? (
+                    addresses.filter(a => a.assignedAt).map((addr, aIdx) => (
+                      <div key={`assigned-${aIdx}`} className="flex gap-3">
+                        <div className="w-2 h-2 mt-2 rounded-full bg-purple-500 shrink-0"></div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            Agent Assigned — {addr.label || `Address ${aIdx + 1}`}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {format(new Date(addr.assignedAt!), 'PPp')}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : user.assignedAt && (!user.verifiedAt || Math.abs(new Date(user.assignedAt).getTime() - new Date(user.verifiedAt).getTime()) >= 60000) && (
                     <div className="flex gap-3">
                       <div className="w-2 h-2 mt-2 rounded-full bg-purple-500 shrink-0"></div>
                       <div>

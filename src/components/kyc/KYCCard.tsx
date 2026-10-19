@@ -153,6 +153,38 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
   const totalAddresses = addresses.length;
   const verifiedAddressesCount = addresses.filter((a) => a.status === 'VERIFIED').length;
 
+  const formatTimestamp = (d?: string) => (d ? format(new Date(d), 'MM/dd, HH:mm') : null);
+  // Show per-address assigned time whenever a job has multiple addresses
+  const showPerAddressAssigned = hasMultipleAddresses;
+
+  const renderAssigned = (emptyText: string, className: string, align: 'center' | 'start') => {
+    if (!showPerAddressAssigned) {
+      const time = formatTimestamp(user.assignedAt as string | undefined);
+      const emptyClass = `${className.replace(/text-gray-\d+/g, '')} text-gray-300 italic`;
+      return <span className={time ? className : emptyClass}>{time || emptyText}</span>;
+    }
+    return (
+      <div className={`flex flex-col gap-0.5 ${align === 'center' ? 'items-center' : 'items-start'}`}>
+        {addresses.map((a, i) => {
+          const label = a.label || `Address ${i + 1}`;
+          const rawTime = a.assignedAt || (a.status && a.status !== 'PENDING' ? user.assignedAt : undefined);
+          const time = formatTimestamp(rawTime as string | undefined);
+          const emptyClass = `${className.replace(/text-gray-\d+/g, '')} text-gray-300 italic`;
+          return (
+            <span
+              key={i}
+              className={`${time ? className : emptyClass} whitespace-nowrap leading-tight`}
+              title={`${label}: ${time ? `assigned ${time}` : 'not assigned yet'}`}
+            >
+              <span className="text-[9px] font-bold text-gray-400 mr-1">A{i + 1}:</span>
+              <span>{time || emptyText}</span>
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (view === 'grid') {
     return (
       <div className="relative">
@@ -375,9 +407,7 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
               </div>
               <div className="flex flex-col">
                 <span className="text-gray-400">Assigned</span>
-                <span className="text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                  {user.assignedAt ? format(new Date(user.assignedAt), 'MM/dd, HH:mm') : 'Not Assigned'}
-                </span>
+                {renderAssigned('Not Assigned', 'text-gray-700 font-medium overflow-hidden text-ellipsis', 'start')}
               </div>
               <div className="flex flex-col">
                 <span className="text-gray-400">Submitted</span>
@@ -505,9 +535,7 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-[10px] text-gray-400 uppercase tracking-tight font-bold leading-none">Assigned</span>
-                    <span className="text-[11px] text-gray-800 font-bold whitespace-nowrap">
-                      {user.assignedAt ? format(new Date(user.assignedAt as string), 'MM/dd, HH:mm') : 'None'}
-                    </span>
+                    {renderAssigned('None', 'text-[11px] text-gray-800 font-bold whitespace-nowrap', 'start')}
                   </div>
                 </div>
               </div>
@@ -657,11 +685,9 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
             </div>
           </div>
 
-          {/* Column 5: Assigned (Desktop-only) */}
+          {/* Column 5: Assigned (Desktop-only) - one line per address on multi-address jobs */}
           <div className="hidden lg:block text-center">
-            <div className={`text-[11px] font-medium ${user.assignedAt ? 'text-gray-900' : 'text-gray-300 italic'}`}>
-              {user.assignedAt ? format(new Date(user.assignedAt as string), 'MM/dd, HH:mm') : 'None'}
-            </div>
+            {renderAssigned('None', 'text-[11px] font-medium text-gray-900', 'center')}
           </div>
 
           {/* Column 6: Submitted (Desktop-only) */}
