@@ -116,6 +116,10 @@ export interface AddressData {
   status?: VerificationStatus;
   verificationData?: VerificationData;
   mobileJobId?: string;
+  // Per-address claim: different agents can take different addresses
+  assignedAt?: string;
+  assignedAgent?: string;
+  mobileAgentId?: string;
   notes?: string;
   relogReason?: string;
   rejectionReason?: string;
