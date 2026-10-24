@@ -9,11 +9,17 @@ let activeFetchPromise: Promise<NigeriaLocationsData> | null = null;
 const CACHE_KEY = 'melon_nigeria_locations_v1';
 
 export function normalizeStateName(state: string): string {
-  const clean = state.toLowerCase().trim().replace(/[-_]/g, ' ');
+  const clean = state
+    .toLowerCase()
+    .trim()
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+state$/, '');
   if (
     clean === 'fct' ||
     clean === 'abuja' ||
     clean === 'fct abuja' ||
+    clean === 'abuja fct' ||
     clean === 'federal capital territory abuja' ||
     clean === 'federal capital territory'
   ) {
