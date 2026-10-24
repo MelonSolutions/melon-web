@@ -20,12 +20,12 @@ export function BulkUploadCSV() {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
-  const { user } = useAuthContext();
+  const { user, organization } = useAuthContext();
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [organizationId, setOrganizationId] = useState<string>('');
 
-  const isMelonAdmin = isMelonPlatformUser(user);
+  const isMelonAdmin = isMelonPlatformUser(user, organization);
 
   useEffect(() => {
     if (!isMelonAdmin) return;
@@ -37,11 +37,28 @@ export function BulkUploadCSV() {
         const orgList = (Array.isArray(data) ? data : (data as any)?.data || []).filter(
           (org: any) => !org.name?.toLowerCase().startsWith('trial-')
         );
+        const ownOrgId = user?.organizationId || organization?.id;
+        if (
+          ownOrgId &&
+          !orgList.some((org: any) => (org._id || org.id) === ownOrgId)
+        ) {
+          orgList.unshift({
+            _id: ownOrgId,
+            id: ownOrgId,
+            name: organization?.name || 'Melon',
+          });
+        }
         setOrganizations(orgList);
-        
-        const chotaOrg = orgList.find((org: any) => org.name.toLowerCase().includes('chota'));
-        if (chotaOrg) {
-          setOrganizationId(chotaOrg._id || chotaOrg.id);
+
+        const defaultOrg =
+          orgList.find(
+            (org: any) =>
+              (org._id || org.id) === ownOrgId ||
+              org.domain?.toLowerCase() === 'melon.ng' ||
+              org.name?.toLowerCase().includes('melon'),
+          ) || orgList[0];
+        if (defaultOrg) {
+          setOrganizationId(defaultOrg._id || defaultOrg.id);
         }
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
@@ -50,7 +67,7 @@ export function BulkUploadCSV() {
       }
     };
     fetchOrgs();
-  }, [isMelonAdmin]);
+  }, [isMelonAdmin, user?.organizationId, organization?.id, organization?.name]);
 
   const handleFileSelect = async (file: File) => {
     if (!file) return;
