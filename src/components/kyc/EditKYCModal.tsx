@@ -40,6 +40,8 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
     const { user: authUser, organization } = useAuthContext();
     const showCustomerType = isMelonPlatformUser(authUser, organization) || isSycamoreOrganization(organization);
     const [loading, setLoading] = useState(false);
+    // Core refuses to remove an address once any of them is with field agents
+    const canRemoveAddress = !(user.addresses || []).some((a) => a.mobileJobId);
     const [formData, setFormData] = useState<UpdateKYCUserRequest>({
         firstName: user.firstName,
         lastName: user.lastName,
@@ -86,8 +88,9 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
             setLoading(true);
             const payload: UpdateKYCUserRequest = {
                 ...formData,
+                // Only editable fields: core rejects server-managed ones (assignedAt,
+                // mobileAgentId, ...) and merges the stored address back in itself
                 addresses: formData.addresses?.map((addr) => ({
-                    ...addr,
                     label: addr.label,
                     streetNumber: addr.streetNumber,
                     streetName: addr.streetName,
@@ -222,7 +225,7 @@ export function EditKYCModal({ user, onClose, onSuccess }: EditKYCModalProps) {
                                     <span className="text-sm font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">
                                         {address.label}
                                     </span>
-                                    {(formData.addresses?.length || 0) > 1 && (
+                                    {canRemoveAddress && (formData.addresses?.length || 0) > 1 && (
                                         <button
                                             type="button"
                                             onClick={() => removeAddress(index)}
