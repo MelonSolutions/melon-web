@@ -37,13 +37,13 @@ export default async function RootLayout({
   await connection();
 
   return (
-    <html lang="en">
+    <html lang="en" className={metropolis.variable}>
       <head>
         <link rel="icon" href="/favicon.ico?v=3" />
         <link rel="shortcut icon" href="/favicon.ico?v=3" />
         <link rel="apple-touch-icon" href="/favicon.ico?v=3" />
       </head>
-      <body className={`${metropolis.className} ${metropolis.variable} antialiased`}>
+      <body className={`${metropolis.className} antialiased`}>
         <AuthProvider>
           <ToastProvider>
             <ModalProvider>
