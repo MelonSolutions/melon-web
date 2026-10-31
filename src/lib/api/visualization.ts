@@ -4,11 +4,12 @@ import type {
   VisualizationResult,
   ExportFormat,
 } from '@/types/kyc-visualization';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -30,7 +31,7 @@ export async function executeVisualizationQuery(
   }
 
   const url = `${API_BASE_URL}${BASE_URL}/query${params.toString() ? `?${params.toString()}` : ''}`;
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(query),
@@ -53,7 +54,7 @@ export async function saveVisualization(data: {
   isPublic?: boolean;
   tags?: string[];
 }): Promise<SavedVisualization> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/save`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/save`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -91,7 +92,7 @@ export async function getVisualizations(filters?: {
   }
 
   const url = `${API_BASE_URL}${BASE_URL}${params.toString() ? `?${params.toString()}` : ''}`;
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     headers: getAuthHeaders(),
   });
 
@@ -106,7 +107,7 @@ export async function getVisualizations(filters?: {
  * Get all tags used in organization
  */
 export async function getVisualizationTags(): Promise<string[]> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/tags`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/tags`, {
     headers: getAuthHeaders(),
   });
 
@@ -121,7 +122,7 @@ export async function getVisualizationTags(): Promise<string[]> {
  * Get a single visualization by ID
  */
 export async function getVisualizationById(id: string): Promise<SavedVisualization> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/${id}`, {
     headers: getAuthHeaders(),
   });
 
@@ -136,7 +137,7 @@ export async function getVisualizationById(id: string): Promise<SavedVisualizati
  * Execute a saved visualization
  */
 export async function executeSavedVisualization(id: string): Promise<VisualizationResult> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/${id}/execute`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/${id}/execute`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -161,7 +162,7 @@ export async function updateVisualization(
     tags?: string[];
   }
 ): Promise<SavedVisualization> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -178,7 +179,7 @@ export async function updateVisualization(
  * Toggle pin status of a visualization
  */
 export async function toggleVisualizationPin(id: string): Promise<SavedVisualization> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/${id}/pin`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/${id}/pin`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
   });
@@ -194,7 +195,7 @@ export async function toggleVisualizationPin(id: string): Promise<SavedVisualiza
  * Delete a visualization
  */
 export async function deleteVisualization(id: string): Promise<{ message: string }> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -222,7 +223,7 @@ export async function exportVisualization(
 
   const url = `${API_BASE_URL}${BASE_URL}/export${params.toString() ? `?${params.toString()}` : ''}`;
 
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({

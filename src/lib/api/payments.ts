@@ -4,8 +4,10 @@ import type {
   VerifyPaymentResponse,
   PaymentStatusResponse,
 } from '@/types/payments';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
+import { userMessage } from './user-message';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
 export class PaymentApiError extends Error {
   constructor(
@@ -19,7 +21,7 @@ export class PaymentApiError extends Error {
 }
 
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -27,7 +29,7 @@ const getAuthHeaders = () => {
 };
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     ...options,
     headers: {
       ...getAuthHeaders(),
@@ -41,10 +43,10 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
     try {
       const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
+      errorMessage = userMessage(response.status, errorData);
       errorCode = errorData.code;
     } catch {
-      errorMessage = response.statusText;
+      errorMessage = userMessage(response.status);
     }
 
     console.error(`Payment API Error [${response.status}] ${url}:`, errorMessage);

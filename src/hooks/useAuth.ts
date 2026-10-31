@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient, AuthError, SigninResponse, User, OrganizationDetails } from '@/lib/api/auth';
+import { apiClient, AuthError, SigninResponse, User, OrganizationDetails, AcceptInvitationRequest } from '@/lib/api/auth';
+import { endSession, initSession, onSessionExpired, startSession } from '@/lib/auth/session';
 
 export interface AuthState {
   user: User | null;
@@ -14,15 +15,7 @@ export interface AuthState {
 
 export interface AuthActions {
   signin: (email: string, password: string) => Promise<void>;
-  signup: (data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    username?: string;
-    phoneNumber?: string;
-    organizationName?: string;
-  }) => Promise<{ message: string; userId: string; organizationId: string }>;
+  acceptInvitation: (data: AcceptInvitationRequest) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -75,67 +68,10 @@ export function useAuth(): AuthState & AuthActions {
 
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-        
-        if (token) {
-          // Optimistically hydrate cached user data so user is not blocked on a blank loading screen
-          const cachedUserData = localStorage.getItem('userData');
-          if (cachedUserData) {
-            try {
-              const parsedUser = JSON.parse(cachedUserData) as User;
-              setState(prev => ({
-                ...prev,
-                user: parsedUser,
-                isAuthenticated: true,
-                isLoading: false,
-              }));
-            } catch {
-              // Ignore parse error and proceed to network fetch
-            }
-          }
+        // Restore the session from the httpOnly refresh cookie
+        const session = await initSession();
 
-          try {
-            // Get fresh user data
-            const { userData, orgData } = await fetchAuthData();
-            
-            localStorage.setItem('userData', JSON.stringify(userData));
-            
-            setState({
-              user: userData,
-              organization: orgData,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-          } catch (error: any) {
-            console.error('Auth refresh failed:', error);
-
-            // Handle 401 explicitly
-            if (error?.status === 401 || (error instanceof AuthError && error.status === 401)) {
-              console.error('Session expired (401), logging out.');
-              logout();
-              return;
-            }
-
-            // For non-401 errors (network, 500, etc.), try to use cached data
-            const cachedUserData = localStorage.getItem('userData');
-            if (cachedUserData) {
-              try {
-                const parsedUser = JSON.parse(cachedUserData) as User;
-                setState({
-                  user: parsedUser,
-                  organization: null,
-                  isAuthenticated: true, // Optimistically keep them in
-                  isLoading: false,
-                });
-                console.warn('Using cached user data due to server error (non-401).');
-              } catch {
-                logout();
-              }
-            } else {
-              logout();
-            }
-          }
-        } else {
+        if (session === 'unauthenticated') {
           localStorage.removeItem('userData');
           setState({
             user: null,
@@ -143,6 +79,66 @@ export function useAuth(): AuthState & AuthActions {
             isAuthenticated: false,
             isLoading: false,
           });
+          return;
+        }
+
+        // Optimistically hydrate cached user data so user is not blocked on a blank loading screen
+        const cachedUserData = localStorage.getItem('userData');
+        if (cachedUserData) {
+          try {
+            const parsedUser = JSON.parse(cachedUserData) as User;
+            setState(prev => ({
+              ...prev,
+              user: parsedUser,
+              isAuthenticated: true,
+              isLoading: false,
+            }));
+          } catch {
+            // Ignore parse error and proceed to network fetch
+          }
+        }
+
+        try {
+          // Get fresh user data
+          const { userData, orgData } = await fetchAuthData();
+          
+          localStorage.setItem('userData', JSON.stringify(userData));
+          
+          setState({
+            user: userData,
+            organization: orgData,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } catch (error: unknown) {
+          console.error('Auth refresh failed:', error);
+
+          // Handle 401 explicitly
+          const status = (error as { status?: number } | null)?.status;
+          if (status === 401 || (error instanceof AuthError && error.status === 401)) {
+            console.error('Session expired (401), logging out.');
+            logout();
+            return;
+          }
+
+          // For non-401 errors (network, 500, etc.), try to use cached data
+          const cachedUserData = localStorage.getItem('userData');
+          if (cachedUserData) {
+            try {
+              const parsedUser = JSON.parse(cachedUserData) as User;
+              setState({
+                user: parsedUser,
+                organization: null,
+                isAuthenticated: true, // Optimistically keep them in
+                isLoading: false,
+              });
+              console.warn('Using cached user data due to server error (non-401).');
+            } catch {
+              logout();
+            }
+          } else {
+            logout();
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -151,13 +147,16 @@ export function useAuth(): AuthState & AuthActions {
     };
 
     checkAuth();
+
+    // A 401 that a refresh can't fix means the session is over
+    return onSessionExpired(() => logout());
   }, []);
 
   const signin = async (email: string, password: string) => {
     try {
       const response: SigninResponse = await apiClient.signin({ email, password });
       
-      localStorage.setItem('authToken', response.token);
+      startSession(response.token);
       localStorage.setItem('userData', JSON.stringify(response.user));
       
       setState({
@@ -184,23 +183,24 @@ export function useAuth(): AuthState & AuthActions {
     }
   };
 
-  const signup = async (data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    username?: string;
-    phoneNumber?: string;
-    organizationName?: string;
-  }) => {
+  // Accepting an invitation activates the account and signs the person in
+  const acceptInvitation = async (data: AcceptInvitationRequest) => {
+    const response: SigninResponse = await apiClient.acceptInvitation(data);
+    startSession(response.token);
+    localStorage.setItem('userData', JSON.stringify(response.user));
+    setState({
+      user: response.user as User,
+      organization: null,
+      isAuthenticated: true,
+      isLoading: false,
+    });
     try {
-      const response = await apiClient.signup(data);
-      // Don't auto-login, user needs to verify email first
-      return response;
-    } catch (error) {
-      console.error('Signup failed:', error);
-      throw error;
+      const orgData = await apiClient.getOrganization();
+      setState((prev) => ({ ...prev, organization: orgData }));
+    } catch (orgError) {
+      console.error('Failed to fetch organization data:', orgError);
     }
+    router.push('/overview');
   };
 
   const verifyEmail = async (token: string) => {
@@ -215,7 +215,8 @@ export function useAuth(): AuthState & AuthActions {
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    // Revokes the refresh cookie server-side; UI doesn't wait for it
+    void endSession();
     localStorage.removeItem('userData');
     setState({
       user: null,
@@ -302,7 +303,7 @@ export function useAuth(): AuthState & AuthActions {
   return {
     ...state,
     signin,
-    signup,
+    acceptInvitation,
     verifyEmail,
     logout,
     refreshUser,

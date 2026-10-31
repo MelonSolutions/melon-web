@@ -1,5 +1,7 @@
+import { authFetch, getAccessToken } from '@/lib/auth/session';
+import { userMessage } from './user-message';
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
 export type AccessLevel = 'full' | 'read-only' | 'blocked';
 
@@ -107,6 +109,22 @@ export interface AuditLogQueryParams {
   limit?: number;
 }
 
+export type PlatformPlan = 'TRIAL' | 'STARTER' | 'REGULAR' | 'PREMIUM';
+
+export interface OnboardOrganizationRequest {
+  organizationName: string;
+  plan: PlatformPlan;
+  ownerEmail: string;
+  ownerFirstName: string;
+  ownerLastName: string;
+}
+
+export interface OnboardOrganizationResponse {
+  message: string;
+  organization: { id: string; name: string; plan: PlatformPlan; status: string };
+  owner: { id: string; email: string };
+}
+
 export class AdminError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -142,7 +160,7 @@ class AdminApiClient {
     };
 
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('authToken');
+      const token = getAccessToken();
       if (token) {
         config.headers = {
           ...config.headers,
@@ -152,21 +170,14 @@ class AdminApiClient {
     }
 
     try {
-      const response = await fetch(url, config);
+      const response = await authFetch(url, config);
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
 
-        if (response.status === 401) {
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userData');
-          }
-        }
-
         throw new AdminError(
-          errorData.message || `HTTP error! status: ${response.status}`,
+          userMessage(response.status, errorData),
           response.status
         );
       }
@@ -211,6 +222,16 @@ class AdminApiClient {
     const endpoint = `/admin/organizations${queryString ? `?${queryString}` : ''}`;
 
     return this.request<OrganizationsResponse>(endpoint);
+  }
+
+  /**
+   * Onboard an organization onto the full platform and email its owner an invitation
+   */
+  async onboardOrganization(data: OnboardOrganizationRequest): Promise<OnboardOrganizationResponse> {
+    return this.request<OnboardOrganizationResponse>('/admin/organizations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   /**
@@ -284,7 +305,7 @@ class AdminApiClient {
     };
 
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('authToken');
+      const token = getAccessToken();
       if (token) {
         config.headers = {
           Authorization: `Bearer ${token}`,
@@ -293,13 +314,13 @@ class AdminApiClient {
     }
 
     try {
-      const response = await fetch(url, config);
+      const response = await authFetch(url, config);
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new AdminError(
-          errorData.message || `HTTP error! status: ${response.status}`,
+          userMessage(response.status, errorData),
           response.status
         );
       }

@@ -7,7 +7,7 @@ import {
   JobIssueStatus,
 } from '@/types/job-issues';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
 export { ApiError };
 

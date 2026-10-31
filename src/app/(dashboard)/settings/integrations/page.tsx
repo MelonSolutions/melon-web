@@ -36,7 +36,7 @@ export default function IntegrationsSettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState('');
   const [copiedBaseUrl, setCopiedBaseUrl] = useState(false);
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
   // API Keys state
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);

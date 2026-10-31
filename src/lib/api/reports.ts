@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAuthHeaders, API_BASE_URL } from './client';
+import { authFetch } from '@/lib/auth/session';
+import { userMessage } from './user-message';
 
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -82,7 +84,7 @@ const handleApiError = async (res: globalThis.Response) => {
     }));
     
     throw new ApiError(
-      errorData.message || `HTTP ${res.status}: ${res.statusText}`,
+      userMessage(res.status, errorData),
       res.status,
       errorData.code
     );
@@ -93,7 +95,7 @@ const handleApiError = async (res: globalThis.Response) => {
 
 // Create a new report
 export const createReport = async (data: CreateReportRequest): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/create`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/create`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -113,7 +115,7 @@ export const getReports = async (filters: ReportsFilters = {}): Promise<ApiRespo
   if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
   if (filters.currentPage) params.append('currentPage', filters.currentPage.toString());
 
-  const response = await fetch(`${API_BASE_URL}/reports/all?${params}`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/all?${params}`, {
     headers: getAuthHeaders(),
   });
 
@@ -123,7 +125,7 @@ export const getReports = async (filters: ReportsFilters = {}): Promise<ApiRespo
 
 // Get dashboard statistics
 export const getDashboardStats = async (): Promise<DashboardStats> => {
-  const response = await fetch(`${API_BASE_URL}/reports/dashboard`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/dashboard`, {
     headers: getAuthHeaders(),
   });
 
@@ -133,7 +135,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 
 // Get single report by ID
 export const getReport = async (id: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/details/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/details/${id}`, {
     headers: getAuthHeaders(),
   });
 
@@ -143,7 +145,7 @@ export const getReport = async (id: string): Promise<any> => {
 
 // Update report
 export const updateReport = async (id: string, data: UpdateReportRequest): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/update/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/update/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -155,7 +157,7 @@ export const updateReport = async (id: string, data: UpdateReportRequest): Promi
 
 // Delete report
 export const deleteReport = async (id: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/delete/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/delete/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -166,7 +168,7 @@ export const deleteReport = async (id: string): Promise<any> => {
 
 // Publish report
 export const publishReport = async (id: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${id}/publish`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${id}/publish`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -177,7 +179,7 @@ export const publishReport = async (id: string): Promise<any> => {
 
 // Duplicate report
 export const duplicateReport = async (id: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${id}/duplicate`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${id}/duplicate`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -188,7 +190,7 @@ export const duplicateReport = async (id: string): Promise<any> => {
 
 // Get share link
 export const getShareLink = async (id: string): Promise<{ shareToken: string; shareUrl: string }> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${id}/share-link`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${id}/share-link`, {
     headers: getAuthHeaders(),
   });
 
@@ -202,7 +204,7 @@ export const getShareLink = async (id: string): Promise<{ shareToken: string; sh
 
 // Get public report by share token
 export const getPublicReport = async (shareToken: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/public/${shareToken}`);
+  const response = await authFetch(`${API_BASE_URL}/reports/public/${shareToken}`);
 
   await handleApiError(response);
   return response.json();
@@ -210,7 +212,7 @@ export const getPublicReport = async (shareToken: string): Promise<any> => {
 
 // Update report status
 export const updateReportStatus = async (id: string, status: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${id}/status`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${id}/status`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
@@ -225,7 +227,7 @@ export const shareReportViaEmail = async (
   reportId: string,
   data: ShareReportEmailRequest
 ): Promise<ShareReportEmailResponse> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/share-email`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${reportId}/share-email`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -237,7 +239,7 @@ export const shareReportViaEmail = async (
 
 // Generate edit token
 export const generateEditToken = async (reportId: string): Promise<{ editToken: string; editUrl: string }> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/generate-edit-token`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${reportId}/generate-edit-token`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -248,7 +250,7 @@ export const generateEditToken = async (reportId: string): Promise<{ editToken: 
 
 // Get report by edit token (public)
 export const getReportByEditToken = async (editToken: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/edit/${editToken}`);
+  const response = await authFetch(`${API_BASE_URL}/reports/edit/${editToken}`);
 
   await handleApiError(response);
   return response.json();
@@ -259,7 +261,7 @@ export const updateReportByEditToken = async (
   editToken: string,
   data: UpdateReportRequest
 ): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/edit/${editToken}`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/edit/${editToken}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -273,7 +275,7 @@ export const updateReportByEditToken = async (
 
 // Get reports by project ID
 export const getReportsByProject = async (projectId: string): Promise<any[]> => {
-  const response = await fetch(`${API_BASE_URL}/reports/by-project/${projectId}`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/by-project/${projectId}`, {
     headers: getAuthHeaders(),
   });
 
@@ -283,7 +285,7 @@ export const getReportsByProject = async (projectId: string): Promise<any[]> => 
 
 // Get unlinked reports (reports not attached to any project)
 export const getUnlinkedReports = async (): Promise<any[]> => {
-  const response = await fetch(`${API_BASE_URL}/reports/unlinked`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/unlinked`, {
     headers: getAuthHeaders(),
   });
 
@@ -293,7 +295,7 @@ export const getUnlinkedReports = async (): Promise<any[]> => {
 
 // Link report to project
 export const linkReportToProject = async (reportId: string, projectId: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/link-project`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${reportId}/link-project`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: JSON.stringify({ projectId }),
@@ -305,7 +307,7 @@ export const linkReportToProject = async (reportId: string, projectId: string): 
 
 // Unlink report from project
 export const unlinkReportFromProject = async (reportId: string): Promise<any> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/unlink-project`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${reportId}/unlink-project`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
   });
@@ -385,7 +387,7 @@ export interface ReportAnalytics {
 
 // Get report-level analytics (aggregate statistics)
 export const getReportAnalytics = async (reportId: string): Promise<ReportAnalytics> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/analytics/overview`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${reportId}/analytics/overview`, {
     headers: getAuthHeaders(),
   });
 
@@ -395,7 +397,7 @@ export const getReportAnalytics = async (reportId: string): Promise<ReportAnalyt
 
 // Get analytics for all questions in a report
 export const getAllQuestionsAnalytics = async (reportId: string): Promise<QuestionAnalytics[]> => {
-  const response = await fetch(`${API_BASE_URL}/reports/${reportId}/analytics/questions`, {
+  const response = await authFetch(`${API_BASE_URL}/reports/${reportId}/analytics/questions`, {
     headers: getAuthHeaders(),
   });
 
@@ -408,7 +410,7 @@ export const getQuestionAnalytics = async (
   reportId: string,
   questionId: string
 ): Promise<QuestionAnalytics> => {
-  const response = await fetch(
+  const response = await authFetch(
     `${API_BASE_URL}/reports/${reportId}/analytics/questions/${questionId}`,
     {
       headers: getAuthHeaders(),

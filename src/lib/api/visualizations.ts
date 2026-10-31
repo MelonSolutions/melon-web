@@ -2,13 +2,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { DataSource, ChartConfig, VisualizationStats } from '@/types/visualization';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
+import { userMessage } from './user-message';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getAccessToken();
     
     const defaultOptions: RequestInit = {
       headers: {
@@ -19,25 +21,11 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       ...options,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, defaultOptions);
+    const response = await authFetch(`${API_BASE_URL}${endpoint}`, defaultOptions);
     
     if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}`;
-      
-      try {
-        const errorText = await response.text();
-        if (errorText) {
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.message || errorData.error || errorMessage;
-          } catch {
-            errorMessage = errorText || errorMessage;
-          }
-        }
-      } catch {
-        // If we can't read the error, just use the status
-      }
-      
+      const errorData = await response.json().catch(() => null);
+      const errorMessage = userMessage(response.status, errorData);
       throw new Error(errorMessage);
     }
     
@@ -240,9 +228,9 @@ export const shareChart = async (id: string): Promise<{
 
 export const importCsvFile = async (formData: FormData): Promise<DataSource> => {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getAccessToken();
     
-    const response = await fetch(`${API_BASE_URL}/visualizations/data-sources/import-csv`, {
+    const response = await authFetch(`${API_BASE_URL}/visualizations/data-sources/import-csv`, {
       method: 'POST',
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
@@ -251,22 +239,8 @@ export const importCsvFile = async (formData: FormData): Promise<DataSource> => 
     });
 
     if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}`;
-      
-      try {
-        const errorText = await response.text();
-        if (errorText) {
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.message || errorData.error || errorMessage;
-          } catch {
-            errorMessage = errorText || errorMessage;
-          }
-        }
-      } catch {
-        // Use default error message
-      }
-      
+      const errorData = await response.json().catch(() => null);
+      const errorMessage = userMessage(response.status, errorData);
       throw new Error(errorMessage);
     }
 
@@ -290,9 +264,9 @@ export const importCsvFile = async (formData: FormData): Promise<DataSource> => 
 
 export const downloadSampleCsv = async (): Promise<Blob> => {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getAccessToken();
     
-    const response = await fetch(`${API_BASE_URL}/visualizations/data-sources/sample-csv`, {
+    const response = await authFetch(`${API_BASE_URL}/visualizations/data-sources/sample-csv`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
       },
@@ -397,9 +371,9 @@ export const generateChartData = async (id: string): Promise<any> => {
 
 export const exportChart = async (id: string, format: string = 'json'): Promise<Blob> => {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getAccessToken();
     
-    const response = await fetch(`${API_BASE_URL}/visualizations/charts/${id}/export?format=${format}`, {
+    const response = await authFetch(`${API_BASE_URL}/visualizations/charts/${id}/export?format=${format}`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
       },

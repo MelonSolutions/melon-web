@@ -18,6 +18,7 @@ import {
   Zap,
   Globe
 } from 'lucide-react';
+import { SUPPORT_EMAIL } from '@/lib/contact';
 
 export default function HelpCenterPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -258,7 +259,7 @@ export default function HelpCenterPage() {
                 Contact Support
               </Link>
               <a
-                href="mailto:support@melon.com"
+                href={`mailto:${SUPPORT_EMAIL}`}
                 className="flex items-center gap-2 text-sm text-[#5B94E5] hover:text-blue-600 transition-colors cursor-pointer"
               >
                 <Mail className="w-4 h-4" />

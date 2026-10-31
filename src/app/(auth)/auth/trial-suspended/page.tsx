@@ -3,12 +3,13 @@
 import React from 'react';
 import { ShieldAlert, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { SUPPORT_EMAIL } from '@/lib/contact';
 
 export default function TrialSuspendedPage() {
   const router = useRouter();
 
   const handleContactSupport = () => {
-    window.location.href = 'mailto:support@melon.com?subject=Trial Account Suspended';
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Trial Account Suspended`;
   };
 
   const handleLogout = () => {

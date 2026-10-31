@@ -464,7 +464,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                       } as any);
                     },
                     (error) => {
-                      alert('Error capturing GPS: ' + error.message);
+                      alert(
+                        error.code === error.PERMISSION_DENIED
+                          ? 'Location access is turned off. Allow location access for this site in your browser settings, then try again.'
+                          : "We couldn't get your location. Move somewhere with a better signal and try again.",
+                      );
                     }
                   );
                 } else {

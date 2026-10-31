@@ -6,13 +6,15 @@ import {
   PortfolioStats,
   PaginatedResponse 
 } from '@/types/portfolio';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
+import { userMessage } from './user-message';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Get authorization header
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -23,14 +25,14 @@ const getAuthHeaders = () => {
 const handleApiError = async (response: Response) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API Error: ${response.status}`);
+    throw new Error(userMessage(response.status, errorData));
   }
   return response.json();
 };
 
 // Create a new project
 export const createProject = async (data: CreateProjectRequest): Promise<Project> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/create`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/create`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -50,7 +52,7 @@ export const getProjects = async (filters: PortfolioFilters = {}): Promise<Pagin
   if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
   if (filters.currentPage) params.append('currentPage', filters.currentPage.toString());
 
-  const response = await fetch(`${API_BASE_URL}/portfolio/all?${params}`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/all?${params}`, {
     headers: getAuthHeaders(),
   });
 
@@ -59,7 +61,7 @@ export const getProjects = async (filters: PortfolioFilters = {}): Promise<Pagin
 
 // Get portfolio dashboard statistics
 export const getPortfolioStats = async (): Promise<PortfolioStats> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/dashboard`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/dashboard`, {
     headers: getAuthHeaders(),
   });
 
@@ -68,7 +70,7 @@ export const getPortfolioStats = async (): Promise<PortfolioStats> => {
 
 // Get single project by ID
 export const getProject = async (id: string): Promise<Project> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/details/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/details/${id}`, {
     headers: getAuthHeaders(),
   });
 
@@ -77,7 +79,7 @@ export const getProject = async (id: string): Promise<Project> => {
 
 // Update project
 export const updateProject = async (id: string, data: UpdateProjectRequest): Promise<Project> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/update/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/update/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
@@ -88,7 +90,7 @@ export const updateProject = async (id: string, data: UpdateProjectRequest): Pro
 
 // Update project status
 export const updateProjectStatus = async (id: string, status: string): Promise<Project> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/${id}/status`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/${id}/status`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
@@ -99,7 +101,7 @@ export const updateProjectStatus = async (id: string, status: string): Promise<P
 
 // Duplicate project
 export const duplicateProject = async (id: string): Promise<Project> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/${id}/duplicate`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/${id}/duplicate`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -109,7 +111,7 @@ export const duplicateProject = async (id: string): Promise<Project> => {
 
 // Delete project
 export const deleteProject = async (id: string): Promise<{ message: string }> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/delete/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/delete/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -119,7 +121,7 @@ export const deleteProject = async (id: string): Promise<{ message: string }> =>
 
 // Get project summary with metrics
 export const getProjectSummaryWithMetrics = async (): Promise<Project[]> => {
-  const response = await fetch(`${API_BASE_URL}/portfolio/summary-with-metrics`, {
+  const response = await authFetch(`${API_BASE_URL}/portfolio/summary-with-metrics`, {
     headers: getAuthHeaders(),
   });
 

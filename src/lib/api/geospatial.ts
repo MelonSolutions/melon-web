@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataImport, GeoDataPoint, GeoLayer, GeospatialAnalytics, LayerStyling, MapFilters } from "@/types/geospatial";
+import { authFetch, getAccessToken } from '@/lib/auth/session';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface CreateLayerRequest {
@@ -26,7 +27,7 @@ export interface ImportDataRequest {
 
 class GeospatialAPI {
   private getHeaders() {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getAccessToken();
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -40,11 +41,11 @@ class GeospatialAPI {
     formData.append('mappings', JSON.stringify(request.mappings));
     formData.append('name', request.name);
 
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/import`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/import`, {
       method: 'POST',
       headers: {
-        ...(typeof window !== 'undefined' && localStorage.getItem('authToken') && {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+        ...(getAccessToken() && {
+          Authorization: `Bearer ${getAccessToken()}`
         }),
       },
       body: formData,
@@ -58,14 +59,14 @@ class GeospatialAPI {
   }
 
   async getImports(): Promise<DataImport[]> {
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/imports`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/imports`, {
       headers: this.getHeaders(),
     });
     return response.json();
   }
 
   async deleteImport(importId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/imports/${importId}`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/imports/${importId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -77,14 +78,14 @@ class GeospatialAPI {
 
   // Layers
   async getLayers(): Promise<GeoLayer[]> {
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/layers`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/layers`, {
       headers: this.getHeaders(),
     });
     return response.json();
   }
 
   async createLayer(request: CreateLayerRequest): Promise<GeoLayer> {
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/layers`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/layers`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(request),
@@ -98,7 +99,7 @@ class GeospatialAPI {
   }
 
   async updateLayer(layerId: string, updates: Partial<GeoLayer>): Promise<GeoLayer> {
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/layers/${layerId}`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/layers/${layerId}`, {
       method: 'PATCH',
       headers: this.getHeaders(),
       body: JSON.stringify(updates),
@@ -112,7 +113,7 @@ class GeospatialAPI {
   }
 
   async deleteLayer(layerId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/layers/${layerId}`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/layers/${layerId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -147,7 +148,7 @@ class GeospatialAPI {
       params.append('search', filters.search);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/data?${params}`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/data?${params}`, {
       headers: this.getHeaders(),
     });
 
@@ -162,7 +163,7 @@ class GeospatialAPI {
       params.append('endDate', filters.dateRange[1]);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/analytics?${params}`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/analytics?${params}`, {
       headers: this.getHeaders(),
     });
 
@@ -175,7 +176,7 @@ class GeospatialAPI {
       ? `${API_BASE_URL}/api/geospatial/reports/${reportId}/locations`
       : `${API_BASE_URL}/api/geospatial/reports/locations`;
       
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
       headers: this.getHeaders(),
     });
 
@@ -189,7 +190,7 @@ class GeospatialAPI {
     groupBy: 'region' | 'country' | 'grid';
     resolution?: number; // For grid analysis
   }): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/api/geospatial/analysis`, {
+    const response = await authFetch(`${API_BASE_URL}/api/geospatial/analysis`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(options),

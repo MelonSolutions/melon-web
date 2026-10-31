@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthContext } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { ProfileDropdown } from '@/components/profile/ProfileDropdown';
@@ -26,6 +26,13 @@ import {
 } from "lucide-react";
 import { useIssueCounts } from '@/hooks/useJobIssues';
 
+// Pay-as-you-go trial accounts get survey reports only; the rest of the
+// platform is for organizations Melon onboards.
+const TRIAL_ALLOWED_PREFIXES = ['/reports', '/upgrade', '/preferences'];
+
+const isTrialAllowedPath = (path: string) =>
+  TRIAL_ALLOWED_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+
 interface NavItem {
   name: string;
   href: string;
@@ -42,7 +49,21 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, trialUser, organization, getInitials, getFullName, isLoading, isTrial, isOrg } = useAuthContext();
+
+  // Route guard: signed-out visitors go to sign-in; trial accounts stay in Reports
+  const redirectTo = isLoading
+    ? null
+    : !isOrg && !isTrial
+      ? '/login'
+      : isTrial && !isTrialAllowedPath(pathname)
+        ? '/reports'
+        : null;
+
+  useEffect(() => {
+    if (redirectTo) router.replace(redirectTo);
+  }, [redirectTo, router]);
   const { unread } = useIssueCounts({ skip: isTrial });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -143,7 +164,8 @@ export default function DashboardLayout({
     );
   };
 
-  if (isLoading) {
+  // Never flash a page the visitor isn't allowed to see
+  if (isLoading || redirectTo) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-primary)]"></div>
@@ -196,6 +218,24 @@ export default function DashboardLayout({
       'group flex items-center px-4 py-3 rounded-lg transition-colors relative',
       isMobile ? 'text-base font-medium' : 'text-sm font-medium'
     );
+
+    if (item.requiresUpgrade) {
+      return (
+        <Link
+          href="/upgrade"
+          title="Available to organizations on the full Melon platform"
+          className={cn(baseClasses, 'text-gray-400 hover:bg-gray-50 hover:text-gray-600')}
+        >
+          <span className="mr-3 flex-shrink-0 text-gray-300">{item.icon}</span>
+          <span className="flex-1 flex items-center justify-between">
+            <span>{item.name}</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-50 border border-blue-200 text-blue-600 rounded-full whitespace-nowrap ml-2">
+              Full platform
+            </span>
+          </span>
+        </Link>
+      );
+    }
 
     if (item.disabled) {
       return (

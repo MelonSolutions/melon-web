@@ -3,17 +3,19 @@
 import React from 'react';
 import { Clock, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { LANDING_URL, SUPPORT_EMAIL } from '@/lib/contact';
 
 export default function TrialExpiredPage() {
   const router = useRouter();
 
   const handleUpgrade = () => {
     // Redirect to upgrade/subscription page (to be implemented)
-    router.push('/payments/subscribe?source=trial-expired');
+    // Expired trials reopen by adding a card on the Melon website
+    window.location.href = `${LANDING_URL}/upgrade`;
   };
 
   const handleContactSales = () => {
-    window.location.href = 'mailto:admin@melon.ng?subject=Trial Upgrade Inquiry';
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Trial Upgrade Inquiry`;
   };
 
   const handleLogout = () => {
@@ -72,7 +74,7 @@ export default function TrialExpiredPage() {
       <div className="text-center pt-2">
         <p className="text-xs text-gray-500">
           Questions?{' '}
-          <a href="mailto:support@melon.com" className="text-primary hover:underline">
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary hover:underline">
             Contact Support
           </a>
         </p>

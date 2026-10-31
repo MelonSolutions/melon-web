@@ -12,9 +12,8 @@ interface MelonCheckOrganization {
 
 /**
  * Whether the signed-in user is Melon staff. Mirrors the backend: a @melon.ng
- * email or membership of the Melon organization. Organization names are
- * user-chosen at signup, so they are only used when NEXT_PUBLIC_MELON_ORG_ID
- * is not configured.
+ * email or membership of the Melon organization (NEXT_PUBLIC_MELON_ORG_ID).
+ * Only controls what the UI shows; the API enforces access itself.
  */
 export function isMelonPlatformUser(
   user?: MelonCheckUser | null,
@@ -25,8 +24,6 @@ export function isMelonPlatformUser(
 
   const orgId = organization?.id || user?.organizationId || user?.organization?.id;
   const melonOrgId = process.env.NEXT_PUBLIC_MELON_ORG_ID;
-  if (melonOrgId) return !!orgId && orgId === melonOrgId;
-
-  const orgName = organization?.name || user?.organization?.name || '';
-  return orgName.toLowerCase().includes('melon');
+  // Never infer staff status from an organization name: customers choose those
+  return !!melonOrgId && !!orgId && orgId === melonOrgId;
 }

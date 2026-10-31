@@ -1,5 +1,6 @@
 import { API_BASE_URL, getAuthHeaders } from './client';
 import { ApiError } from './errors';
+import { authFetch } from '@/lib/auth/session';
 
 export interface ApiKey {
   id: string;
@@ -21,7 +22,7 @@ export interface CreateApiKeyDto {
 
 export const listApiKeys = async (): Promise<ApiKey[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api-keys`, {
+    const response = await authFetch(`${API_BASE_URL}/api-keys`, {
       headers: getAuthHeaders(),
     });
     
@@ -38,7 +39,7 @@ export const listApiKeys = async (): Promise<ApiKey[]> => {
 
 export const createApiKey = async (dto: CreateApiKeyDto): Promise<{ apiKey: ApiKey, secret: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api-keys`, {
+    const response = await authFetch(`${API_BASE_URL}/api-keys`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(dto),
@@ -57,7 +58,7 @@ export const createApiKey = async (dto: CreateApiKeyDto): Promise<{ apiKey: ApiK
 
 export const rotateApiKey = async (keyId: string): Promise<{ apiKey: ApiKey, secret: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api-keys/${keyId}/rotate`, {
+    const response = await authFetch(`${API_BASE_URL}/api-keys/${keyId}/rotate`, {
       method: 'POST',
       headers: getAuthHeaders(),
     });
@@ -75,7 +76,7 @@ export const rotateApiKey = async (keyId: string): Promise<{ apiKey: ApiKey, sec
 
 export const revokeApiKey = async (keyId: string): Promise<void> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api-keys/${keyId}`, {
+    const response = await authFetch(`${API_BASE_URL}/api-keys/${keyId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -137,7 +138,7 @@ export const getApiLogs = async (params: {
     if (params.endDate) searchParams.set('endDate', params.endDate);
     if (params.organizationId) searchParams.set('organizationId', params.organizationId);
 
-    const response = await fetch(`${API_BASE_URL}/api-keys/logs?${searchParams.toString()}`, {
+    const response = await authFetch(`${API_BASE_URL}/api-keys/logs?${searchParams.toString()}`, {
       headers: getAuthHeaders(),
     });
 
