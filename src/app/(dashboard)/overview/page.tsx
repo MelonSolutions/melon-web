@@ -58,8 +58,8 @@ function renderTimeFilterOptions(availableMonths?: string[]) {
     availableMonths && availableMonths.length > 0
       ? availableMonths
       : Array.from({ length: 12 }, (_, i) => {
-          const d = new Date();
-          d.setMonth(d.getMonth() - i);
+          const now = new Date();
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
           return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         });
 

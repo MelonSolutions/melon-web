@@ -19,7 +19,7 @@ export function proxy(request: NextRequest) {
 
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    `script-src 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
     // React renders style={{}} as inline style attributes, which a nonce can't cover
     "style-src 'self' 'unsafe-inline'",
     // Map tiles (4 providers), marker icons and KYC documents come from many hosts
