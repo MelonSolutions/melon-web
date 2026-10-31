@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApiError } from './errors';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
+import { userMessage } from './user-message';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface QuestionResponse {
@@ -65,7 +67,7 @@ export interface ImpactMetricsProgressResponse {
 }
 
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -76,7 +78,7 @@ const handleApiError = async (res: globalThis.Response) => {
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ message: 'An error occurred' }));
     throw new ApiError(
-      errorData.message || `HTTP ${res.status}: ${res.statusText}`,
+      userMessage(res.status, errorData),
       res.status,
       errorData
     );
@@ -89,7 +91,7 @@ export const submitResponse = async (data: CreateResponseRequest): Promise<{
   responseId: string;
   impactMetricsUpdated: number;
 }> => {
-  const res = await fetch(`${API_BASE_URL}/responses/submit`, {
+  const res = await authFetch(`${API_BASE_URL}/responses/submit`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -117,7 +119,7 @@ export const getResponsesByReport = async (
   if (pagination.pageSize) params.append('pageSize', pagination.pageSize.toString());
   if (pagination.currentPage) params.append('currentPage', pagination.currentPage.toString());
 
-  const res = await fetch(`${API_BASE_URL}/responses/report/${reportId}?${params}`, {
+  const res = await authFetch(`${API_BASE_URL}/responses/report/${reportId}?${params}`, {
     headers: getAuthHeaders(),
   });
 
@@ -126,7 +128,7 @@ export const getResponsesByReport = async (
 };
 
 export const getResponseDetails = async (responseId: string): Promise<ReportResponse> => {
-  const res = await fetch(`${API_BASE_URL}/responses/details/${responseId}`, {
+  const res = await authFetch(`${API_BASE_URL}/responses/details/${responseId}`, {
     headers: getAuthHeaders(),
   });
 
@@ -135,7 +137,7 @@ export const getResponseDetails = async (responseId: string): Promise<ReportResp
 };
 
 export const getResponseAnalytics = async (reportId: string): Promise<ResponseAnalytics[]> => {
-  const res = await fetch(`${API_BASE_URL}/responses/analytics/${reportId}`, {
+  const res = await authFetch(`${API_BASE_URL}/responses/analytics/${reportId}`, {
     headers: getAuthHeaders(),
   });
 
@@ -144,7 +146,7 @@ export const getResponseAnalytics = async (reportId: string): Promise<ResponseAn
 };
 
 export const getImpactMetricsProgress = async (reportId: string): Promise<ImpactMetricsProgressResponse> => {
-  const res = await fetch(`${API_BASE_URL}/responses/impact-metrics-progress/${reportId}`, {
+  const res = await authFetch(`${API_BASE_URL}/responses/impact-metrics-progress/${reportId}`, {
     headers: getAuthHeaders(),
   });
 

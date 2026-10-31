@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+import { authFetch } from '@/lib/auth/session';
+import { userMessage } from './user-message';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface ApiResponse<T = any> {
@@ -8,25 +11,9 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-export interface SignupRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  username?: string;
-  phoneNumber?: string;
-  organizationName?: string;
-}
-
 export interface SigninRequest {
   email: string;
   password: string;
-}
-
-export interface SignupResponse {
-  message: string;
-  userId: string;
-  organizationId: string;
 }
 
 export interface SigninResponse {
@@ -139,6 +126,20 @@ export interface InviteUserRequest {
   role?: 'ADMIN' | 'MEMBER';
 }
 
+export interface InvitationDetails {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  organizationName?: string;
+}
+
+export interface AcceptInvitationRequest {
+  token: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
 export class AuthError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -173,38 +174,15 @@ private async request<T>(
     },
   };
 
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
-    }
-  }
-
   try {
-    const response = await fetch(url, config);
+    // authFetch attaches the session token and renews it on 401
+    const response = await authFetch(url, config);
     clearTimeout(timeoutId);
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       
-      if (response.status === 401) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
-        }
-      }
-      
-      let errorMessage = `HTTP error! status: ${response.status}`;
-      if (errorData.message) {
-        errorMessage = Array.isArray(errorData.message)
-          ? errorData.message.join(', ')
-          : errorData.message;
-      }
-      
-      throw new AuthError(errorMessage, response.status);
+      throw new AuthError(userMessage(response.status, errorData), response.status);
     }
 
     return await response.json();
@@ -212,16 +190,13 @@ private async request<T>(
     clearTimeout(timeoutId);
     
     if (error.name === 'AbortError') {
-      const timeoutError = new Error('Request timeout - please try again');
+      const timeoutError = new Error('This is taking longer than usual. Please try again.');
       timeoutError.name = 'TimeoutError';
       throw timeoutError;
     }
 
-    if (error.message === 'Failed to fetch') {
+    if (error.name === 'NetworkError') {
       console.error(`Network Error: Failed to fetch ${url}. Online: ${navigator.onLine}`);
-      const networkError = new Error('Connection failed. Please check your internet and try again.');
-      networkError.name = 'NetworkError';
-      throw networkError;
     }
     
     console.error(`API request failed [${url}]:`, error);
@@ -229,18 +204,26 @@ private async request<T>(
   }
 }
 
-  // Auth endpoints
-  async signup(data: SignupRequest): Promise<SignupResponse> {
-    return this.request<SignupResponse>('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
+  // Auth endpoints (accounts are created by Melon onboarding or invitation)
   async signin(data: SigninRequest): Promise<SigninResponse> {
     return this.request<SigninResponse>('/auth/signin', {
       method: 'POST',
       body: JSON.stringify(data),
+      // Lets the browser store the httpOnly refresh cookie from the response
+      credentials: 'include',
+    });
+  }
+
+  async getInvitation(token: string): Promise<InvitationDetails> {
+    return this.request<InvitationDetails>(`/auth/invitations/${encodeURIComponent(token)}`);
+  }
+
+  async acceptInvitation(data: AcceptInvitationRequest): Promise<SigninResponse> {
+    return this.request<SigninResponse>('/auth/invitations/accept', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      // Lets the browser store the httpOnly refresh cookie from the response
+      credentials: 'include',
     });
   }
 
@@ -292,11 +275,6 @@ private async request<T>(
   // Legacy method for backwards compatibility
   async login(data: SigninRequest): Promise<SigninResponse> {
     return this.signin(data);
-  }
-
-  // Legacy method for backwards compatibility  
-  async register(data: SignupRequest): Promise<SignupResponse> {
-    return this.signup(data);
   }
 
   async updateBranding(data: { brandColor?: string; brandName?: string; logoUrl?: string }): Promise<any> {

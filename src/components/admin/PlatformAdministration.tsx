@@ -1,16 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, FileText, Building2 } from 'lucide-react';
+import { Shield, FileText, Building2, UserPlus } from 'lucide-react';
 import RestrictionsTab from './RestrictionsTab';
 import AuditLogTab from './AuditLogTab';
+import OnboardOrganizationTab from './OnboardOrganizationTab';
 
-type TabType = 'restrictions' | 'audit';
+type TabType = 'onboard' | 'restrictions' | 'audit';
 
 export default function PlatformAdministration() {
   const [activeTab, setActiveTab] = useState<TabType>('restrictions');
 
   const tabs = [
+    {
+      id: 'onboard' as TabType,
+      label: 'Onboard Organization',
+      icon: UserPlus,
+      description: 'Set up a new organization on the full platform',
+    },
     {
       id: 'restrictions' as TabType,
       label: 'Organization Restrictions',
@@ -36,7 +43,7 @@ export default function PlatformAdministration() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Platform Administration</h1>
             <p className="text-gray-600 mt-1">
-              Manage organization-level feature restrictions and view audit logs
+              Onboard organizations, manage feature restrictions and view audit logs
             </p>
           </div>
         </div>
@@ -87,6 +94,7 @@ export default function PlatformAdministration() {
 
         {/* Tab Content */}
         <div className="p-6">
+          {activeTab === 'onboard' && <OnboardOrganizationTab />}
           {activeTab === 'restrictions' && <RestrictionsTab />}
           {activeTab === 'audit' && <AuditLogTab />}
         </div>

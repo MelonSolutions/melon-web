@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreditCard, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { SUPPORT_EMAIL } from '@/lib/contact';
 
 export default function TrialUpgradePage() {
   const router = useRouter();
@@ -61,7 +62,7 @@ export default function TrialUpgradePage() {
       <div className="text-center pt-2">
         <p className="text-xs text-gray-500">
           Need help?{' '}
-          <a href="mailto:support@melon.com" className="text-primary hover:underline">
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary hover:underline">
             Contact Support
           </a>
         </p>

@@ -7,8 +7,10 @@ import {
   AuditLog,
   RejectionCode,
 } from '@/types/kyc';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
+import { userMessage } from './user-message';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export class ApiError extends Error {
@@ -23,7 +25,7 @@ export class ApiError extends Error {
 }
 
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -31,7 +33,7 @@ const getAuthHeaders = () => {
 };
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     ...options,
     headers: {
       ...getAuthHeaders(),
@@ -45,10 +47,10 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
     try {
       const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
+      errorMessage = userMessage(response.status, errorData);
       errorCode = errorData.code;
     } catch {
-      errorMessage = response.statusText;
+      errorMessage = userMessage(response.status);
     }
 
     console.error(`API Error [${response.status}] ${url}:`, errorMessage);
@@ -240,9 +242,9 @@ export async function uploadDocument(
   formData.append('file', file);
   formData.append('documentType', documentType);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
 
-  const response = await fetch(`${API_BASE_URL}/kyc/${userId}/documents`, {
+  const response = await authFetch(`${API_BASE_URL}/kyc/${userId}/documents`, {
     method: 'POST',
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -256,7 +258,7 @@ export async function uploadDocument(
       const errorData = await response.json();
       errorMessage = errorData.message || errorMessage;
     } catch {
-      errorMessage = response.statusText;
+      errorMessage = userMessage(response.status);
     }
     throw new ApiError(errorMessage, response.status);
   }
@@ -268,9 +270,9 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
 
-  const response = await fetch(`${API_BASE_URL}/kyc/upload-image`, {
+  const response = await authFetch(`${API_BASE_URL}/kyc/upload-image`, {
     method: 'POST',
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -284,7 +286,7 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
       const errorData = await response.json();
       errorMessage = errorData.message || errorMessage;
     } catch {
-      errorMessage = response.statusText;
+      errorMessage = userMessage(response.status);
     }
     throw new ApiError(errorMessage, response.status);
   }
@@ -327,9 +329,9 @@ export async function exportKYCData(filters?: {
   if (filters?.startDate) params.append('startDate', filters.startDate);
   if (filters?.endDate) params.append('endDate', filters.endDate);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
 
-  const response = await fetch(
+  const response = await authFetch(
     `${API_BASE_URL}/kyc/export${params.toString() ? `?${params.toString()}` : ''}`,
     {
       headers: {
@@ -346,9 +348,9 @@ export async function exportKYCData(filters?: {
 }
 
 export async function downloadKYCReport(userId: string): Promise<void> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
 
-  const response = await fetch(`${API_BASE_URL}/kyc/${userId}/report`, {
+  const response = await authFetch(`${API_BASE_URL}/kyc/${userId}/report`, {
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
     },
@@ -390,9 +392,9 @@ export async function downloadDailyOrganizationReport(
   if (endDate) params.append('endDate', endDate);
   if (organizationId) params.append('organizationId', organizationId);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
 
-  const response = await fetch(
+  const response = await authFetch(
     `${API_BASE_URL}/kyc/reports/daily?${params.toString()}`,
     {
       headers: {
@@ -446,7 +448,7 @@ export interface BulkUploadResult {
 }
 
 export async function bulkUploadKYC(file: File, organizationId?: string): Promise<BulkUploadResult> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
 
   const formData = new FormData();
   formData.append('file', file);
@@ -454,7 +456,7 @@ export async function bulkUploadKYC(file: File, organizationId?: string): Promis
     formData.append('organizationId', organizationId);
   }
 
-  const response = await fetch(`${API_BASE_URL}/kyc/bulk-upload`, {
+  const response = await authFetch(`${API_BASE_URL}/kyc/bulk-upload`, {
     method: 'POST',
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),

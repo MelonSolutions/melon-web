@@ -30,7 +30,9 @@ export function ProfileDropdown() {
   }, []);
 
   const menuItems = [
-    {
+    // Account settings belong to organization users; trial accounts manage
+    // themselves under Trial Preferences
+    ...(isTrial ? [] : [{
       section: 'Account',
       items: [
         {
@@ -52,7 +54,7 @@ export function ProfileDropdown() {
           description: 'Manage notification settings'
         }
       ]
-    },
+    }]),
     ...(isTrial
       ? [
           {

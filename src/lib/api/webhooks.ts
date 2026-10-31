@@ -1,5 +1,6 @@
 import { API_BASE_URL, getAuthHeaders } from './client';
 import { ApiError } from './errors';
+import { authFetch } from '@/lib/auth/session';
 
 export interface WebhookEndpoint {
   id: string;
@@ -20,7 +21,7 @@ export interface CreateWebhookDto {
 
 export const getEndpoints = async (): Promise<WebhookEndpoint[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/webhooks/config`, {
+    const response = await authFetch(`${API_BASE_URL}/webhooks/config`, {
       headers: getAuthHeaders(),
     });
     
@@ -37,7 +38,7 @@ export const getEndpoints = async (): Promise<WebhookEndpoint[]> => {
 
 export const createEndpoint = async (dto: CreateWebhookDto): Promise<{ endpoint: WebhookEndpoint, secret: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/webhooks/config`, {
+    const response = await authFetch(`${API_BASE_URL}/webhooks/config`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(dto),
@@ -56,7 +57,7 @@ export const createEndpoint = async (dto: CreateWebhookDto): Promise<{ endpoint:
 
 export const rotateEndpointSecret = async (id: string): Promise<{ secret: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/webhooks/config/${id}/rotate-secret`, {
+    const response = await authFetch(`${API_BASE_URL}/webhooks/config/${id}/rotate-secret`, {
       method: 'POST',
       headers: getAuthHeaders(),
     });
@@ -75,7 +76,7 @@ export const rotateEndpointSecret = async (id: string): Promise<{ secret: string
 export const deleteEndpoint = async (id: string): Promise<void> => {
 
   try {
-    const response = await fetch(`${API_BASE_URL}/webhooks/config/${id}`, {
+    const response = await authFetch(`${API_BASE_URL}/webhooks/config/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -102,7 +103,7 @@ export interface WebhookEventLog {
 
 export const getEndpointHistory = async (endpointId: string): Promise<WebhookEventLog[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/webhooks/config/${endpointId}/history`, {
+    const response = await authFetch(`${API_BASE_URL}/webhooks/config/${endpointId}/history`, {
       headers: getAuthHeaders(),
     });
     
@@ -119,7 +120,7 @@ export const getEndpointHistory = async (endpointId: string): Promise<WebhookEve
 
 export const testEndpoint = async (endpointId: string): Promise<{ statusCode: number; body: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/webhooks/config/${endpointId}/test`, {
+    const response = await authFetch(`${API_BASE_URL}/webhooks/config/${endpointId}/test`, {
       method: 'POST',
       headers: getAuthHeaders(),
     });
@@ -137,7 +138,7 @@ export const testEndpoint = async (endpointId: string): Promise<{ statusCode: nu
 
 export const replayEvent = async (endpointId: string, eventId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/webhooks/config/${endpointId}/events/${eventId}/replay`, {
+    const response = await authFetch(`${API_BASE_URL}/webhooks/config/${endpointId}/events/${eventId}/replay`, {
       method: 'POST',
       headers: getAuthHeaders(),
     });

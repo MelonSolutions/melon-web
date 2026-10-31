@@ -1,5 +1,6 @@
 import localFont from 'next/font/local';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import './globals.css';
 import { ModalProvider } from '@/components/ui/Modal';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -27,11 +28,14 @@ export const metadata: Metadata = {
   description: 'Transform data into measurable impact with intelligent analytics',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Render per request so Next.js can attach the CSP nonce from src/proxy.ts
+  await connection();
+
   return (
     <html lang="en">
       <head>

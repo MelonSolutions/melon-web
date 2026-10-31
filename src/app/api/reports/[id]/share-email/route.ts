@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const backendResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com'}/reports/${id}/share-email`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng'}/reports/${id}/share-email`,
       {
         method: 'POST',
         headers: {

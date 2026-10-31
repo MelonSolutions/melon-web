@@ -50,12 +50,15 @@ export function BulkUploadCSV() {
         }
         setOrganizations(orgList);
 
+        // Default to Melon's own organization, identified by ID or domain only:
+        // org names are chosen by customers and can't be trusted here
+        const melonOrgId = process.env.NEXT_PUBLIC_MELON_ORG_ID;
         const defaultOrg =
           orgList.find(
             (org: any) =>
               (org._id || org.id) === ownOrgId ||
-              org.domain?.toLowerCase() === 'melon.ng' ||
-              org.name?.toLowerCase().includes('melon'),
+              (melonOrgId && (org._id || org.id) === melonOrgId) ||
+              org.domain?.toLowerCase() === 'melon.ng',
           ) || orgList[0];
         if (defaultOrg) {
           setOrganizationId(defaultOrg._id || defaultOrg.id);

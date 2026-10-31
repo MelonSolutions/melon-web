@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { X, Mail, Plus, Trash2, Send, Loader2, CheckCircle } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
+import { authFetch } from '@/lib/auth/session';
 
 interface EmailSharingModalProps {
   isOpen: boolean;
@@ -62,22 +63,13 @@ export function EmailSharingModal({ isOpen, onClose, report, shareUrl }: EmailSh
       return;
     }
 
-    const token = localStorage.getItem('authToken');
-    console.log('Token from localStorage:', token ? 'Token exists' : 'Token is null');
-    
-    if (!token) {
-      alert('Authentication token not found. Please log in again.');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/reports/${report._id}/share-email`, {
+      const response = await authFetch(`/api/reports/${report._id}/share-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           recipients: validEmails,

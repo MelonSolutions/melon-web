@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Accounts are created by Melon onboarding and invitations, not public signup
+      { source: '/signup', destination: '/login', permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

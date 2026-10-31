@@ -1,6 +1,7 @@
 /**
  * Shared API client utilities
  */
+import { getAccessToken } from '@/lib/auth/session';
 
 /**
  * Gets authentication headers, supporting both organization and trial tokens.
@@ -15,8 +16,8 @@ export const getAuthHeaders = (): Record<string, string> => {
     return headers;
   }
 
-  // Check for org token first (higher priority)
-  const authToken = localStorage.getItem('authToken');
+  // Dashboard session first (higher priority); it lives in memory only
+  const authToken = getAccessToken();
   if (authToken) {
     headers.Authorization = `Bearer ${authToken}`;
     return headers;
@@ -34,4 +35,4 @@ export const getAuthHeaders = (): Record<string, string> => {
 /**
  * Base API configuration
  */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';

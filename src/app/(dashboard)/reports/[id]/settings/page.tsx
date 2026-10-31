@@ -25,8 +25,9 @@ import { ReportCategory } from '@/types/reports';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import { useToast } from '@/components/ui/Toast';
 import { EmailSharingModal } from '@/components/reports/EmailSharingModal';
+import { authFetch } from '@/lib/auth/session';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
 export default function ReportSettingsPage() {
   const params = useParams();
@@ -247,12 +248,7 @@ const handleEmailLink = () => {
     if (!report) return;
     setIsDownloadingExcel(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-      const response = await fetch(`${API_BASE_URL}/responses/${report._id}/export/excel`, {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
+      const response = await authFetch(`${API_BASE_URL}/responses/${report._id}/export/excel`);
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({ message: 'Export failed' }));

@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 async function verifyEmailToken(token: string): Promise<{ message: string; }> {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
   const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
     method: 'POST',

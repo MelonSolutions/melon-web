@@ -6,11 +6,12 @@ import type {
   CSVQueryResult,
   MapDataPoint,
 } from '@/types/csv-import';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
   return {
     ...(token && { Authorization: `Bearer ${token}` }),
   };
@@ -22,7 +23,7 @@ const BASE_URL = '/csv-import';
  * Get CSV format requirements and examples
  */
 export async function getCSVFormatRequirements(): Promise<CSVFormatRequirements> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/format-requirements`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/format-requirements`, {
     headers: getAuthHeaders(),
   });
 
@@ -65,7 +66,7 @@ export async function uploadCSV(request: UploadCSVRequest): Promise<CSVDataSourc
     formData.append('categoryColumn', request.categoryColumn);
   }
 
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/upload`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/upload`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: formData,
@@ -102,7 +103,7 @@ export async function getCSVDataSources(filters?: {
   }
 
   const url = `${API_BASE_URL}${BASE_URL}/data-sources${params.toString() ? `?${params.toString()}` : ''}`;
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     headers: {
       ...getAuthHeaders(),
       'Content-Type': 'application/json',
@@ -120,7 +121,7 @@ export async function getCSVDataSources(filters?: {
  * Get a specific CSV data source
  */
 export async function getCSVDataSource(id: string): Promise<CSVDataSource> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}`, {
     headers: {
       ...getAuthHeaders(),
       'Content-Type': 'application/json',
@@ -141,7 +142,7 @@ export async function updateCSVDataSource(
   id: string,
   data: UpdateCSVDataSourceRequest
 ): Promise<CSVDataSource> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}`, {
     method: 'PUT',
     headers: {
       ...getAuthHeaders(),
@@ -161,7 +162,7 @@ export async function updateCSVDataSource(
  * Delete a CSV data source
  */
 export async function deleteCSVDataSource(id: string): Promise<{ message: string }> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}`, {
     method: 'DELETE',
     headers: {
       ...getAuthHeaders(),
@@ -197,7 +198,7 @@ export async function queryCSVData(
   }
 
   const url = `${API_BASE_URL}${BASE_URL}/data-sources/${id}/data${params.toString() ? `?${params.toString()}` : ''}`;
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     headers: {
       ...getAuthHeaders(),
       'Content-Type': 'application/json',
@@ -215,7 +216,7 @@ export async function queryCSVData(
  * Get map data points from a CSV source
  */
 export async function getCSVMapDataPoints(id: string): Promise<MapDataPoint[]> {
-  const response = await fetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}/map-points`, {
+  const response = await authFetch(`${API_BASE_URL}${BASE_URL}/data-sources/${id}/map-points`, {
     headers: {
       ...getAuthHeaders(),
       'Content-Type': 'application/json',

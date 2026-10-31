@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://melon-core.onrender.com';
+import { authFetch, getAccessToken } from '@/lib/auth/session';
+import { userMessage } from './user-message';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.melon.ng';
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export class ApiError extends Error {
@@ -89,7 +91,7 @@ export interface RegionalDistribution {
 }
 
 const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token = getAccessToken();
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
@@ -97,7 +99,7 @@ const getAuthHeaders = () => {
 };
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const response = await fetch(url, {
+  const response = await authFetch(url, {
     ...options,
     headers: {
       ...getAuthHeaders(),
@@ -111,10 +113,10 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
     try {
       const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
+      errorMessage = userMessage(response.status, errorData);
       errorCode = errorData.code;
     } catch {
-      errorMessage = response.statusText;
+      errorMessage = userMessage(response.status);
     }
 
     console.error(`API Error [${response.status}] ${url}:`, errorMessage);
