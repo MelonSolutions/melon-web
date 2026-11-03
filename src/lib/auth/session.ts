@@ -131,15 +131,17 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
   if (typeof window === 'undefined') return send(input, init);
 
   await initSession();
-  if (accessToken && expiresAt - Date.now() < EXPIRY_SKEW_MS) {
+  const hadSession = !!accessToken;
+  if (hadSession && expiresAt - Date.now() < EXPIRY_SKEW_MS) {
     await refreshSession();
   }
 
-  const hadSession = !!accessToken;
   const response = await send(input, withAccessToken(init));
   if (response.status !== 401 || !hadSession) return response;
 
-  const result = await refreshSession();
+  // A failed pre-emptive refresh above already cleared the token; don't hide
+  // that as a bare 401, sign the user out so they know to sign in again
+  const result = accessToken ? await refreshSession() : 'unauthenticated';
   if (result !== 'ok') {
     if (result === 'unauthenticated') expiredListeners.forEach((listener) => listener());
     return response;
