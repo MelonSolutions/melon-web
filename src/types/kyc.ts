@@ -430,6 +430,21 @@ export const getStatusDisplayName = (status: VerificationStatus): string => {
   return STATUS_DISPLAY_NAMES[status] || status;
 };
 
+/**
+ * Addresses that didn't pass on a request that counts as VERIFIED (it is
+ * once one address passes and the rest are decided). Mirrors core's
+ * getAddressExceptions; worked out from the addresses, never stored.
+ */
+export const getAddressExceptions = (
+  status?: VerificationStatus,
+  addresses?: Pick<AddressData, 'label' | 'status' | 'isDeleted'>[],
+): { label: string; status: VerificationStatus }[] => {
+  if (status !== 'VERIFIED' || !addresses || addresses.length < 2) return [];
+  return addresses
+    .filter((a) => !a.isDeleted && a.status && a.status !== 'VERIFIED')
+    .map((a) => ({ label: a.label || 'Address', status: a.status as VerificationStatus }));
+};
+
 export const getDocumentTypeDisplayName = (type: DocumentType): string => {
   return DOCUMENT_TYPE_DISPLAY_NAMES[type] || type;
 };

@@ -45,6 +45,8 @@ import {
   REJECTION_CODE_LABELS,
   REJECTION_CODE_OPTIONS,
   formatResidency,
+  getAddressExceptions,
+  getStatusDisplayName,
 } from '@/types/kyc';
 import Select from '@/components/ui/Select';
 import {
@@ -549,6 +551,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   }
 
   const hasMultipleAddresses = user.addresses && user.addresses.length > 0;
+  const addressExceptions = getAddressExceptions(user.status, user.addresses);
   const addresses = hasMultipleAddresses ? user.addresses! : [{
     label: 'Address',
     streetNumber: user.streetNumber,
@@ -631,12 +634,30 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 Issue reported
               </a>
             )}
-            <StatusBadge status={user.status} size="md" className="shrink-0" />
+            <StatusBadge status={user.status} addresses={user.addresses} size="md" className="shrink-0" />
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {addressExceptions.length > 0 && (
+          <div
+            role="status"
+            className="mb-6 flex items-start gap-3 p-4 rounded-lg border border-amber-200 bg-amber-50"
+          >
+            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold text-amber-900">Verified with exception</p>
+              <p className="text-amber-800">
+                This request is verified, but not every address passed:{' '}
+                {addressExceptions
+                  .map((e) => `${e.label} (${getStatusDisplayName(e.status).toLowerCase()})`)
+                  .join(', ')}
+                . See the address below for details.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <JobIssuesSection
@@ -1299,7 +1320,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Overall Status</span>
-                    <StatusBadge status={user.status} size="sm" />
+                    <StatusBadge status={user.status} addresses={user.addresses} size="sm" />
                   </div>
 
                   <div className="border-t border-gray-200 pt-4 mt-4">
