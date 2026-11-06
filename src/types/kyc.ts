@@ -141,6 +141,15 @@ export function formatResidency(vd?: VerificationData): string | null {
   return label + by;
 }
 
+// Melon staff context on an agent's report. Append-only: there is no edit or
+// delete, so the agent's own notes always stay as filed.
+export interface ReviewNote {
+  text: string;
+  authorId?: string;
+  authorName: string;
+  createdAt: string;
+}
+
 export interface AddressData {
   label: string;
   streetNumber?: string;
@@ -154,6 +163,7 @@ export interface AddressData {
   longitude?: number;
   status?: VerificationStatus;
   verificationData?: VerificationData;
+  reviewNotes?: ReviewNote[];
   mobileJobId?: string;
   // Per-address claim: different agents can take different addresses
   assignedAt?: string;
