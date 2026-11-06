@@ -6,6 +6,7 @@ import {
   KYCDashboardStats,
   AuditLog,
   RejectionCode,
+  ReviewNote,
 } from '@/types/kyc';
 import { authFetch, getAccessToken } from '@/lib/auth/session';
 import { userMessage } from './user-message';
@@ -132,6 +133,18 @@ export async function updateKYCUser(
   return fetchWithAuth(`${API_BASE_URL}/kyc/update/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
+  });
+}
+
+/** Appends a Melon staff note to one address's report. Melon staff only. */
+export async function addReviewNote(
+  id: string,
+  addressIndex: number,
+  text: string
+): Promise<ReviewNote[]> {
+  return fetchWithAuth(`${API_BASE_URL}/kyc/${id}/addresses/${addressIndex}/review-notes`, {
+    method: 'POST',
+    body: JSON.stringify({ text }),
   });
 }
 

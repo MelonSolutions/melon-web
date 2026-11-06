@@ -62,6 +62,7 @@ import { formatPhotoTag } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { ReviewNotes } from '@/components/kyc/ReviewNotes';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
@@ -1148,6 +1149,14 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                                 <p className="text-sm text-gray-700 whitespace-pre-wrap">{address.verificationData.agentNotes}</p>
                               </div>
                             )}
+
+                            <ReviewNotes
+                              kycId={userId}
+                              addressIndex={index}
+                              notes={address.reviewNotes}
+                              canAdd={isMelonAdmin && !!hasMultipleAddresses}
+                              onAdded={refetch}
+                            />
                           </div>
                         </div>
                       )}
