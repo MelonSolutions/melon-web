@@ -360,7 +360,7 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
           </div>
 
           <div className="mb-4 flex items-center gap-2 flex-wrap">
-            <StatusBadge status={user.status} size="sm" />
+            <StatusBadge status={user.status} addresses={user.addresses} size="sm" />
             {user.hasOpenIssue && (
               <span
                 className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-medium text-red-700"
@@ -609,7 +609,7 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
                 </>
               )}
             </div>
-            <StatusBadge status={user.status} size="sm" />
+            <StatusBadge status={user.status} addresses={user.addresses} size="sm" />
             {user.hasOpenIssue && (
               <span
                 className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-medium text-red-700"
@@ -646,7 +646,7 @@ export function KYCCard({ user, view, onRefetch, selectable, isSelected, onToggl
 
           {/* Column 3: Status (Desktop-only) */}
           <div className="hidden lg:flex flex-col items-start gap-1 shrink-0">
-            <StatusBadge status={user.status} size="sm" />
+            <StatusBadge status={user.status} addresses={user.addresses} size="sm" />
             {user.hasOpenIssue && (
               <span
                 className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-medium text-red-700"
