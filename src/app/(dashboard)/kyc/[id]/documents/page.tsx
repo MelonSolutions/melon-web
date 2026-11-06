@@ -250,7 +250,7 @@ export default function KYCDocumentsPage({ params }: PageProps) {
           </div>
           
           <div className="flex items-center gap-3">
-            <StatusBadge status={user.status} size="md" />
+            <StatusBadge status={user.status} addresses={user.addresses} size="md" />
             <label className="cursor-pointer">
               <input
                 type="file"
