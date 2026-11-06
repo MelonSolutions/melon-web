@@ -99,7 +99,46 @@ export interface VerificationData {
   verifiedAddress?: string;
   verificationPhotos?: Array<{ url: string; tag?: string } | string>;
   agentNotes?: string;
+  residencyConfirmed?: ResidencyConfirmation;
+  residencyConfirmedBy?: ResidencyConfirmedBy;
   verifiedAt?: string;
+}
+
+// Agent's answer to "does the customer live here?"; absent on reports from
+// app builds that predate the question
+export type ResidencyConfirmation = 'yes' | 'no' | 'unable_to_confirm';
+export type ResidencyConfirmedBy =
+  | 'customer'
+  | 'household_member'
+  | 'neighbour'
+  | 'security'
+  | 'landlord'
+  | 'other';
+
+export const RESIDENCY_LABELS: Record<ResidencyConfirmation, string> = {
+  yes: 'Yes',
+  no: 'No',
+  unable_to_confirm: 'Unable to confirm',
+};
+
+export const RESIDENCY_BY_LABELS: Record<ResidencyConfirmedBy, string> = {
+  customer: 'customer',
+  household_member: 'household member',
+  neighbour: 'neighbour',
+  security: 'security',
+  landlord: 'landlord',
+  other: 'other',
+};
+
+/** "No (by security)", or null when the agent wasn't asked */
+export function formatResidency(vd?: VerificationData): string | null {
+  if (!vd?.residencyConfirmed) return null;
+  const label = RESIDENCY_LABELS[vd.residencyConfirmed] ?? vd.residencyConfirmed;
+  const by =
+    vd.residencyConfirmedBy && vd.residencyConfirmed !== 'unable_to_confirm'
+      ? ` (by ${RESIDENCY_BY_LABELS[vd.residencyConfirmedBy] ?? vd.residencyConfirmedBy})`
+      : '';
+  return label + by;
 }
 
 export interface AddressData {

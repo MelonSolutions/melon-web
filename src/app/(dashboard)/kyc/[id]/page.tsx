@@ -44,6 +44,7 @@ import {
   RejectionCode,
   REJECTION_CODE_LABELS,
   REJECTION_CODE_OPTIONS,
+  formatResidency,
 } from '@/types/kyc';
 import Select from '@/components/ui/Select';
 import {
@@ -1121,6 +1122,23 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                                     );
                                   })}
                                 </div>
+                              </div>
+                            )}
+
+                            {formatResidency(address.verificationData) && (
+                              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Residency Confirmed</div>
+                                <p
+                                  className={`text-sm font-medium ${
+                                    address.verificationData.residencyConfirmed === 'yes'
+                                      ? 'text-green-700'
+                                      : address.verificationData.residencyConfirmed === 'no'
+                                        ? 'text-red-700'
+                                        : 'text-amber-700'
+                                  }`}
+                                >
+                                  {formatResidency(address.verificationData)}
+                                </p>
                               </div>
                             )}
 
