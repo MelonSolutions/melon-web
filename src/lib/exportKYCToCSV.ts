@@ -1,6 +1,6 @@
 'use client';
 
-import { KYCUser, formatLoanType } from '@/types/kyc';
+import { KYCUser, formatLoanType, formatResidency } from '@/types/kyc';
 
 export function exportKYCToCSV(users: KYCUser[], filename?: string) {
   const csvRows = [];
@@ -40,6 +40,7 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
     'Submitted At',
     'Verified At',
     'Mobile Job ID',
+    'Residency Confirmed',
   ];
   csvRows.push(headers.join(','));
 
@@ -124,6 +125,7 @@ export function exportKYCToCSV(users: KYCUser[], filename?: string) {
           ? new Date(vd.verifiedAt).toISOString()
           : '',
         escapeCSV(addr.mobileJobId || user.mobileJobId || ''),
+        escapeCSV(formatResidency(vd) || ''),
       ];
       csvRows.push(row.join(','));
     });

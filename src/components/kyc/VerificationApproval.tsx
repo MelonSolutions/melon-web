@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { CheckCircle, XCircle, MapPin, Calendar, AlertTriangle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { VerificationData } from '@/types/kyc';
+import { VerificationData, formatResidency } from '@/types/kyc';
 import { format } from 'date-fns';
 import { formatPhotoTag } from '@/lib/utils';
 
@@ -193,6 +193,12 @@ export function VerificationApproval({
             <div className="flex items-start gap-3">
               <FileText className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
               <div className="flex-1">
+                {formatResidency(verificationData) && (
+                  <p className="text-sm text-gray-700 mb-2">
+                    <span className="font-medium">Residency confirmed:</span>{' '}
+                    {formatResidency(verificationData)}
+                  </p>
+                )}
                 {verificationData.agentNotes ? (
                   <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                     {verificationData.agentNotes}
