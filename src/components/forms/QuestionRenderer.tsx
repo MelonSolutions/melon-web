@@ -351,6 +351,9 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
           />
         );
 
+      case 'GPS_LOCATION':
+        return <GpsLocationInput value={value} onChange={onChange} />;
+
       case 'IMPACT_METRIC':
         return (
           <div>
@@ -393,7 +396,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
           )}
         </h3>
         {question.description && (
-          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
+          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed whitespace-pre-line">
             {question.description}
           </p>
         )}
@@ -409,6 +412,109 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
             />
           </svg>
           {error}
+        </p>
+      )}
+    </div>
+  );
+};
+
+interface GpsAnswer {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  capturedAt?: string;
+}
+
+const isGpsAnswer = (v: unknown): v is GpsAnswer =>
+  !!v &&
+  typeof v === 'object' &&
+  typeof (v as GpsAnswer).lat === 'number' &&
+  typeof (v as GpsAnswer).lng === 'number';
+
+/**
+ * Captures the device's location. The answer is stored as
+ * { lat, lng, accuracy, capturedAt }, the shape the export and
+ * analytics already read ('lat' and 'lng').
+ */
+const GpsLocationInput: React.FC<{ value: unknown; onChange: (value: GpsAnswer | null) => void }> = ({
+  value,
+  onChange,
+}) => {
+  const [status, setStatus] = React.useState<'idle' | 'locating'>('idle');
+  const [message, setMessage] = React.useState<string | null>(null);
+  const captured = isGpsAnswer(value) ? value : null;
+
+  const capture = () => {
+    setMessage(null);
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setMessage('This device or browser cannot share its location.');
+      return;
+    }
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setMessage('Location only works when the survey is opened over https.');
+      return;
+    }
+    setStatus('locating');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setStatus('idle');
+        onChange({
+          lat: Number(pos.coords.latitude.toFixed(6)),
+          lng: Number(pos.coords.longitude.toFixed(6)),
+          accuracy: Math.round(pos.coords.accuracy),
+          capturedAt: new Date(pos.timestamp).toISOString(),
+        });
+      },
+      (err) => {
+        setStatus('idle');
+        if (err.code === err.PERMISSION_DENIED) {
+          setMessage(
+            'Location permission was refused. Allow location for this site in the browser settings, then try again.',
+          );
+        } else if (err.code === err.TIMEOUT) {
+          setMessage('Finding the location took too long. Move to an open spot and try again.');
+        } else {
+          setMessage('The location could not be found. Check that location is turned on, then try again.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 },
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      {captured && (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800">
+          <p className="font-medium tabular-nums">
+            {captured.lat}, {captured.lng}
+          </p>
+          {captured.accuracy !== undefined && (
+            <p className="text-gray-500 mt-0.5">Accurate to about {captured.accuracy} m</p>
+          )}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={capture}
+          disabled={status === 'locating'}
+          className="px-4 py-2.5 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7EC9] disabled:opacity-60 transition-colors"
+        >
+          {status === 'locating' ? 'Finding location…' : captured ? 'Capture again' : 'Capture location'}
+        </button>
+        {captured && status !== 'locating' && (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="px-4 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      {message && (
+        <p className="text-sm text-red-500" role="alert">
+          {message}
         </p>
       )}
     </div>
