@@ -571,6 +571,16 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
   const canUploadDocuments = user.status === 'PENDING';
   const isMultiAddressRequest = addresses.length > 1;
   const verifiedAddressesCount = addresses.filter((a) => a.status === 'VERIFIED').length;
+  // Approved and Not Approved both pay the agent; a later whole-request
+  // reject does not undo that, so the page must not say otherwise
+  const paidAddresses = addresses.filter((a) => a.status === 'VERIFIED' || a.status === 'NOT_APPROVED');
+  const hasOpenAddress = addresses.some(
+    (a) => !a.status || ['PENDING', 'ASSIGNED', 'IN_REVIEW', 'VERIFICATION_SUBMITTED'].includes(a.status),
+  );
+  // Mirrors the server: rejecting only closes open addresses, so a request
+  // whose visited addresses are all decided has nothing left to reject
+  const canRejectRequest =
+    user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (paidAddresses.length === 0 || hasOpenAddress);
 
   const userLat = user.latitude ?? user.addresses?.[0]?.latitude;
   const userLng = user.longitude ?? user.addresses?.[0]?.longitude;
@@ -605,7 +615,7 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                 Revive Job
               </Button>
             )}
-            {user.status !== 'REJECTED' && user.status !== 'VERIFIED' && (
+            {canRejectRequest && (
               <Button
                 variant="danger"
                 size="sm"
@@ -720,7 +730,17 @@ export default function KYCUserDetailsPage({ params }: PageProps) {
                       <CardTitle className="text-error mb-1">Verification Rejected</CardTitle>
                       <div className="text-sm text-error/90 space-y-2">
                         <p>The verification submission was not convincing. The verification was not done properly.</p>
-                        <p className="text-xs text-red-600 font-medium">Agent does not get paid ✗</p>
+                        {paidAddresses.length > 0 ? (
+                          <p className="text-xs text-emerald-700 font-medium">
+                            Agent still gets paid ✓ for{' '}
+                            {paidAddresses
+                              .map((a) => `${a.label || 'Address'} (${a.status === 'VERIFIED' ? 'Approved' : 'Not Approved'})`)
+                              .join(', ')}
+                            . That decision was made before this rejection and stands.
+                          </p>
+                        ) : (
+                          <p className="text-xs text-red-600 font-medium">Agent does not get paid ✗</p>
+                        )}
                         {user.verificationDate && (
                           <p className="text-xs text-red-500">Decision made: {format(new Date(user.verificationDate), 'PPp')}</p>
                         )}
