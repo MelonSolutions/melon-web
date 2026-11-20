@@ -7,7 +7,7 @@ import {
   getReportByEditToken,
   updateReportByEditToken,
 } from '@/lib/api/reports';
-import { QuestionBuilder } from '@/components/forms/QuestionBuilder';
+import { QuestionBuilder, cleanQuestions, questionErrors } from '@/components/forms/QuestionBuilder';
 import { PublicFormLayout } from '@/components/forms/PublicFormLayout';
 
 const CATEGORIES = [
@@ -60,12 +60,10 @@ export default function EditFormPage() {
       return;
     }
 
-    // Validate all questions have titles
-    for (const question of report.questions || []) {
-      if (!question.title?.trim()) {
-        setError('All questions must have a title');
-        return;
-      }
+    const problems = questionErrors(report.questions || []);
+    if (Object.keys(problems).length) {
+      setError(`${Object.keys(problems).length} question(s) need attention: ${Object.values(problems)[0]}`);
+      return;
     }
 
     setSaving(true);
@@ -77,7 +75,7 @@ export default function EditFormPage() {
         title: report.title,
         description: report.description,
         category: report.category,
-        questions: report.questions,
+        questions: cleanQuestions(report.questions || []),
       });
 
       setReport(updated);

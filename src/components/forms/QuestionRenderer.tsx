@@ -1,290 +1,310 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React from 'react';
-import { Question } from '@/types/reports';
+import { Check, MapPin } from 'lucide-react';
+import FileUploadField from '@/components/reports/FileUploadField';
+import { FormQuestion, OTHERS, matrixAxes } from './answers';
 
-interface QuestionRendererProps {
-  question: Question;
+interface QuestionInputProps {
+  question: FormQuestion;
   value: any;
   onChange: (value: any) => void;
-  error?: string;
+  invalid?: boolean;
 }
 
+const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
+
+// 16px text on phones stops iOS zooming into the field
+const fieldClass = (invalid?: boolean) =>
+  cx(
+    'w-full rounded-xl border bg-white px-4 py-3 text-base sm:text-[15px] text-gray-900 placeholder-gray-400 outline-none transition',
+    'focus:border-primary focus:ring-2 focus:ring-primary/20',
+    invalid ? 'border-red-300' : 'border-gray-200 hover:border-gray-300',
+  );
+
+/** A tappable option row: big enough for a thumb, clear when selected. */
+const OptionTile: React.FC<{
+  type: 'radio' | 'checkbox';
+  name: string;
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}> = ({ type, name, label, checked, onChange }) => (
+  <label
+    className={cx(
+      'flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors',
+      checked ? 'border-primary bg-primary-light' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50',
+    )}
+  >
+    <input type={type} name={name} checked={checked} onChange={onChange} className="sr-only peer" />
+    <span
+      aria-hidden
+      className={cx(
+        'flex h-5 w-5 shrink-0 items-center justify-center border-2 transition-colors',
+        'peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40 peer-focus-visible:ring-offset-1',
+        type === 'radio' ? 'rounded-full' : 'rounded-md',
+        checked ? 'border-primary bg-primary' : 'border-gray-300 bg-white',
+      )}
+    >
+      {checked &&
+        (type === 'radio' ? (
+          <span className="h-2 w-2 rounded-full bg-white" />
+        ) : (
+          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+        ))}
+    </span>
+    <span className="text-[15px] leading-snug text-gray-800">{label}</span>
+  </label>
+);
+
 /**
- * Renders a single survey question based on its type.
- * Supports both UPPERCASE (backend enum) and lowercase type strings.
+ * The answer control for one survey question, without its card or title.
+ * Accepts backend (UPPERCASE) and legacy lowercase type strings.
  */
-export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
-  question,
-  value,
-  onChange,
-  error,
-}) => {
-  const normalizedType = question.type.toUpperCase();
+export const QuestionInput: React.FC<QuestionInputProps> = ({ question, value, onChange, invalid }) => {
+  const type = question.type.toUpperCase();
+  const options = (question.options ?? []).filter((o: any) => typeof o === 'string') as string[];
+  const allowOther = !!question.settings?.allowOther;
 
-  const inputStyles =
-    'w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none';
+  switch (type) {
+    case 'MULTIPLE_CHOICE': {
+      const othersSelected = typeof value === 'object' && value?.option === OTHERS;
+      return (
+        <div className="space-y-2">
+          {options.map((option) => (
+            <OptionTile
+              key={option}
+              type="radio"
+              name={`q-${question.id}`}
+              label={option}
+              checked={!othersSelected && value === option}
+              onChange={() => onChange(option)}
+            />
+          ))}
+          {allowOther && (
+            <>
+              <OptionTile
+                type="radio"
+                name={`q-${question.id}`}
+                label="Other"
+                checked={othersSelected}
+                onChange={() => onChange({ option: OTHERS, customText: othersSelected ? value.customText : '' })}
+              />
+              {othersSelected && (
+                <input
+                  type="text"
+                  value={value?.customText || ''}
+                  onChange={(e) => onChange({ option: OTHERS, customText: e.target.value })}
+                  placeholder="Type your answer"
+                  aria-label="Other, please specify"
+                  className={fieldClass(invalid)}
+                  autoFocus
+                />
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
 
-  const renderInput = () => {
-    switch (normalizedType) {
-      case 'MULTIPLE_CHOICE': {
-        const isOthersSelected = typeof value === 'object' && value?.option === '- Others';
-        const currentValue = isOthersSelected ? '- Others' : value;
+    case 'CHECKBOXES': {
+      const current: any[] = Array.isArray(value) ? value : [];
+      const chosen = current.filter((v) => typeof v === 'string') as string[];
+      const others = current.find((v) => typeof v === 'object' && v?.option === OTHERS);
+      const set = (nextChosen: string[], nextOthers = others) =>
+        onChange(nextOthers ? [...nextChosen, nextOthers] : nextChosen);
+      return (
+        <div className="space-y-2">
+          {options.map((option) => (
+            <OptionTile
+              key={option}
+              type="checkbox"
+              name={`q-${question.id}-${option}`}
+              label={option}
+              checked={chosen.includes(option)}
+              onChange={() =>
+                set(chosen.includes(option) ? chosen.filter((v) => v !== option) : [...chosen, option])
+              }
+            />
+          ))}
+          {allowOther && (
+            <>
+              <OptionTile
+                type="checkbox"
+                name={`q-${question.id}-others`}
+                label="Other"
+                checked={!!others}
+                onChange={() => set(chosen, others ? undefined : { option: OTHERS, customText: '' })}
+              />
+              {others && (
+                <input
+                  type="text"
+                  value={others.customText || ''}
+                  onChange={(e) => set(chosen, { option: OTHERS, customText: e.target.value })}
+                  placeholder="Type your answer"
+                  aria-label="Other, please specify"
+                  className={fieldClass(invalid)}
+                  autoFocus
+                />
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
 
-        return (
-          <div className="space-y-2.5">
-            {question.options?.map((option, index) => (
-              <label
-                key={index}
-                className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="relative flex items-center justify-center">
+    case 'DROPDOWN': {
+      const othersSelected = typeof value === 'object' && value?.option === OTHERS;
+      return (
+        <div className="space-y-2">
+          <select
+            value={othersSelected ? OTHERS : value || ''}
+            onChange={(e) =>
+              onChange(e.target.value === OTHERS ? { option: OTHERS, customText: '' } : e.target.value)
+            }
+            className={cx(fieldClass(invalid), !value && 'text-gray-400')}
+          >
+            <option value="">Select an option</option>
+            {options.map((option) => (
+              <option key={option} value={option} className="text-gray-900">
+                {option}
+              </option>
+            ))}
+            {allowOther && (
+              <option value={OTHERS} className="text-gray-900">
+                Other (please specify)
+              </option>
+            )}
+          </select>
+          {othersSelected && (
+            <input
+              type="text"
+              value={value?.customText || ''}
+              onChange={(e) => onChange({ option: OTHERS, customText: e.target.value })}
+              placeholder="Type your answer"
+              aria-label="Other, please specify"
+              className={fieldClass(invalid)}
+              autoFocus
+            />
+          )}
+        </div>
+      );
+    }
+
+    case 'PARAGRAPH':
+      return (
+        <textarea
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={question.settings?.placeholder || 'Your answer'}
+          rows={4}
+          className={cx(fieldClass(invalid), 'resize-y min-h-[112px]')}
+        />
+      );
+
+    case 'LINEAR_SCALE': {
+      const min = Number(question.settings?.min ?? 1);
+      const max = Number(question.settings?.max ?? 5);
+      const step = Math.max(1, Number(question.settings?.step ?? 1));
+      const points: number[] = [];
+      for (let i = min; i <= max && points.length < 21; i += step) points.push(i);
+      return (
+        <div>
+          <div
+            role="radiogroup"
+            className="grid gap-1.5 sm:gap-2"
+            style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}
+          >
+            {points.map((num) => {
+              const selected = String(value) === String(num);
+              return (
+                <label key={num} className="cursor-pointer">
                   <input
                     type="radio"
-                    name={`question-${question.id}`}
-                    value={option}
-                    checked={currentValue === option}
-                    onChange={(e) => onChange(e.target.value)}
-                    className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 cursor-pointer"
+                    name={`q-${question.id}`}
+                    checked={selected}
+                    onChange={() => onChange(num)}
+                    className="sr-only peer"
                   />
-                </div>
-                <span className="text-gray-800 text-[15px]">{option}</span>
-              </label>
-            ))}
-            {question.settings?.allowOther && (
-              <div className="space-y-2">
-                <label className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="relative flex items-center justify-center">
-                    <input
+                  <span
+                    className={cx(
+                      'flex h-11 items-center justify-center rounded-lg border text-sm font-semibold tabular-nums transition-colors',
+                      'peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40',
+                      selected
+                        ? 'border-primary bg-primary text-white'
+                        : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary',
+                    )}
+                  >
+                    {num}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          <div className="mt-2 flex justify-between text-xs text-gray-400">
+            <span>Lowest</span>
+            <span>Highest</span>
+          </div>
+        </div>
+      );
+    }
+
+    case 'MATRIX': {
+      const { rows, columns } = matrixAxes(question);
+      const answer: Record<string, string> = (value && typeof value === 'object' ? value : {}) as any;
+      const pick = (row: string, col: string) => onChange({ ...answer, [row]: col });
+      return (
+        <>
+          {/* Phones: one block per row, options as tiles */}
+          <div className="space-y-5 sm:hidden">
+            {rows.map((row, r) => (
+              <fieldset key={row}>
+                <legend className="mb-2 text-sm font-semibold text-gray-800">{row}</legend>
+                <div className="space-y-2">
+                  {columns.map((col) => (
+                    <OptionTile
+                      key={col}
                       type="radio"
-                      name={`question-${question.id}`}
-                      value="- Others"
-                      checked={isOthersSelected}
-                      onChange={() => onChange({ option: '- Others', customText: '' })}
-                      className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 cursor-pointer"
+                      name={`m-${question.id}-${r}`}
+                      label={col}
+                      checked={answer[row] === col}
+                      onChange={() => pick(row, col)}
                     />
-                  </div>
-                  <span className="text-gray-800 text-[15px]">- Others</span>
-                </label>
-                {isOthersSelected && (
-                  <input
-                    type="text"
-                    value={value?.customText || ''}
-                    onChange={(e) => onChange({ option: '- Others', customText: e.target.value })}
-                    placeholder="Please specify..."
-                    className="ml-9 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none text-sm"
-                    autoFocus
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      case 'CHECKBOXES': {
-        const currentValues = Array.isArray(value) ? value : [];
-        const othersObject = currentValues.find((v: any) => typeof v === 'object' && v?.option === '- Others');
-        const isOthersChecked = !!othersObject;
-        const regularValues = currentValues.filter((v: any) => typeof v === 'string');
-
-        return (
-          <div className="space-y-2.5">
-            {question.options?.map((option, index) => (
-              <label
-                key={index}
-                className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  value={option}
-                  checked={regularValues.includes(option)}
-                  onChange={(e) => {
-                    const newValues = currentValues.filter((v: any) => typeof v === 'object');
-                    if (e.target.checked) {
-                      onChange([...regularValues, option, ...newValues]);
-                    } else {
-                      onChange([...regularValues.filter((v: string) => v !== option), ...newValues]);
-                    }
-                  }}
-                  className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 rounded cursor-pointer"
-                />
-                <span className="text-gray-800 text-[15px]">{option}</span>
-              </label>
-            ))}
-            {question.settings?.allowOther && (
-              <div className="space-y-2">
-                <label className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={isOthersChecked}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        onChange([...regularValues, { option: '- Others', customText: '' }]);
-                      } else {
-                        onChange(regularValues);
-                      }
-                    }}
-                    className="w-[18px] h-[18px] text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 rounded cursor-pointer"
-                  />
-                  <span className="text-gray-800 text-[15px]">- Others</span>
-                </label>
-                {isOthersChecked && (
-                  <input
-                    type="text"
-                    value={othersObject?.customText || ''}
-                    onChange={(e) => {
-                      const newValues = regularValues.filter((v: any) => typeof v === 'string');
-                      onChange([...newValues, { option: '- Others', customText: e.target.value }]);
-                    }}
-                    placeholder="Please specify..."
-                    className="ml-9 w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none text-sm"
-                    autoFocus
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      case 'DROPDOWN': {
-        const isOthersSelected = typeof value === 'object' && value?.option === '- Others';
-        const currentValue = isOthersSelected ? '- Others' : (value || '');
-
-        return (
-          <div className="space-y-3">
-            <select
-              value={currentValue}
-              onChange={(e) => {
-                if (e.target.value === '- Others') {
-                  onChange({ option: '- Others', customText: '' });
-                } else {
-                  onChange(e.target.value);
-                }
-              }}
-              className={inputStyles}
-            >
-              <option value="">— Select an option —</option>
-              {question.options?.map((option, index) => (
-                <option key={index} value={option}>
-                  {option}
-                </option>
-              ))}
-              {question.settings?.allowOther && (
-                <option value="- Others">- Others (please specify)</option>
-              )}
-            </select>
-            {isOthersSelected && (
-              <input
-                type="text"
-                value={value?.customText || ''}
-                onChange={(e) => onChange({ option: '- Others', customText: e.target.value })}
-                placeholder="Please specify..."
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none"
-                autoFocus
-              />
-            )}
-          </div>
-        );
-      }
-
-      case 'SHORT_ANSWER':
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={question.settings?.placeholder || 'Your answer'}
-            className={inputStyles}
-          />
-        );
-
-      case 'PARAGRAPH':
-        return (
-          <textarea
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={question.settings?.placeholder || 'Your answer'}
-            rows={4}
-            className={`${inputStyles} resize-none`}
-          />
-        );
-
-      case 'LINEAR_SCALE': {
-        const min = question.settings?.min ?? 1;
-        const max = question.settings?.max ?? 5;
-        const step = question.settings?.step ?? 1;
-        const scaleValues: number[] = [];
-        for (let i = min; i <= max; i += step) {
-          scaleValues.push(i);
-        }
-        return (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-sm text-gray-500 mr-1">{min}</span>
-            {scaleValues.map((num) => (
-              <label key={num} className="cursor-pointer">
-                <input
-                  type="radio"
-                  name={`question-${question.id}`}
-                  value={num}
-                  checked={String(value) === String(num)}
-                  onChange={() => onChange(num)}
-                  className="sr-only"
-                />
-                <div
-                  className={`w-10 h-10 border-2 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
-                    String(value) === String(num)
-                      ? 'border-[#5B94E5] bg-[#5B94E5] text-white shadow-md scale-110'
-                      : 'border-gray-300 text-gray-600 hover:border-[#5B94E5] hover:text-[#5B94E5]'
-                  }`}
-                >
-                  {num}
+                  ))}
                 </div>
-              </label>
+              </fieldset>
             ))}
-            <span className="text-sm text-gray-500 ml-1">{max}</span>
           </div>
-        );
-      }
-
-      case 'MATRIX': {
-        const rows = question.settings?.rows || [];
-        const columns = question.settings?.columns || [];
-        const matrixValue = value || {};
-
-        return (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-gray-300">
+          {/* Wider screens: a grid */}
+          <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200">
+            <table className="w-full border-collapse text-sm">
               <thead>
-                <tr>
-                  <th className="border border-gray-300 bg-gray-50 p-3 text-left text-sm font-medium"></th>
-                  {columns.map((col, colIndex) => (
-                    <th key={colIndex} className="border border-gray-300 bg-gray-50 p-3 text-center text-sm font-medium">
+                <tr className="bg-gray-50">
+                  <th className="p-3" />
+                  {columns.map((col) => (
+                    <th key={col} className="p-3 text-center text-xs font-semibold text-gray-600 min-w-[72px]">
                       {col}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 p-3 text-sm font-medium text-gray-900">
-                      {row}
-                    </td>
-                    {columns.map((col, colIndex) => (
-                      <td key={colIndex} className="border border-gray-300 p-3 text-center">
-                        <input
-                          type="radio"
-                          name={`matrix-${question.id}-row-${rowIndex}`}
-                          value={col}
-                          checked={matrixValue[row] === col}
-                          onChange={() => {
-                            const newValue = { ...matrixValue, [row]: col };
-                            onChange(newValue);
-                          }}
-                          className="w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] focus:ring-offset-0 border-gray-300 cursor-pointer"
-                        />
+                {rows.map((row, r) => (
+                  <tr key={row} className="border-t border-gray-100 hover:bg-gray-50/60">
+                    <td className="p-3 font-medium text-gray-800 min-w-[140px]">{row}</td>
+                    {columns.map((col) => (
+                      <td key={col} className="p-0 text-center">
+                        <label className="flex h-12 cursor-pointer items-center justify-center">
+                          <input
+                            type="radio"
+                            name={`t-${question.id}-${r}`}
+                            checked={answer[row] === col}
+                            onChange={() => pick(row, col)}
+                            aria-label={`${row}: ${col}`}
+                            className="h-[18px] w-[18px] cursor-pointer accent-[#5B94E5]"
+                          />
+                        </label>
                       </td>
                     ))}
                   </tr>
@@ -292,130 +312,87 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
               </tbody>
             </table>
           </div>
-        );
-      }
-
-      case 'DATE':
-        return (
-          <input
-            type="date"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            className={inputStyles}
-          />
-        );
-
-      case 'TIME':
-        return (
-          <input
-            type="time"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            className={inputStyles}
-          />
-        );
-
-      case 'EMAIL':
-        return (
-          <input
-            type="email"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="email@example.com"
-            className={inputStyles}
-          />
-        );
-
-      case 'PHONE':
-        return (
-          <input
-            type="tel"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="+234-800-000-0000"
-            className={inputStyles}
-          />
-        );
-
-      case 'NUMBER':
-        return (
-          <input
-            type="number"
-            value={value ?? ''}
-            onChange={(e) => onChange(e.target.value === '' ? '' : e.target.valueAsNumber)}
-            min={question.settings?.min}
-            max={question.settings?.max}
-            step={question.settings?.step || 1}
-            placeholder={question.settings?.placeholder || 'Enter a number'}
-            className={inputStyles}
-          />
-        );
-
-      case 'GPS_LOCATION':
-        return <GpsLocationInput value={value} onChange={onChange} />;
-
-      case 'IMPACT_METRIC':
-        return (
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1.5">
-              Actual Value
-            </label>
-            <input
-              type="number"
-              value={value ?? ''}
-              onChange={(e) => onChange(e.target.value === '' ? '' : e.target.valueAsNumber)}
-              placeholder="Enter numeric value"
-              min={0}
-              className={inputStyles}
-            />
-          </div>
-        );
-
-      default:
-        return (
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Your answer"
-            className={inputStyles}
-          />
-        );
+        </>
+      );
     }
-  };
 
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 transition-shadow hover:shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-[15px] font-semibold text-gray-900 leading-snug">
-          {question.title}
-          {question.required && (
-            <span className="text-red-500 ml-1" aria-label="required">
-              *
-            </span>
-          )}
-        </h3>
-        {question.description && (
-          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed whitespace-pre-line">
-            {question.description}
-          </p>
-        )}
-      </div>
-      <div className="mt-3">{renderInput()}</div>
-      {error && (
-        <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {error}
-        </p>
-      )}
-    </div>
-  );
+    case 'DATE':
+    case 'TIME':
+      return (
+        <input
+          type={type === 'DATE' ? 'date' : 'time'}
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          className={cx(fieldClass(invalid), 'sm:max-w-xs')}
+        />
+      );
+
+    case 'EMAIL':
+      return (
+        <input
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="name@example.com"
+          className={fieldClass(invalid)}
+        />
+      );
+
+    case 'PHONE':
+      return (
+        <input
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0803 000 0000"
+          className={cx(fieldClass(invalid), 'sm:max-w-xs')}
+        />
+      );
+
+    case 'NUMBER':
+    case 'IMPACT_METRIC':
+      return (
+        <input
+          type="number"
+          inputMode="decimal"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value === '' ? '' : e.target.valueAsNumber)}
+          min={type === 'IMPACT_METRIC' ? 0 : question.settings?.min}
+          max={question.settings?.max}
+          step={question.settings?.step || 'any'}
+          placeholder={question.settings?.placeholder || 'Enter a number'}
+          className={cx(fieldClass(invalid), 'sm:max-w-xs')}
+        />
+      );
+
+    case 'GPS_LOCATION':
+      return <GpsLocationInput value={value} onChange={onChange} />;
+
+    case 'FILE_UPLOAD':
+      return (
+        <FileUploadField
+          questionId={question.id}
+          currentValue={typeof value === 'string' ? value : ''}
+          onUpload={(_, url) => onChange(url)}
+        />
+      );
+
+    case 'SHORT_ANSWER':
+    default:
+      return (
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={question.settings?.placeholder || 'Your answer'}
+          className={fieldClass(invalid)}
+        />
+      );
+  }
 };
 
 interface GpsAnswer {
@@ -426,10 +403,7 @@ interface GpsAnswer {
 }
 
 const isGpsAnswer = (v: unknown): v is GpsAnswer =>
-  !!v &&
-  typeof v === 'object' &&
-  typeof (v as GpsAnswer).lat === 'number' &&
-  typeof (v as GpsAnswer).lng === 'number';
+  !!v && typeof v === 'object' && typeof (v as GpsAnswer).lat === 'number' && typeof (v as GpsAnswer).lng === 'number';
 
 /**
  * Captures the device's location. The answer is stored as
@@ -468,9 +442,7 @@ const GpsLocationInput: React.FC<{ value: unknown; onChange: (value: GpsAnswer |
       (err) => {
         setStatus('idle');
         if (err.code === err.PERMISSION_DENIED) {
-          setMessage(
-            'Location permission was refused. Allow location for this site in the browser settings, then try again.',
-          );
+          setMessage('Location permission was refused. Allow location for this site in the browser settings, then try again.');
         } else if (err.code === err.TIMEOUT) {
           setMessage('Finding the location took too long. Move to an open spot and try again.');
         } else {
@@ -483,37 +455,45 @@ const GpsLocationInput: React.FC<{ value: unknown; onChange: (value: GpsAnswer |
 
   return (
     <div className="space-y-3">
-      {captured && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800">
-          <p className="font-medium tabular-nums">
-            {captured.lat}, {captured.lng}
-          </p>
-          {captured.accuracy !== undefined && (
-            <p className="text-gray-500 mt-0.5">Accurate to about {captured.accuracy} m</p>
-          )}
+      {captured ? (
+        <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+          <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+          <div className="min-w-0 text-sm">
+            <p className="font-semibold text-green-800">Location captured</p>
+            <p className="mt-0.5 tabular-nums text-green-700">
+              {captured.lat}, {captured.lng}
+              {captured.accuracy !== undefined && <span className="text-green-600"> · within about {captured.accuracy} m</span>}
+            </p>
+          </div>
         </div>
-      )}
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={capture}
           disabled={status === 'locating'}
-          className="px-4 py-2.5 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7EC9] disabled:opacity-60 transition-colors"
+          className={cx(
+            'inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-60',
+            captured
+              ? 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+              : 'bg-primary text-white hover:bg-primary-hover',
+          )}
         >
+          <MapPin className="h-4 w-4" />
           {status === 'locating' ? 'Finding location…' : captured ? 'Capture again' : 'Capture location'}
         </button>
         {captured && status !== 'locating' && (
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="px-4 py-2.5 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            className="rounded-xl px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
           >
             Clear
           </button>
         )}
       </div>
       {message && (
-        <p className="text-sm text-red-500" role="alert">
+        <p className="text-sm text-red-600" role="alert">
           {message}
         </p>
       )}

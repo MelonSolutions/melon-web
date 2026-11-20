@@ -6,6 +6,10 @@ import { useRouter } from 'next/navigation';
 import { apiClient, AuthError, SigninResponse, User, OrganizationDetails, AcceptInvitationRequest } from '@/lib/api/auth';
 import { endSession, initSession, onSessionExpired, startSession } from '@/lib/auth/session';
 
+/** Pages people fill in without an account (shared survey links). */
+const isPublicFormPath = (path: string) =>
+  path.startsWith('/reports/public/') || path.startsWith('/forms/');
+
 export interface AuthState {
   user: User | null;
   organization: OrganizationDetails | null;
@@ -224,7 +228,9 @@ export function useAuth(): AuthState & AuthActions {
       isAuthenticated: false,
       isLoading: false,
     });
-    router.push('/login');
+    // Respondents on a shared form have no account: a failed or flaky session
+    // check must never send them to sign-in. Dashboard pages guard themselves.
+    if (!isPublicFormPath(window.location.pathname)) router.push('/login');
   };
 
   const refreshUser = async () => {

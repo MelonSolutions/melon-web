@@ -1,408 +1,186 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Plus } from 'lucide-react';
+import type { Question, QuestionType } from '@/types/reports';
+import { QuestionEditor } from './QuestionEditor';
+import { QUESTION_TYPES, duplicateOf, newQuestion } from './question-types';
 
-interface Question {
-  id: string;
-  type: string;
-  title: string;
-  description?: string;
-  required: boolean;
-  options?: string[];
-  allowOthers?: boolean;
-  settings?: any;
+/** After a render, scroll a question into view and put the cursor in its title. */
+export function focusQuestion(id: string) {
+  requestAnimationFrame(() => {
+    const el = document.getElementById(`builder-${id}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el?.querySelector('textarea')?.focus({ preventScroll: true });
+  });
+}
+
+const cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');
+
+/** Type buttons; used in the builder sidebar and the add-question menu. */
+export function QuestionTypePalette({
+  onPick,
+  compact = false,
+}: {
+  onPick: (type: QuestionType) => void;
+  compact?: boolean;
+}) {
+  const groups = Array.from(new Set(QUESTION_TYPES.map((t) => t.group)));
+  return (
+    <div className={compact ? 'grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2' : 'space-y-4'}>
+      {groups.map((group) => (
+        <div key={group}>
+          <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">{group}</p>
+          <div className="space-y-0.5">
+            {QUESTION_TYPES.filter((t) => t.group === group).map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => onPick(t.value)}
+                title={t.hint}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm text-gray-700 transition-colors hover:bg-primary-light hover:text-primary"
+              >
+                <t.icon className="h-4 w-4 shrink-0 text-gray-400" />
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 interface QuestionBuilderProps {
   questions: Question[];
   onChange: (questions: Question[]) => void;
+  /** Ask before deleting; call proceed() to delete. Defaults to window.confirm. */
+  confirmDelete?: (question: Question, proceed: () => void) => void;
+  /** Per-question errors keyed by question id. */
+  errors?: Record<string, string>;
+  minQuestions?: number;
 }
 
-const QUESTION_TYPES = [
-  { value: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: '🔘' },
-  { value: 'CHECKBOXES', label: 'Checkboxes', icon: '☑️' },
-  { value: 'DROPDOWN', label: 'Dropdown', icon: '📋' },
-  { value: 'SHORT_ANSWER', label: 'Short Answer', icon: '📄' },
-  { value: 'PARAGRAPH', label: 'Paragraph', icon: '📝' },
-  { value: 'LINEAR_SCALE', label: 'Linear Scale', icon: '📊' },
-  { value: 'DATE', label: 'Date', icon: '📅' },
-  { value: 'TIME', label: 'Time', icon: '🕐' },
-  { value: 'EMAIL', label: 'Email', icon: '✉️' },
-  { value: 'PHONE', label: 'Phone', icon: '📞' },
-  { value: 'NUMBER', label: 'Number', icon: '🔢' },
-  { value: 'IMPACT_METRIC', label: 'Impact Metric', icon: '📈' },
-];
-
-const generateId = () =>
-  typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
 /**
- * Interactive question builder for creating/editing survey questions.
- * Supports all 12 question types, re-ordering, options management, and inline editing.
+ * The question list of a survey: edit, reorder, duplicate, delete, add.
+ * Every survey editor (create, edit, shared edit link) uses this one.
  */
-export const QuestionBuilder: React.FC<QuestionBuilderProps> = ({
-  questions,
-  onChange,
-}) => {
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+export function QuestionBuilder({ questions, onChange, confirmDelete, errors, minQuestions = 1 }: QuestionBuilderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const addQuestion = () => {
-    const newQuestion: Question = {
-      id: generateId(),
-      type: 'SHORT_ANSWER',
-      title: '',
-      required: false,
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     };
-    onChange([...questions, newQuestion]);
-    setEditingIndex(questions.length);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [menuOpen]);
+
+  const add = (type: QuestionType) => {
+    const q = newQuestion(type);
+    onChange([...questions, q]);
+    setMenuOpen(false);
+    focusQuestion(q.id);
   };
 
-  const updateQuestion = (index: number, updates: Partial<Question>) => {
-    const updated = [...questions];
-    updated[index] = { ...updated[index], ...updates };
+  const replace = (index: number, next: Question) => onChange(questions.map((q, i) => (i === index ? next : q)));
 
-    // Auto-add empty options when switching to a choice-based type
-    if (updates.type && needsOptions(updates.type) && !(updated[index].options?.length)) {
-      updated[index].options = ['Option 1'];
-    }
-
-    onChange(updated);
+  const move = (index: number, direction: 'up' | 'down') => {
+    const to = direction === 'up' ? index - 1 : index + 1;
+    if (to < 0 || to >= questions.length) return;
+    const next = [...questions];
+    [next[index], next[to]] = [next[to], next[index]];
+    onChange(next);
   };
 
-  const deleteQuestion = (index: number) => {
-    if (confirm('Are you sure you want to delete this question?')) {
-      onChange(questions.filter((_, i) => i !== index));
-      if (editingIndex === index) setEditingIndex(null);
-    }
+  const duplicate = (index: number) => {
+    const copy = duplicateOf(questions[index]);
+    const next = [...questions];
+    next.splice(index + 1, 0, copy);
+    onChange(next);
+    focusQuestion(copy.id);
   };
 
-  const moveQuestion = (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= questions.length) return;
-
-    const updated = [...questions];
-    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
-    onChange(updated);
-    setEditingIndex(newIndex);
-  };
-
-  const needsOptions = (type: string) =>
-    ['MULTIPLE_CHOICE', 'CHECKBOXES', 'DROPDOWN'].includes(type);
-
-  const addOption = (questionIndex: number) => {
-    const question = questions[questionIndex];
-    const options = question.options || [];
-    updateQuestion(questionIndex, {
-      options: [...options, `Option ${options.length + 1}`],
-    });
-  };
-
-  const updateOption = (
-    questionIndex: number,
-    optionIndex: number,
-    value: string,
-  ) => {
-    const options = [...(questions[questionIndex].options || [])];
-    options[optionIndex] = value;
-    updateQuestion(questionIndex, { options });
-  };
-
-  const deleteOption = (questionIndex: number, optionIndex: number) => {
-    const options = (questions[questionIndex].options || []).filter(
-      (_, i) => i !== optionIndex,
-    );
-    updateQuestion(questionIndex, { options });
+  const remove = (index: number) => {
+    const target = questions[index];
+    const proceed = () => onChange(questions.filter((q) => q.id !== target.id));
+    if (confirmDelete) confirmDelete(target, proceed);
+    else if (window.confirm('Delete this question?')) proceed();
   };
 
   return (
     <div className="space-y-4">
       {questions.map((question, index) => (
-        <div
-          key={question.id}
-          className={`border rounded-xl bg-white transition-shadow ${
-            editingIndex === index
-              ? 'border-[#5B94E5] shadow-md ring-1 ring-[#5B94E5]/20'
-              : 'border-gray-200 hover:shadow-sm'
-          }`}
-        >
-          {/* Collapsed view */}
-          {editingIndex !== index ? (
-            <div
-              onClick={() => setEditingIndex(index)}
-              className="flex items-center gap-3 p-4 cursor-pointer"
-            >
-              <div className="flex flex-col gap-1 border border-gray-200 rounded-lg bg-gray-50 p-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    moveQuestion(index, 'up');
-                  }}
-                  disabled={index === 0}
-                  title="Move up"
-                  className="px-2 py-1 text-sm text-gray-500 hover:text-white hover:bg-[#5B94E5] rounded disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-gray-500 transition-colors"
-                >
-                  ▲
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    moveQuestion(index, 'down');
-                  }}
-                  disabled={index === questions.length - 1}
-                  title="Move down"
-                  className="px-2 py-1 text-sm text-gray-500 hover:text-white hover:bg-[#5B94E5] rounded disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-gray-500 transition-colors"
-                >
-                  ▼
-                </button>
-              </div>
-
-              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-xs font-semibold text-gray-600">
-                {index + 1}
-              </span>
-
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-gray-900 truncate">
-                  {question.title || (
-                    <span className="text-gray-400 italic">Untitled Question</span>
-                  )}
-                  {question.required && (
-                    <span className="text-red-500 ml-1">*</span>
-                  )}
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  {QUESTION_TYPES.find((t) => t.value === question.type)?.icon}{' '}
-                  {QUESTION_TYPES.find((t) => t.value === question.type)?.label}
-                  {needsOptions(question.type) &&
-                    ` · ${(question.options || []).length} options`}
-                </div>
-              </div>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteQuestion(index);
-                }}
-                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            /* Expanded edit view */
-            <div className="p-5 space-y-5">
-              {/* Header row with number badge and controls */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#5B94E5] text-white text-xs font-bold">
-                    {index + 1}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-700">
-                    Editing Question
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => moveQuestion(index, 'up')}
-                    disabled={index === 0}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-20"
-                    title="Move up"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => moveQuestion(index, 'down')}
-                    disabled={index === questions.length - 1}
-                    className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-20"
-                    title="Move down"
-                  >
-                    ▼
-                  </button>
-                </div>
-              </div>
-
-              {/* Question Type selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Question Type
-                </label>
-                <select
-                  value={question.type}
-                  onChange={(e) =>
-                    updateQuestion(index, { type: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none"
-                >
-                  {QUESTION_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.icon} {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Question Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Question Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={question.title}
-                  onChange={(e) =>
-                    updateQuestion(index, { title: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none"
-                  placeholder="Enter your question"
-                  autoFocus
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Description{' '}
-                  <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <textarea
-                  value={question.description || ''}
-                  onChange={(e) =>
-                    updateQuestion(index, { description: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none resize-none"
-                  rows={2}
-                  placeholder="Additional context or instructions"
-                />
-              </div>
-
-              {/* Required toggle */}
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={question.required}
-                  onChange={(e) =>
-                    updateQuestion(index, { required: e.target.checked })
-                  }
-                  className="w-4 h-4 rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Required
-                </span>
-              </label>
-
-              {/* Allow Others toggle - only for choice-based questions */}
-              {needsOptions(question.type) && (
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={question.allowOthers || false}
-                    onChange={(e) =>
-                      updateQuestion(index, { allowOthers: e.target.checked })
-                    }
-                    className="w-4 h-4 rounded border-gray-300 text-[#5B94E5] focus:ring-[#5B94E5]"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Allow &apos;Others&apos; option with text input
-                  </span>
-                </label>
-              )}
-
-              {/* Options editor for choice-based types */}
-              {needsOptions(question.type) && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Options
-                  </label>
-                  <div className="space-y-2">
-                    {(question.options || []).map((option, optIndex) => (
-                      <div key={optIndex} className="flex items-center gap-2">
-                        <div
-                          className={`w-4 h-4 flex-shrink-0 border-2 border-gray-300 ${
-                            question.type === 'MULTIPLE_CHOICE'
-                              ? 'rounded-full'
-                              : 'rounded'
-                          }`}
-                        />
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={(e) =>
-                            updateOption(index, optIndex, e.target.value)
-                          }
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5B94E5] focus:border-[#5B94E5] transition-colors outline-none text-sm"
-                          placeholder={`Option ${optIndex + 1}`}
-                        />
-                        <button
-                          onClick={() => deleteOption(index, optIndex)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                    {/* Show "- Others" option if allowOthers is enabled */}
-                    {question.allowOthers && (
-                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
-                        <div
-                          className={`w-4 h-4 flex-shrink-0 border-2 border-gray-400 ${
-                            question.type === 'MULTIPLE_CHOICE'
-                              ? 'rounded-full'
-                              : 'rounded'
-                          }`}
-                        />
-                        <input
-                          type="text"
-                          value="- Others"
-                          disabled
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 text-sm cursor-not-allowed"
-                        />
-                        <div className="p-1.5 w-6 h-6" />
-                      </div>
-                    )}
-                    <button
-                      onClick={() => addOption(index)}
-                      className="text-sm text-[#5B94E5] hover:text-[#4A7EC9] font-medium flex items-center gap-1 mt-1"
-                    >
-                      <span className="text-lg leading-none">+</span> Add Option
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Action bar */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <button
-                  onClick={() => deleteQuestion(index)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Delete
-                </button>
-                <button
-                  onClick={() => setEditingIndex(null)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#5B94E5] text-white text-sm font-medium rounded-lg hover:bg-[#4A7EC9] transition-colors"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          )}
+        <div key={question.id} id={`builder-${question.id}`} className="scroll-mt-24">
+          <QuestionEditor
+            question={question}
+            index={index}
+            total={questions.length}
+            onChange={(next) => replace(index, next)}
+            onMove={(d) => move(index, d)}
+            onDuplicate={() => duplicate(index)}
+            onDelete={() => remove(index)}
+            canDelete={questions.length > minQuestions}
+            error={errors?.[question.id]}
+          />
         </div>
       ))}
 
-      {/* Add Question button */}
-      <button
-        onClick={addQuestion}
-        className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-[#5B94E5] hover:text-[#5B94E5] transition-colors flex items-center justify-center gap-2 font-medium"
-      >
-        <span className="text-xl leading-none">+</span> Add Question
-      </button>
+      <div ref={menuRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+          className={cx(
+            'flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed py-5 font-medium transition-colors',
+            menuOpen
+              ? 'border-primary bg-primary-light/50 text-primary'
+              : 'border-gray-300 text-gray-500 hover:border-primary hover:text-primary',
+          )}
+        >
+          <Plus className="h-5 w-5" />
+          Add question
+        </button>
+        {menuOpen && (
+          <div className="absolute inset-x-0 bottom-full z-20 mb-2 rounded-xl border border-gray-200 bg-white p-4 shadow-lg">
+            <QuestionTypePalette onPick={add} compact />
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}
+
+/** Problems that would stop a survey being saved, keyed by question id. */
+export function questionErrors(questions: Question[]): Record<string, string> {
+  const errors: Record<string, string> = {};
+  questions.forEach((q) => {
+    const type = q.type.toUpperCase();
+    if (!q.title?.trim()) errors[q.id] = 'Type the question.';
+    else if (['MULTIPLE_CHOICE', 'CHECKBOXES', 'DROPDOWN'].includes(type) && !q.options?.some((o) => o.trim()))
+      errors[q.id] = 'Add at least one option.';
+    else if (type === 'MATRIX' && (!q.settings?.rows?.some((r) => r.trim()) || !q.settings?.columns?.some((c) => c.trim())))
+      errors[q.id] = 'Add at least one row and one column.';
+  });
+  return errors;
+}
+
+/** Drop blank options, rows and columns before saving. */
+export function cleanQuestions(questions: Question[]): Question[] {
+  const tidy = (list?: string[]) => list?.map((s) => s.trim()).filter(Boolean);
+  return questions.map((q) => ({
+    ...q,
+    title: q.title.trim(),
+    ...(q.options ? { options: tidy(q.options) } : {}),
+    ...(q.settings?.rows || q.settings?.columns
+      ? { settings: { ...q.settings, rows: tidy(q.settings.rows), columns: tidy(q.settings.columns) } }
+      : {}),
+  }));
+}
