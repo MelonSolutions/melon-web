@@ -245,7 +245,9 @@ export const generateEditToken = async (reportId: string): Promise<{ editToken: 
   });
 
   await handleApiError(response);
-  return response.json();
+  const data: { editToken: string; editUrl: string } = await response.json();
+  // The API still builds this link on an old host; edit links open on this app
+  return { ...data, editUrl: `${window.location.origin}/forms/edit/${data.editToken}` };
 };
 
 // Get report by edit token (public)

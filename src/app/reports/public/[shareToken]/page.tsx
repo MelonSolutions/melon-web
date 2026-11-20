@@ -1,44 +1,73 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Create this file: app/reports/public/[shareToken]/page.tsx
-
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Send, CheckCircle, Clock, Info, MapPin, Upload, X, Image as ImageIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import FileUploadField from '@/components/reports/FileUploadField';
-import { Progress } from '@/components/ui/Progress';
-import { Badge } from '@/components/ui/Badge';
+import Image from 'next/image';
+import { Send, CheckCircle2, Clock, ListChecks, AlertCircle, Save } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/Toast';
-
-interface Question {
-  id: string;
-  type: string;
-  title: string;
-  description?: string;
-  required: boolean;
-  options?: string[] | [string[], string[]];
-  impactMetricId?: string;
-  settings?: any;
-}
+import { QuestionInput } from '@/components/forms/QuestionRenderer';
+import {
+  FormQuestion,
+  estimateMinutes,
+  formatAnswer,
+  isAnswered,
+  validateAnswer,
+} from '@/components/forms/answers';
 
 interface Report {
   _id: string;
   title: string;
   description?: string;
-  questions: Question[];
+  questions: FormQuestion[];
   collectEmail: boolean;
   isPublic: boolean;
   status: string;
+  allowMultipleResponses?: boolean;
+}
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RESPONDENT_EMAIL = '__respondentEmail';
+
+/** Centered card for loading, error and thank-you states. */
+function StateCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+      <BrandBar />
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sm:p-10 max-w-md w-full text-center">
+          {children}
+        </div>
+      </div>
+      <PoweredBy />
+    </div>
+  );
+}
+
+function BrandBar({ dark = false }: { dark?: boolean }) {
+  return (
+    <div className={dark ? '' : 'bg-[#12182B]'}>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
+        <Image src="/images/melon-logo-white.png" alt="Melon" width={84} height={16} priority />
+      </div>
+    </div>
+  );
+}
+
+function PoweredBy() {
+  return (
+    <p className="text-center text-xs text-gray-400 py-8">
+      Powered by <span className="font-semibold text-gray-500">Melon</span> · Your answers are sent securely
+    </p>
+  );
 }
 
 export default function PublicFormPage() {
   const params = useParams();
   const shareToken = params?.shareToken as string;
   const { addToast } = useToast();
-  
+
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -46,758 +75,418 @@ export default function PublicFormPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [responses, setResponses] = useState<Record<string, any>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [respondentName, setRespondentName] = useState('');
   const [respondentEmail, setRespondentEmail] = useState('');
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const storageKey = `melon_draft_${shareToken}`;
 
-  // Load draft from localStorage
+  // Restore an unfinished draft saved on this device
   useEffect(() => {
-    if (typeof window !== 'undefined' && shareToken) {
+    if (!shareToken) return;
+    try {
       const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.responses) setResponses(parsed.responses);
-          if (parsed.respondentName) setRespondentName(parsed.respondentName);
-          if (parsed.respondentEmail) setRespondentEmail(parsed.respondentEmail);
-        } catch (e) {
-          console.error('Failed to parse draft from localStorage', e);
-        }
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (parsed.responses && Object.keys(parsed.responses).length) {
+        setResponses(parsed.responses);
+        setDraftRestored(true);
       }
+      if (parsed.respondentName) setRespondentName(parsed.respondentName);
+      if (parsed.respondentEmail) setRespondentEmail(parsed.respondentEmail);
+    } catch {
+      // Storage blocked or draft unreadable: start fresh
     }
   }, [shareToken, storageKey]);
 
-  // Save draft to localStorage whenever fields change
+  // Keep the draft on this device until it is submitted
   useEffect(() => {
-    if (typeof window !== 'undefined' && shareToken) {
-      const draft = { responses, respondentName, respondentEmail };
-      // Only save if there's actual data to avoid overwriting with empty defaults prematurely
-      if (Object.keys(responses).length > 0 || respondentName || respondentEmail) {
-        localStorage.setItem(storageKey, JSON.stringify(draft));
-      }
+    if (!shareToken) return;
+    if (!Object.keys(responses).length && !respondentName && !respondentEmail) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ responses, respondentName, respondentEmail }));
+    } catch {
+      // Storage full or blocked: the form still works, the draft just isn't kept
     }
   }, [responses, respondentName, respondentEmail, shareToken, storageKey]);
 
   useEffect(() => {
-    if (shareToken) {
-      fetchPublicReport();
-    }
+    if (!shareToken) return;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/reports/public/${shareToken}`);
+        if (!response.ok) {
+          throw new Error(
+            response.status === 404
+              ? 'We couldn’t find this form. Check the link you were sent.'
+              : response.status === 403
+                ? 'This form isn’t open to the public.'
+                : 'The form didn’t load. Check your connection and refresh the page.',
+          );
+        }
+        setReport(await response.json());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'The form didn’t load.');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [shareToken]);
 
-  const fetchPublicReport = async () => {
+  const setAnswer = useCallback((questionId: string, value: any) => {
+    setResponses((prev) => ({ ...prev, [questionId]: value }));
+    setErrors((prev) => {
+      if (!prev[questionId]) return prev;
+      const next = { ...prev };
+      delete next[questionId];
+      return next;
+    });
+  }, []);
+
+  const answeredCount = useMemo(
+    () => (report ? report.questions.filter((q) => isAnswered(q, responses[q.id])).length : 0),
+    [report, responses],
+  );
+  const progress = report?.questions.length ? (answeredCount / report.questions.length) * 100 : 0;
+
+  const validate = (): Record<string, string> => {
+    const found: Record<string, string> = {};
+    if (report?.collectEmail && !respondentEmail.trim()) {
+      found[RESPONDENT_EMAIL] = 'Enter your email address.';
+    } else if (respondentEmail.trim() && !EMAIL.test(respondentEmail.trim())) {
+      found[RESPONDENT_EMAIL] = 'Enter a valid email address.';
+    }
+    report?.questions.forEach((q) => {
+      const message = validateAnswer(q, responses[q.id]);
+      if (message) found[q.id] = message;
+    });
+    return found;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+    if (!report) return;
+
+    const found = validate();
+    setErrors(found);
+    const keys = Object.keys(found);
+    if (keys.length) {
+      document.getElementById(`question-${keys[0]}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      addToast({
+        type: 'warning',
+        title: keys.length === 1 ? '1 question needs attention' : `${keys.length} questions need attention`,
+        message: 'They are marked in red.',
+      });
+      return;
+    }
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch(`/api/reports/public/${shareToken}`);
-      
+      setSubmitting(true);
+      const response = await fetch('/api/responses/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportId: report._id,
+          responses: report.questions.map((q) => formatAnswer(q, responses[q.id])).filter(Boolean),
+          respondentName: respondentName.trim() || undefined,
+          respondentEmail: respondentEmail.trim() || undefined,
+        }),
+      });
+
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Form not found');
-        } else if (response.status === 403) {
-          throw new Error('This form is not publicly accessible');
-        } else {
-          throw new Error('Failed to load form');
-        }
+        const data = await response.json().catch(() => ({}));
+        const raw: string = data.message || '';
+        const unavailable = response.status === 402 || raw.toLowerCase().includes('payment method');
+        throw new Error(
+          unavailable
+            ? 'This survey is temporarily unavailable. Please contact the survey owner.'
+            : raw || 'Your response wasn’t sent. Check your connection and try again; your answers are still here.',
+        );
       }
-      
-      const data = await response.json();
-      setReport(data);
+
+      setSubmitted(true);
+      window.scrollTo({ top: 0 });
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+        // Nothing to clean up
+      }
     } catch (err) {
-      console.error('Error fetching public report:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load form');
+      const message = err instanceof Error ? err.message : 'Your response wasn’t sent.';
+      setSubmitError(message);
+      addToast({ type: 'error', title: 'Not sent', message });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleResponseChange = (questionId: string, value: any) => {
-    setResponses(prev => ({
-      ...prev,
-      [questionId]: value
-    }));
+  const startAnother = () => {
+    setResponses({});
+    setErrors({});
+    setRespondentName('');
+    setRespondentEmail('');
+    setDraftRestored(false);
+    setSubmitted(false);
   };
 
-  const progress = useMemo(() => {
-    if (!report) return 0;
-    const answeredCount = Object.keys(responses).filter(id => {
-      const val = responses[id];
-      return val !== undefined && val !== '' && (!Array.isArray(val) || val.length > 0);
-    }).length;
-    return (answeredCount / report.questions.length) * 100;
-  }, [responses, report]);
-
-  const estimatedTime = useMemo(() => {
-    if (!report) return 0;
-    return Math.max(1, Math.ceil(report.questions.length / 3));
-  }, [report]);
-
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setSubmitError(null);
-  
-  if (!report) return;
-
-  const missingRequired = report.questions
-    .filter(q => q.required)
-    .filter(q => !responses[q.id] || responses[q.id] === '');
-  
-  if (missingRequired.length > 0) {
-    addToast({
-      type: 'warning',
-      title: 'Missing Required Fields',
-      message: 'Please fill in all required fields before submitting.',
-    });
-    return;
-  }
-
-  if (report.collectEmail && !respondentEmail) {
-    addToast({
-      type: 'warning',
-      title: 'Email Required',
-      message: 'Please provide your email address to submit this form.',
-    });
-    return;
-  }
-
-  try {
-    setSubmitting(true);
-    
-    const formattedResponses = Object.entries(responses).map(([questionId, value]) => {
-      const question = report.questions.find(q => q.id === questionId);
-      
-      if (question?.type === 'impact_metric') {
-        return {
-          questionId,
-          impactMetricId: question.impactMetricId,
-          actualValue: parseFloat(value) || 0
-        };
-      }
-
-      return {
-        questionId,
-        answer: Array.isArray(value) 
-          ? value.join(', ') 
-          : (typeof value === 'object' && value !== null ? value : value?.toString() || '')
-      };
-    });
-
-    const submitData = {
-      reportId: report._id,
-      responses: formattedResponses,
-      respondentName: respondentName || undefined,
-      respondentEmail: respondentEmail || undefined,
-    };
-
-    const response = await fetch('/api/responses/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(submitData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Failed to submit' }));
-      const rawMessage = errorData.message || 'Failed to submit response';
-      // Show user-friendly message for payment/billing errors
-      const isPaymentError = response.status === 402 || rawMessage.toLowerCase().includes('payment method');
-      throw new Error(
-        isPaymentError
-          ? 'This survey is temporarily unavailable. Please contact the survey owner for more information.'
-          : rawMessage
-      );
-    }
-
-    setSubmitted(true);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(storageKey);
-    }
-  } catch (err) {
-    console.error('Error submitting response:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Failed to submit response';
-    setSubmitError(errorMessage);
-    addToast({
-      type: 'error',
-      title: 'Submission Failed',
-      message: errorMessage,
-    });
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-  const renderQuestion = (question: Question) => {
-    const value = responses[question.id] || '';
-
-    switch (question.type) {
-      case 'multiple_choice':
-      case 'MULTIPLE_CHOICE':
-        return (
-          <div className="space-y-3">
-            {question.options?.map((option, index) => (
-              <label key={index} className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                <input
-                  type="radio"
-                  name={question.id}
-                  value={option}
-                  checked={value === option}
-                  onChange={(e) => handleResponseChange(question.id, e.target.value)}
-                  className="w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] border-gray-300"
-                />
-                <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{option}</span>
-              </label>
-            ))}
-          </div>
-        );
-
-      case 'checkboxes':
-      case 'CHECKBOXES':
-        return (
-          <div className="space-y-3">
-            {question.options?.map((option, index) => (
-              <label key={index} className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                <input
-                  type="checkbox"
-                  checked={Array.isArray(value) ? value.includes(option) : false}
-                  onChange={(e) => {
-                    const currentValues = Array.isArray(value) ? value : [];
-                    if (e.target.checked) {
-                      handleResponseChange(question.id, [...currentValues, option]);
-                    } else {
-                      handleResponseChange(question.id, currentValues.filter(v => v !== option));
-                    }
-                  }}
-                  className="w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] rounded border-gray-300"
-                />
-                <span className="text-gray-700 group-hover:text-gray-900 transition-colors">{option}</span>
-              </label>
-            ))}
-          </div>
-        );
-
-      case 'dropdown':
-      case 'DROPDOWN':
-        return (
-          <select
-            value={value}
-            onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all bg-white text-gray-900"
-          >
-            <option value="">Select an option</option>
-            {question.options?.map((option, index) => (
-              <option key={index} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        );
-
-      case 'short_answer':
-      case 'SHORT_ANSWER':
-        return (
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all bg-white text-gray-900"
-            placeholder="Your answer"
-          />
-        );
-
-      case 'paragraph':
-      case 'PARAGRAPH':
-        return (
-          <textarea
-            value={value}
-            onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all bg-white text-gray-900 resize-none"
-            placeholder="Your answer"
-          />
-        );
-
-      case 'linear_scale':
-      case 'LINEAR_SCALE':
-        return (
-          <div className="flex flex-col gap-4 py-2">
-            <div className="flex items-center justify-between px-2">
-              <span className="text-xs font-medium text-gray-400">Strongly Disagree</span>
-              <span className="text-xs font-medium text-gray-400">Strongly Agree</span>
-            </div>
-            <div className="flex items-center justify-between">
-              {[1, 2, 3, 4, 5].map(num => (
-                <label key={num} className="cursor-pointer">
-                  <input
-                    type="radio"
-                    name={question.id}
-                    value={num}
-                    checked={value === num.toString()}
-                    onChange={(e) => handleResponseChange(question.id, e.target.value)}
-                    className="sr-only"
-                  />
-                  <motion.div 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className={`w-12 h-12 border-2 rounded-2xl flex items-center justify-center text-base font-semibold transition-all ${
-                    value === num.toString()
-                      ? 'border-[#5B94E5] bg-[#5B94E5] text-white shadow-lg shadow-blue-200'
-                      : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-[#5B94E5] hover:bg-white hover:text-[#5B94E5]'
-                  }`}>
-                    {num}
-                  </motion.div>
-                </label>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'date':
-      case 'DATE':
-        return (
-          <input
-            type="date"
-            value={value}
-            onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            className="w-full md:w-auto px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all bg-white text-gray-900"
-          />
-        );
-
-      case 'time':
-      case 'TIME':
-        return (
-          <input
-            type="time"
-            value={value}
-            onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            className="w-full md:w-auto px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all bg-white text-gray-900"
-          />
-        );
-
-      case 'impact_metric':
-        return (
-          <input
-            type="number"
-            value={value}
-            onChange={(e) => handleResponseChange(question.id, parseFloat(e.target.value) || 0)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all bg-white text-gray-900"
-            placeholder="Enter numeric value"
-            min="0"
-          />
-        );
-
-      case 'matrix':
-      case 'MATRIX':
-        let rows: string[] = [];
-        let cols: string[] = [];
-
-        if (question.settings?.rows && question.settings?.columns) {
-          rows = question.settings.rows;
-          cols = question.settings.columns;
-        } else if (Array.isArray(question.options) && Array.isArray(question.options[0])) {
-          rows = question.options[0] as string[];
-          cols = question.options[1] as string[];
-        }
-
-        const matrixValue = (value as unknown as Record<string, string>) || {};
-
-        return (
-          <div className="overflow-x-auto w-full">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className="p-2 border-b border-gray-100"></th>
-                  {cols.map((col, cIdx) => (
-                    <th key={cIdx} className="p-2 border-b border-gray-100 text-sm font-medium text-gray-500 text-center min-w-[100px]">
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, rIdx) => (
-                  <tr key={rIdx} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-3 border-b border-gray-50 text-sm text-gray-700 min-w-[150px]">
-                      {row}
-                    </td>
-                    {cols.map((col, cIdx) => (
-                      <td key={cIdx} className="p-3 border-b border-gray-50 text-center">
-                        <label className="flex items-center justify-center w-full h-full cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`${question.id}_${rIdx}`}
-                            value={col}
-                            checked={matrixValue[row] === col}
-                            onChange={(e) => {
-                              handleResponseChange(question.id, {
-                                ...matrixValue,
-                                [row]: e.target.value
-                              } as any);
-                            }}
-                            className="cursor-pointer w-4 h-4 text-[#5B94E5] focus:ring-[#5B94E5] border-gray-300"
-                          />
-                        </label>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-
-      case 'gps_location':
-      case 'GPS_LOCATION':
-        const gpsValue = value as unknown as { lat: number; lng: number } | null;
-        return (
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => {
-                if ('geolocation' in navigator) {
-                  navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                      handleResponseChange(question.id, {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                      } as any);
-                    },
-                    (error) => {
-                      alert(
-                        error.code === error.PERMISSION_DENIED
-                          ? 'Location access is turned off. Allow location access for this site in your browser settings, then try again.'
-                          : "We couldn't get your location. Move somewhere with a better signal and try again.",
-                      );
-                    }
-                  );
-                } else {
-                  alert('Geolocation is not supported by your browser.');
-                }
-              }}
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 hover:bg-white hover:border-[#5B94E5]/50 transition-all cursor-pointer font-medium"
-            >
-              <MapPin className="w-5 h-5 text-[#5B94E5]" />
-              {gpsValue ? 'Recapture GPS Location' : 'Capture GPS Location'}
-            </button>
-            
-            {gpsValue && (
-              <div className="px-4 py-3 bg-green-50 border border-green-100 rounded-xl flex items-center justify-between">
-                <span className="text-sm font-medium text-green-700">Location captured successfully</span>
-                <span className="text-xs text-green-600 font-mono bg-green-100 px-2 py-1 rounded-md">
-                  {gpsValue.lat.toFixed(6)}, {gpsValue.lng.toFixed(6)}
-                </span>
-              </div>
-            )}
-          </div>
-        );
-
-      case 'file_upload':
-      case 'FILE_UPLOAD': {
-        const imageUrl = value as string;
-
-        return (
-          <FileUploadField
-            questionId={question.id}
-            currentValue={imageUrl}
-            onUpload={(qId, url) => handleResponseChange(qId, url)}
-          />
-        );
-      }
-
-      default:
-        return (
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all bg-white text-gray-900"
-            placeholder="Your answer"
-          />
-        );
-    }
-  };
-
+  // ─── States ───────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-[#5B94E5] rounded-full border-t-transparent animate-spin"></div>
-          </div>
-          <p className="text-gray-500 font-medium">Loading form details...</p>
-        </div>
-      </div>
+      <StateCard>
+        <div className="mx-auto mb-5 h-10 w-10 rounded-full border-4 border-gray-100 border-t-primary animate-spin" />
+        <p className="text-gray-500 font-medium">Loading the form…</p>
+      </StateCard>
     );
   }
 
-  if (error) {
+  if (error || !report || report.status !== 'PUBLISHED' || !report.isPublic) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-10 max-w-md w-full text-center border border-gray-100"
-        >
-          <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-red-500 text-3xl">⚠️</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Form Not Available</h1>
-          <p className="text-gray-600 mb-8 leading-relaxed">{error}</p>
-          <button
-            onClick={() => window.history.back()}
-            className="w-full py-4 bg-[#5B94E5] text-white font-semibold rounded-2xl hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-[0.98]"
-          >
-            Go Back
-          </button>
-        </motion.div>
-      </div>
+      <StateCard>
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+          <AlertCircle className="h-7 w-7 text-red-500" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">This form isn’t available</h1>
+        <p className="text-gray-600 leading-relaxed">
+          {error || 'It may have been closed by its owner, or the link may be incomplete.'}
+        </p>
+      </StateCard>
     );
   }
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-12 max-w-md w-full text-center border border-gray-100"
-        >
-          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-500" />
+      <StateCard>
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.3 }}>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+            <CheckCircle2 className="h-9 w-9 text-green-500" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Thank You!</h1>
-          <p className="text-gray-600 mb-8 leading-relaxed">
-            Your response has been successfully submitted to the system.
-          </p>
-          <button
-            onClick={() => window.close()}
-            className="w-full py-4 bg-[#5B94E5] text-white font-semibold rounded-2xl hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-[0.98]"
-          >
-            Finish
-          </button>
         </motion.div>
-      </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Response received</h1>
+        <p className="text-gray-600 leading-relaxed">
+          Thank you for taking part in <span className="font-medium text-gray-800">{report.title}</span>.
+          {report.allowMultipleResponses ? '' : ' You can close this page.'}
+        </p>
+        {report.allowMultipleResponses && (
+          <button
+            onClick={startAnother}
+            className="mt-7 w-full rounded-xl bg-primary py-3.5 font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            Submit another response
+          </button>
+        )}
+      </StateCard>
     );
   }
 
-  if (!report || report.status !== 'PUBLISHED' || !report.isPublic) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-10 max-w-md w-full text-center border border-gray-100">
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Form Not Found</h1>
-          <p className="text-gray-600 mb-8 leading-relaxed">
-            The form you&rsquo;re looking for is either closed, restricted, or doesn&rsquo;t exist.
-          </p>
-          <button
-            onClick={() => window.history.back()}
-            className="w-full py-4 bg-[#5B94E5] text-white font-semibold rounded-2xl hover:bg-blue-600 transition-all"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // ─── Form ─────────────────────────────────────────────────
+  const minutes = estimateMinutes(report.questions);
+  const errorCount = Object.keys(errors).length;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Hero Header */}
-      <div className="bg-[#12182B] relative overflow-hidden h-64 flex items-end pb-12">
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#5B94E5]/20 to-transparent opacity-60"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#5B94E5]/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
-        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10 mix-blend-overlay"></div>
-        
-        <div className="max-w-3xl mx-auto w-full px-4 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 leading-tight">
-              {report.title}
-            </h1>
-            <div className="flex flex-wrap items-center gap-3 mt-4">
-              <Badge variant="primary" className="bg-white/10 text-blue-200 border-white/10">
-                <Clock className="w-3.5 h-3.5 mr-1.5" />
-                {estimatedTime} min read
-              </Badge>
-              <Badge variant="info" className="bg-white/10 text-blue-200 border-white/10">
-                {report.questions.length} questions
-              </Badge>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-
-      <div className="max-w-3xl mx-auto px-4 -mt-10 pb-24 relative z-20">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Form Description Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-8 border border-white"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-xs font-bold text-[#5B94E5] uppercase tracking-widest">About this form</span>
-              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                <Info className="w-5 h-5 text-[#5B94E5]" />
+      <header className="bg-[#12182B] relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5B94E5]/25 via-transparent to-transparent" />
+        <div className="relative">
+          <BrandBar dark />
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-20">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+              <h1 className="text-2xl sm:text-4xl font-bold text-white leading-tight text-balance">{report.title}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-4 text-sm text-blue-100/90">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  About {minutes} min
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1">
+                  <ListChecks className="h-3.5 w-3.5" />
+                  {report.questions.length} questions
+                </span>
               </div>
-            </div>
-            {report.description ? (
-              <p className="text-gray-600 text-lg leading-relaxed whitespace-pre-wrap">
+            </motion.div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 -mt-12 pb-28 md:pb-16 relative">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {/* About + progress */}
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+            {report.description && (
+              <p className="text-gray-700 text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap mb-6">
                 {report.description}
               </p>
-            ) : (
-              <p className="text-gray-400 italic">No description provided.</p>
             )}
-            
-            <div className="mt-8 pt-8 border-t border-gray-50">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">Completion Progress</span>
-                <span className="text-sm font-bold text-[#5B94E5]">{Math.round(progress)}%</span>
+            {draftRestored && (
+              <div className="mb-6 flex items-start gap-2.5 rounded-xl bg-primary-light px-4 py-3 text-sm text-gray-700">
+                <Save className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  We restored the answers you started on this device.{' '}
+                  <button type="button" onClick={startAnother} className="font-semibold text-primary hover:underline">
+                    Start over
+                  </button>
+                </span>
               </div>
-              <Progress value={progress} className="h-2.5 bg-gray-100" />
+            )}
+            <div className="flex items-center justify-between mb-2 text-sm">
+              <span className="font-medium text-gray-700">
+                {answeredCount} of {report.questions.length} answered
+              </span>
+              <span className="font-semibold text-primary tabular-nums">{Math.round(progress)}%</span>
             </div>
-          </motion.div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+            </div>
+            <p className="mt-4 text-xs text-gray-400">
+              Questions marked <span className="text-red-500">*</span> are required. Your answers are saved on this device until you submit.
+            </p>
+          </section>
 
-          {/* Respondent Info Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-8 border border-white"
+          {/* Respondent */}
+          <section
+            id={`question-${RESPONDENT_EMAIL}`}
+            className={`bg-white rounded-2xl border shadow-sm p-6 sm:p-8 ${errors[RESPONDENT_EMAIL] ? 'border-red-300' : 'border-gray-200'}`}
           >
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Your Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-500 ml-1 uppercase tracking-wider">
-                  Full Name
-                </label>
+            <h2 className="text-base font-semibold text-gray-900 mb-4">About you</h2>
+            <div className={`grid grid-cols-1 gap-4 ${report.collectEmail ? 'sm:grid-cols-2' : ''}`}>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Full name <span className="font-normal text-gray-400">(optional)</span>
+                </span>
                 <input
                   type="text"
+                  autoComplete="name"
                   value={respondentName}
                   onChange={(e) => setRespondentName(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all text-gray-900"
-                  placeholder="e.g. John Doe"
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base sm:text-[15px] text-gray-900 placeholder-gray-400 outline-none transition hover:border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  placeholder="e.g. Amaka Okafor"
                 />
-              </div>
-              
+              </label>
               {report.collectEmail && (
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-500 ml-1 uppercase tracking-wider">
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Email address <span className="text-red-500">*</span>
+                  </span>
                   <input
                     type="email"
+                    inputMode="email"
+                    autoComplete="email"
                     value={respondentEmail}
-                    onChange={(e) => setRespondentEmail(e.target.value)}
-                    required={report.collectEmail}
-                    className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-[#5B94E5]/20 focus:border-[#5B94E5] outline-none transition-all text-gray-900"
-                    placeholder="john@example.com"
+                    onChange={(e) => {
+                      setRespondentEmail(e.target.value);
+                      setErrors((prev) => {
+                        const next = { ...prev };
+                        delete next[RESPONDENT_EMAIL];
+                        return next;
+                      });
+                    }}
+                    className={`w-full rounded-xl border bg-white px-4 py-3 text-base sm:text-[15px] text-gray-900 placeholder-gray-400 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 ${errors[RESPONDENT_EMAIL] ? 'border-red-300' : 'border-gray-200 hover:border-gray-300'}`}
+                    placeholder="name@example.com"
                   />
-                </div>
+                </label>
               )}
             </div>
-          </motion.div>
+            {errors[RESPONDENT_EMAIL] && (
+              <p className="mt-2 text-sm text-red-600" role="alert">
+                {errors[RESPONDENT_EMAIL]}
+              </p>
+            )}
+          </section>
 
           {/* Questions */}
-          <div className="space-y-6">
-            {report.questions.map((question, index) => (
-              <motion.div 
+          {report.questions.map((question, index) => {
+            const message = errors[question.id];
+            return (
+              <section
                 key={question.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.5 }}
-                className="bg-white rounded-[2rem] shadow-lg shadow-gray-200/40 p-8 border border-white hover:shadow-xl transition-shadow"
+                id={`question-${question.id}`}
+                className={`bg-white rounded-2xl border shadow-sm p-6 sm:p-8 scroll-mt-6 transition-colors ${message ? 'border-red-300 ring-1 ring-red-100' : 'border-gray-200'}`}
               >
-                <div className="mb-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="text-xl font-bold text-gray-900 leading-snug">
-                      <span className="text-[#5B94E5] font-mono mr-3 text-lg">{(index + 1).toString().padStart(2, '0')}.</span>
+                <div className="flex items-start gap-3 sm:gap-4 mb-5">
+                  <span className="mt-0.5 flex h-7 min-w-7 shrink-0 items-center justify-center rounded-lg bg-primary-light px-1.5 text-xs font-bold text-primary tabular-nums">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-snug">
                       {question.title}
-                      {question.required && <span className="text-red-500 ml-1">*</span>}
+                      {question.required && (
+                        <span className="text-red-500 ml-1" aria-label="required">
+                          *
+                        </span>
+                      )}
                     </h3>
+                    {question.description && (
+                      <p className="text-sm text-gray-500 mt-1.5 leading-relaxed whitespace-pre-wrap">{question.description}</p>
+                    )}
                   </div>
-                  {question.description && (
-                    <p className="text-gray-500 mt-3 text-base leading-relaxed whitespace-pre-wrap ml-10">
-                      {question.description}
+                </div>
+                <div className="sm:pl-11">
+                  <QuestionInput
+                    question={question}
+                    value={responses[question.id]}
+                    onChange={(value) => setAnswer(question.id, value)}
+                    invalid={!!message}
+                  />
+                  {message && (
+                    <p className="mt-2.5 flex items-center gap-1.5 text-sm text-red-600" role="alert">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      {message}
                     </p>
                   )}
                 </div>
-                
-                <div className="ml-0 md:ml-10">
-                  {renderQuestion(question)}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+              </section>
+            );
+          })}
 
-          {/* Submit Footer */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-8 border border-white"
-          >
-            <AnimatePresence>
-              {submitError && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-6"
-                >
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                    <span className="text-red-500 text-lg mt-0.5">⚠️</span>
-                    <div>
-                      <p className="text-red-800 font-semibold text-sm">Submission Failed</p>
-                      <p className="text-red-700 text-sm mt-1">{submitError}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-3 text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
-                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                <span className="text-sm font-medium">Fields with * are mandatory</span>
+          {/* Submit */}
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+            {submitError && (
+              <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                <p className="text-sm text-red-700">{submitError}</p>
               </div>
-              
+            )}
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4">
+              <p className="text-sm text-gray-500 text-center sm:text-left">
+                {errorCount > 0
+                  ? `${errorCount} ${errorCount === 1 ? 'question needs' : 'questions need'} attention.`
+                  : `${answeredCount} of ${report.questions.length} answered.`}
+              </p>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-10 py-4 bg-[#5B94E5] text-white font-bold rounded-2xl hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-xl bg-primary px-8 py-3.5 font-semibold text-white transition-colors hover:bg-primary-hover active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    Sending...
+                    <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                    Sending…
                   </>
                 ) : (
                   <>
-                    <Send className="w-5 h-5" />
-                    Submit Responses
+                    <Send className="h-4 w-4" />
+                    Submit response
                   </>
                 )}
               </button>
             </div>
-          </motion.div>
+          </section>
         </form>
-      </div>
+        <PoweredBy />
+      </main>
 
-      {/* Sticky Footer Progress (Mobile) */}
-      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white/80 backdrop-blur-md border-t border-gray-100 p-4 z-50">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Progress</span>
-            <span className="text-[10px] font-bold text-[#5B94E5]">{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} className="h-1" />
+      {/* Phones: progress stays visible while scrolling */}
+      <div className="fixed bottom-0 inset-x-0 md:hidden bg-white/90 backdrop-blur border-t border-gray-200 px-4 py-3 z-40">
+        <div className="flex items-center justify-between mb-1.5 text-xs">
+          <span className="font-medium text-gray-500">
+            {answeredCount} of {report.questions.length} answered
+          </span>
+          <span className="font-semibold text-primary tabular-nums">{Math.round(progress)}%</span>
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
         </div>
       </div>
     </div>
