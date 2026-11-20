@@ -30,8 +30,8 @@ export function ReportSettingsCard({
     {
       key: 'allowMultipleResponses',
       icon: Repeat,
-      title: 'Offer “Submit another response”',
-      detail: 'Shown after each response; useful when one agent fills the form for many people.',
+      title: 'Allow more than one response per person',
+      detail: 'When off, each device and each email can respond once. Turn on when one agent fills the form for many people.',
     },
     {
       key: 'collectEmail',

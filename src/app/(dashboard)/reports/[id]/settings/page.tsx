@@ -443,7 +443,10 @@ const handleEmailLink = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-sm font-medium text-gray-900 mb-1">Allow Multiple Responses</h3>
-                      <p className="text-sm text-gray-500">Allow respondents to submit multiple responses to this form</p>
+                      <p className="text-sm text-gray-500">
+                        When off, each device and each email address can respond once. Turn on when one agent fills
+                        the form for many people.
+                      </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer ml-4">
                       <input
