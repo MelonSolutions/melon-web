@@ -28,6 +28,24 @@ interface Report {
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * A random id kept on this device for this form. The API uses it to refuse a
+ * second response when the form accepts one response per person.
+ */
+function respondentKey(shareToken: string): string | undefined {
+  try {
+    const name = `melon_respondent_${shareToken}`;
+    let key = localStorage.getItem(name);
+    if (!key) {
+      key = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+      localStorage.setItem(name, key);
+    }
+    return key;
+  } catch {
+    return undefined;
+  }
+}
 const RESPONDENT_EMAIL = '__respondentEmail';
 
 /** Centered card for loading, error and thank-you states. */
@@ -79,13 +97,18 @@ export default function PublicFormPage() {
   const [respondentName, setRespondentName] = useState('');
   const [respondentEmail, setRespondentEmail] = useState('');
   const [draftRestored, setDraftRestored] = useState(false);
+  // This device already sent a response (remembered locally, or refused by the API)
+  const [respondedHere, setRespondedHere] = useState(false);
+  const [alreadyResponded, setAlreadyResponded] = useState(false);
 
   const storageKey = `melon_draft_${shareToken}`;
+  const respondedKey = `melon_responded_${shareToken}`;
 
   // Restore an unfinished draft saved on this device
   useEffect(() => {
     if (!shareToken) return;
     try {
+      if (localStorage.getItem(respondedKey)) setRespondedHere(true);
       const saved = localStorage.getItem(storageKey);
       if (!saved) return;
       const parsed = JSON.parse(saved);
@@ -98,7 +121,7 @@ export default function PublicFormPage() {
     } catch {
       // Storage blocked or draft unreadable: start fresh
     }
-  }, [shareToken, storageKey]);
+  }, [shareToken, storageKey, respondedKey]);
 
   // Keep the draft on this device until it is submitted
   useEffect(() => {
@@ -194,8 +217,17 @@ export default function PublicFormPage() {
           responses: report.questions.map((q) => formatAnswer(q, responses[q.id])).filter(Boolean),
           respondentName: respondentName.trim() || undefined,
           respondentEmail: respondentEmail.trim() || undefined,
+          respondentKey: respondentKey(shareToken),
         }),
       });
+
+      if (response.status === 409) {
+        // One response per person, and this device or email already answered
+        setAlreadyResponded(true);
+        markResponded();
+        window.scrollTo({ top: 0 });
+        return;
+      }
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -210,17 +242,22 @@ export default function PublicFormPage() {
 
       setSubmitted(true);
       window.scrollTo({ top: 0 });
-      try {
-        localStorage.removeItem(storageKey);
-      } catch {
-        // Nothing to clean up
-      }
+      markResponded();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Your response wasn’t sent.';
       setSubmitError(message);
       addToast({ type: 'error', title: 'Not sent', message });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const markResponded = () => {
+    try {
+      localStorage.removeItem(storageKey);
+      if (!report?.allowMultipleResponses) localStorage.setItem(respondedKey, new Date().toISOString());
+    } catch {
+      // Storage blocked: the API still refuses a second response by email
     }
   };
 
@@ -252,6 +289,21 @@ export default function PublicFormPage() {
         <h1 className="text-xl font-bold text-gray-900 mb-2">This form isn’t available</h1>
         <p className="text-gray-600 leading-relaxed">
           {error || 'It may have been closed by its owner, or the link may be incomplete.'}
+        </p>
+      </StateCard>
+    );
+  }
+
+  if (alreadyResponded || (respondedHere && !submitted && !report.allowMultipleResponses)) {
+    return (
+      <StateCard>
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary-light">
+          <CheckCircle2 className="h-9 w-9 text-primary" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">You’ve already responded</h1>
+        <p className="text-gray-600 leading-relaxed">
+          <span className="font-medium text-gray-800">{report.title}</span> accepts one response per person, and we
+          already have yours. Thank you for taking part.
         </p>
       </StateCard>
     );
