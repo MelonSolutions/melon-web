@@ -177,6 +177,17 @@ export const publishReport = async (id: string): Promise<any> => {
   return response.json();
 };
 
+// Unpublish report
+export const unpublishReport = async (id: string): Promise<any> => {
+  const response = await authFetch(`${API_BASE_URL}/reports/${id}/unpublish`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  await handleApiError(response);
+  return response.json();
+};
+
 // Duplicate report
 export const duplicateReport = async (id: string): Promise<any> => {
   const response = await authFetch(`${API_BASE_URL}/reports/${id}/duplicate`, {
