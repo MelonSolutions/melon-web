@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { 
   MoreHorizontal, 
   Eye, 
+  EyeOff,
   Edit3, 
   Copy, 
   Trash2, 
@@ -16,7 +17,7 @@ import {
   Lock,
   Loader2
 } from 'lucide-react';
-import { duplicateReport, deleteReport } from '@/lib/api/reports';
+import { duplicateReport, deleteReport, unpublishReport } from '@/lib/api/reports';
 import { EmailSharingModal } from '@/components/reports/EmailSharingModal';
 
 interface Report {
@@ -57,6 +58,25 @@ export function ReportCard({ report, view, onRefetch }: ReportCardProps) {
       onRefetch();
     } catch (error) {
       console.error('Error duplicating report:', error);
+    } finally {
+      setLoading(false);
+      setShowDropdown(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    const confirmed = confirm(
+      `Unpublish "${report.title}"? This takes the form offline and moves it back to Draft without deleting existing responses.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      await unpublishReport(reportId);
+      onRefetch();
+    } catch (error) {
+      console.error('Error unpublishing report:', error);
     } finally {
       setLoading(false);
       setShowDropdown(false);
@@ -205,18 +225,20 @@ const handleShare = async () => {
 
                       {report.status === 'PUBLISHED' && (
                         <>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
-                              setShowDropdown(false);
-                            }}
-                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
-                          >
-                            <Eye className="w-4 h-4" />
-                            Preview
-                          </button>
+                          {report.isPublic !== false && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
+                                setShowDropdown(false);
+                              }}
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                            >
+                              <Eye className="w-4 h-4" />
+                              Preview
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.preventDefault();
@@ -227,6 +249,18 @@ const handleShare = async () => {
                           >
                             <Share2 className="w-4 h-4" />
                             Share
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleUnpublish();
+                            }}
+                            disabled={loading}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-50 text-left"
+                          >
+                            <EyeOff className="w-4 h-4" />
+                            Unpublish
                           </button>
                         </>
                       )}
@@ -395,22 +429,32 @@ const handleShare = async () => {
 
                   {report.status === 'PUBLISHED' && (
                     <>
-                      <button
-                        onClick={() => {
-                          window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
-                          setShowDropdown(false);
-                        }}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Preview
-                      </button>
+                      {report.isPublic !== false && (
+                        <button
+                          onClick={() => {
+                            window.open(`/reports/public/${report.shareToken || reportId}`, '_blank');
+                            setShowDropdown(false);
+                          }}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Preview
+                        </button>
+                      )}
                       <button
                         onClick={handleShare}
                         className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
                       >
                         <Share2 className="w-4 h-4" />
                         Share
+                      </button>
+                      <button
+                        onClick={handleUnpublish}
+                        disabled={loading}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-50 text-left"
+                      >
+                        <EyeOff className="w-4 h-4" />
+                        Unpublish
                       </button>
                     </>
                   )}

@@ -16,14 +16,17 @@ import {
   Loader2,
   FileSpreadsheet,
   Link2,
-  X
+  X,
+  EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
 import { useReport } from '@/hooks/useReports';
-import { updateReport, deleteReport, getShareLink, generateEditToken } from '@/lib/api/reports';
+import { updateReport, deleteReport, getShareLink, generateEditToken, unpublishReport } from '@/lib/api/reports';
 import { ReportCategory } from '@/types/reports';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import { useToast } from '@/components/ui/Toast';
+import { useModal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmailSharingModal } from '@/components/reports/EmailSharingModal';
 import { authFetch } from '@/lib/auth/session';
 
@@ -34,9 +37,11 @@ export default function ReportSettingsPage() {
   const router = useRouter();
   const reportId = params.id as string;
   const { addToast } = useToast();
+  const { openModal, closeModal } = useModal();
   
   const { report, loading: reportLoading, refetch } = useReport(reportId);
   const [loading, setLoading] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [shareLoading, setShareLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('general');
@@ -104,6 +109,52 @@ export default function ReportSettingsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUnpublish = async () => {
+    if (!report) return;
+    try {
+      setUnpublishing(true);
+      await unpublishReport(reportId);
+      await refetch();
+      addToast({
+        type: 'success',
+        title: 'Report Unpublished',
+        message: 'The report is now back in draft and the public form link is offline.',
+      });
+    } catch (error) {
+      console.error('Error unpublishing report:', error);
+      addToast({
+        type: 'error',
+        title: 'Failed to Unpublish',
+        message: error instanceof Error ? error.message : 'There was an error unpublishing your report.',
+      });
+    } finally {
+      setUnpublishing(false);
+    }
+  };
+
+  const confirmUnpublish = () => {
+    if (!report) return;
+    openModal(
+      <ConfirmDialog
+        title="Unpublish report"
+        message={
+          report.responseCount > 0
+            ? `This takes "${report.title}" offline and moves it back to Draft. Your ${report.responseCount} existing ${report.responseCount === 1 ? 'response stays' : 'responses stay'} safe, and you can publish it again whenever you’re ready.`
+            : `This takes "${report.title}" offline and moves it back to Draft. Anyone opening the share link won’t be able to respond until you publish it again.`
+        }
+        confirmText="Unpublish"
+        cancelText="Cancel"
+        type="warning"
+        onConfirm={() => {
+          closeModal();
+          void handleUnpublish();
+        }}
+        onCancel={closeModal}
+      />,
+      { size: 'sm' },
+    );
   };
 
   const handleDelete = async () => {
@@ -340,7 +391,7 @@ const handleEmailLink = () => {
 
   return (
     <div>
-      <ReportNavigation currentPage="settings" />
+      <ReportNavigation currentPage="settings" report={report} />
       
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -558,7 +609,7 @@ const handleEmailLink = () => {
                       </div>
 
                       {/* Quick Actions */}
-                      <div className="flex gap-3">
+                      <div className="flex flex-wrap gap-3">
                         <button
                           onClick={handleGenerateShareLink}
                           disabled={shareLoading}
@@ -599,15 +650,29 @@ const handleEmailLink = () => {
                           )}
                           {isDownloadingExcel ? 'Exporting...' : 'Excel Export'}
                         </button>
-                        <a
-                          href={`/reports/public/${reportId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-50 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                        {report.isPublic && (
+                          <a
+                            href={`/reports/public/${reportId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-50 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Preview Form
+                          </a>
+                        )}
+                        <button
+                          onClick={confirmUnpublish}
+                          disabled={unpublishing}
+                          className="flex items-center gap-2 px-4 py-2 text-amber-800 bg-amber-50 border border-amber-200 text-sm font-medium rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50"
                         >
-                          <ExternalLink className="w-4 h-4" />
-                          Preview Form
-                        </a>
+                          {unpublishing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
+                          {unpublishing ? 'Unpublishing...' : 'Unpublish'}
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -668,6 +733,31 @@ const handleEmailLink = () => {
                 <h2 className="text-lg font-medium text-red-600 mb-6">Advanced Settings</h2>
                 
                 <div className="space-y-6">
+                  {report.status === 'PUBLISHED' && (
+                    <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-gray-900 mb-1">Unpublish Report</h3>
+                          <p className="text-sm text-gray-600">
+                            Take this report offline and move it back to Draft. Existing responses stay intact and you can publish it again later.
+                          </p>
+                        </div>
+                        <button
+                          onClick={confirmUnpublish}
+                          disabled={unpublishing}
+                          className="ml-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
+                        >
+                          {unpublishing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <EyeOff className="w-4 h-4" />
+                          )}
+                          {unpublishing ? 'Unpublishing...' : 'Unpublish Report'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="border border-red-200 rounded-lg p-4 bg-red-50">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

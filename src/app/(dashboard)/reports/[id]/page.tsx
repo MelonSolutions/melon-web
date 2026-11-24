@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Save, Send } from 'lucide-react';
+import { EyeOff, Save, Send } from 'lucide-react';
 import { ReportNavigation } from '@/components/reports/navigation/ReportNavigation';
 import { useReport } from '@/hooks/useReports';
-import { updateReport } from '@/lib/api/reports';
+import { publishReport, unpublishReport, updateReport } from '@/lib/api/reports';
 import { Question } from '@/types/reports';
 import { useToast } from '@/components/ui/Toast';
 import { useModal } from '@/components/ui/Modal';
@@ -31,7 +31,7 @@ export default function ReportDetailsPage() {
   const justPublished = searchParams.get('PUBLISHED') === 'true';
 
   const { report, loading: reportLoading, refetch } = useReport(reportId);
-  const [saving, setSaving] = useState<'save' | 'publish' | null>(null);
+  const [saving, setSaving] = useState<'save' | 'publish' | 'unpublish' | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [titleError, setTitleError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', description: '', questions: [] as Question[] });
@@ -97,9 +97,12 @@ export default function ReportDetailsPage() {
         title,
         description: formData.description.trim(),
         questions: cleanQuestions(formData.questions),
-        // Saving never takes a live report offline; only Publish changes the status
-        status: publish ? 'PUBLISHED' : report.status,
+        // Saving never takes a live report offline; Publish uses the publish endpoint so isPublic + shareToken are restored
+        status: report.status,
       });
+      if (publish) {
+        await publishReport(reportId);
+      }
       await refetch();
       addToast({
         type: 'success',
@@ -119,6 +122,51 @@ export default function ReportDetailsPage() {
     } finally {
       setSaving(null);
     }
+  };
+
+  const handleUnpublish = async () => {
+    if (!report) return;
+    try {
+      setSaving('unpublish');
+      await unpublishReport(reportId);
+      await refetch();
+      addToast({
+        type: 'success',
+        title: 'Report unpublished',
+        message: 'Moved back to draft. The public form link is now offline.',
+      });
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: 'Could not unpublish',
+        message: error instanceof Error ? error.message : 'Try again in a moment.',
+      });
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const confirmUnpublish = () => {
+    if (!report) return;
+    openModal(
+      <ConfirmDialog
+        title="Unpublish report"
+        message={
+          report.responseCount > 0
+            ? `This takes the form offline and moves it back to Draft. Your ${report.responseCount} existing ${report.responseCount === 1 ? 'response stays' : 'responses stay'} safe, and you can publish it again whenever you’re ready.`
+            : 'This takes the form offline and moves it back to Draft. Anyone opening the share link won’t be able to respond until you publish it again.'
+        }
+        confirmText="Unpublish"
+        cancelText="Cancel"
+        type="warning"
+        onConfirm={() => {
+          closeModal();
+          void handleUnpublish();
+        }}
+        onCancel={closeModal}
+      />,
+      { size: 'sm' },
+    );
   };
 
   const confirmDelete = (_: unknown, proceed: () => void) =>
@@ -176,7 +224,7 @@ export default function ReportDetailsPage() {
 
   return (
     <div>
-      <ReportNavigation currentPage="edit" />
+      <ReportNavigation currentPage="edit" report={report} />
 
       <div className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="flex items-center justify-between gap-3 px-6 py-3">
@@ -187,6 +235,16 @@ export default function ReportDetailsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {isLive && (
+              <button
+                onClick={confirmUnpublish}
+                disabled={!!saving}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+              >
+                <EyeOff className="h-4 w-4" />
+                {saving === 'unpublish' ? 'Unpublishing…' : 'Unpublish'}
+              </button>
+            )}
             <button
               onClick={() => handleSave(false)}
               disabled={!!saving || !dirty}
@@ -217,8 +275,9 @@ export default function ReportDetailsPage() {
         <main className="mx-auto min-w-0 max-w-3xl flex-1 space-y-4">
           {isLive && (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              This report is live. Saved changes appear on the form straight away; changing a question’s type or
-              options can make earlier answers harder to compare.
+              {report.isPublic === false
+                ? 'This report is published, but public access is turned off in Settings. Use Unpublish to move it back to Draft.'
+                : 'This report is live. Saved changes appear on the form straight away; changing a question’s type or options can make earlier answers harder to compare.'}
             </p>
           )}
 

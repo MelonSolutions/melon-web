@@ -10,6 +10,7 @@ import {
   updateReport,
   deleteReport,
   publishReport,
+  unpublishReport,
   duplicateReport,
   getShareLink,
   updateReportStatus,
@@ -160,6 +161,18 @@ export function useReports(filters: ReportsFilters = {}) {
     }
   }, [refetch]);
 
+  // Unpublish report
+  const unpublishExistingReport = useCallback(async (id: string) => {
+    try {
+      const unpublishedReport = await unpublishReport(id);
+      await refetch();
+      return unpublishedReport;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to unpublish report';
+      throw new Error(errorMessage);
+    }
+  }, [refetch]);
+
   // Duplicate report
   const duplicateExistingReport = useCallback(async (id: string) => {
     try {
@@ -195,6 +208,7 @@ export function useReports(filters: ReportsFilters = {}) {
     updateReport: updateExistingReport,
     deleteReport: deleteExistingReport,
     publishReport: publishExistingReport,
+    unpublishReport: unpublishExistingReport,
     duplicateReport: duplicateExistingReport,
     updateStatus,
   };
@@ -262,6 +276,20 @@ export function useReport(id: string) {
     }
   }, [id]);
 
+  // Unpublish report
+  const unpublishReportData = useCallback(async (): Promise<Report> => {
+    if (!id) throw new Error('No report ID provided');
+    
+    try {
+      const unpublishedReport: Report = await unpublishReport(id);
+      setReport(unpublishedReport);
+      return unpublishedReport;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to unpublish report';
+      throw new Error(errorMessage);
+    }
+  }, [id]);
+
   // Get share link
   const getReportShareLink = useCallback(async (): Promise<{ shareToken: string; shareUrl: string }> => {
     if (!id) throw new Error('No report ID provided');
@@ -295,6 +323,7 @@ export function useReport(id: string) {
     refetch,
     updateReport: updateReportData,
     publishReport: publishReportData,
+    unpublishReport: unpublishReportData,
     getShareLink: getReportShareLink,
     updateStatus: updateReportStatusData,
   };

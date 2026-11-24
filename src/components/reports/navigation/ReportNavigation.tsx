@@ -9,14 +9,22 @@ import { useReport } from '@/hooks/useReports';
 interface ReportNavigationProps {
   showBackButton?: boolean;
   currentPage?: 'edit' | 'responses' | 'settings';
+  report?: {
+    title: string;
+    status: string;
+    responseCount: number;
+    isPublic?: boolean;
+  } | null;
 }
 
-export function ReportNavigation({ showBackButton = true, currentPage }: ReportNavigationProps) {
+export function ReportNavigation({ showBackButton = true, currentPage, report: reportProp }: ReportNavigationProps) {
   const pathname = usePathname();
   const params = useParams();
   const reportId = params?.id as string;
   
-  const { report, loading } = useReport(reportId);
+  const { report: fetchedReport, loading: fetchLoading } = useReport(reportProp ? '' : reportId);
+  const report = reportProp ?? fetchedReport;
+  const loading = reportProp ? false : fetchLoading;
 
   const getCurrentPage = () => {
     if (currentPage) return currentPage;
@@ -120,7 +128,7 @@ export function ReportNavigation({ showBackButton = true, currentPage }: ReportN
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2">
-            {report.status === 'PUBLISHED' && (
+            {report.status === 'PUBLISHED' && report.isPublic !== false && (
               <a
                 href={`/reports/public/${reportId}`}
                 target="_blank"
