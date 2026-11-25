@@ -114,9 +114,17 @@ const validatePhoneNumber = (phone: string): string | undefined => {
 
 export default function AddKYCUserPage() {
   const router = useRouter();
-  const { user } = useAuthContext();
+  const { user, organization, isAuthenticated, isLoading: authLoading } = useAuthContext();
   const { addToast } = useToast();
   const [creating, setCreating] = useState(false);
+
+  // /kyc/create lives outside DashboardLayout; redirect signed-out visitors
+  // so they never fill out the form without an active session.
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
   const [phoneError, setPhoneError] = useState<string | undefined>(undefined);
   const [needsRelog, setNeedsRelog] = useState<boolean>(false);
   const [cityStateWarnings, setCityStateWarnings] = useState<Record<string, string | undefined>>({});
@@ -131,7 +139,7 @@ export default function AddKYCUserPage() {
     return states.map(state => ({ value: state, label: state }));
   }, [states]);
 
-  const isMelonAdmin = isMelonPlatformUser(user);
+  const isMelonAdmin = isMelonPlatformUser(user, organization);
 
   useEffect(() => {
     if (!isMelonAdmin) return;
@@ -172,7 +180,7 @@ export default function AddKYCUserPage() {
 
   const targetOrganization = isMelonAdmin && formData.organizationId
     ? organizations.find(org => (org._id || org.id) === formData.organizationId)
-    : user?.organization ?? { name: user?.organizationName };
+    : user?.organization ?? organization ?? { name: user?.organizationName };
   const requiresCustomerType = isSycamoreOrganization(targetOrganization);
   const showCustomerType = requiresCustomerType || isMelonAdmin;
 
@@ -431,6 +439,7 @@ export default function AddKYCUserPage() {
       router.push(`/kyc/${result._id}`);
     } catch (error) {
       setCreating(false);
+      console.error('Failed to create KYC request:', error);
 
       if (error instanceof ApiError) {
         if (
@@ -454,6 +463,12 @@ export default function AddKYCUserPage() {
             title: 'Request Already Exists',
             message: error.message || 'A verification request with these details already exists in your organization.',
           });
+        } else if (error.status === 401) {
+          addToast({
+            type: 'error',
+            title: 'Session Expired',
+            message: error.message || 'Your session has expired. Please sign in again.',
+          });
         } else if (error.status === 403) {
           addToast({
             type: 'error',
@@ -473,11 +488,26 @@ export default function AddKYCUserPage() {
             message: error.message,
           });
         }
+      } else if (error instanceof Error && error.name === 'NetworkError') {
+        addToast({
+          type: 'error',
+          title: 'Connection Error',
+          message: error.message || "We couldn't reach Melon. Check your internet connection and try again.",
+        });
+      } else if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        addToast({
+          type: 'error',
+          title: 'Request Timed Out',
+          message: error.message || 'This is taking longer than usual. Please try again.',
+        });
       } else {
         addToast({
           type: 'error',
           title: 'Unexpected Error',
-          message: 'Something went wrong. Please try again.',
+          message:
+            error instanceof Error && error.message
+              ? error.message
+              : 'Something went wrong. Please try again.',
         });
       }
     }
